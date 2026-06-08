@@ -195,5 +195,12 @@ pollState();
 setInterval(pollState, 2000);
 startMicrophone().catch((error) => {
   elements.trackTitle.textContent = "Microfone bloqueado";
-  elements.artistName.textContent = error.message;
+  elements.artistName.textContent = microphoneErrorMessage(error);
 });
+
+function microphoneErrorMessage(error) {
+  if (error && error.name === "NotAllowedError") {
+    return "Permissão do microfone negada";
+  }
+  return "Não foi possível iniciar o microfone";
+}
