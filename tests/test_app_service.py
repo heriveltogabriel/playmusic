@@ -27,6 +27,11 @@ class FakeDiscogsClient:
         return 1
 
 
+class FailingDiscogsClient:
+    def sync_collection(self, store):
+        raise RuntimeError("Discogs unavailable")
+
+
 class FakeAudDClient:
     def recognize(self, audio_bytes, filename="clip.webm"):
         self.audio_bytes = audio_bytes
@@ -61,6 +66,17 @@ class AppServiceTests(unittest.TestCase):
 
             self.assertEqual(response["count"], 1)
             self.assertEqual(response["status"], "ok")
+
+    def test_sync_collection_returns_structured_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = CatalogStore(Path(tmp) / "catalog.sqlite3")
+            app = VinylDisplayApp(store, FailingDiscogsClient(), FakeAudDClient())
+
+            response = app.sync_collection()
+
+            self.assertEqual(response["status"], "error")
+            self.assertEqual(response["collection_count"], 0)
+            self.assertIn("Discogs unavailable", response["message"])
 
     def test_recognize_audio_sets_playing_state(self):
         with tempfile.TemporaryDirectory() as tmp:

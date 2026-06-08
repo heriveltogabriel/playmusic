@@ -30,7 +30,14 @@ class VinylDisplayApp:
         return state
 
     def sync_collection(self) -> dict[str, Any]:
-        count = self.discogs_client.sync_collection(self.store)
+        try:
+            count = self.discogs_client.sync_collection(self.store)
+        except Exception as error:
+            return {
+                "status": "error",
+                "message": str(error),
+                "collection_count": self.store.collection_count(),
+            }
         return {"status": "ok", "count": count}
 
     def recognize_audio(

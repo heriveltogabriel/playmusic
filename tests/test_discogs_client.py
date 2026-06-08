@@ -1,6 +1,8 @@
 import tempfile
 import unittest
+from email.message import Message
 from pathlib import Path
+from urllib.error import HTTPError
 
 from vinyl_display.catalog import CatalogStore
 from vinyl_display.clients.discogs import DiscogsClient, parse_duration
@@ -48,6 +50,21 @@ class FakeJsonTransport:
         raise AssertionError(f"Unexpected URL: {url}")
 
 
+class RateLimitedTransport(FakeJsonTransport):
+    def __init__(self):
+        super().__init__()
+        self.release_attempts = 0
+
+    def __call__(self, url, headers):
+        if url.endswith("/releases/14192689"):
+            self.release_attempts += 1
+            if self.release_attempts == 1:
+                headers = Message()
+                headers["Retry-After"] = "0"
+                raise HTTPError(url, 429, "Too Many Requests", headers, None)
+        return super().__call__(url, headers)
+
+
 class DiscogsClientTests(unittest.TestCase):
     def test_parse_duration(self):
         self.assertEqual(parse_duration("4:21"), 261)
@@ -75,6 +92,27 @@ class DiscogsClientTests(unittest.TestCase):
             self.assertEqual(release.catalog_numbers, ["B0030719-01"])
             self.assertEqual(release.tracks[0].duration_seconds, 261)
             self.assertEqual(store.get_metadata("discogs_last_sync_count"), "1")
+
+    def test_sync_retries_discogs_rate_limit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = CatalogStore(Path(tmp) / "catalog.sqlite3")
+            store.initialize()
+            sleeps = []
+            transport = RateLimitedTransport()
+            client = DiscogsClient(
+                username="heriveltogabriel",
+                user_agent="VinylDisplayTest/0.1",
+                request_json=transport,
+                page_delay_seconds=0,
+                sleep_func=sleeps.append,
+            )
+
+            count = client.sync_collection(store)
+
+            self.assertEqual(count, 1)
+            self.assertEqual(transport.release_attempts, 2)
+            self.assertIn(0.0, sleeps)
+            self.assertIsNotNone(store.get_release(14192689))
 
 
 if __name__ == "__main__":
