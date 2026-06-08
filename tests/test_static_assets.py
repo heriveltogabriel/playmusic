@@ -21,6 +21,8 @@ class StaticAssetTests(unittest.TestCase):
         self.assertIn("MediaRecorder", js)
         self.assertIn("/api/recognize", js)
         self.assertIn("/api/state", js)
+        self.assertIn("MediaRecorder.isTypeSupported", js)
+        self.assertNotIn("innerHTML", js)
 
     def test_css_is_amoled_friendly_and_has_no_negative_letter_spacing(self):
         css = (ROOT / "static" / "styles.css").read_text()

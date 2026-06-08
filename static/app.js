@@ -33,12 +33,21 @@ function formatTime(seconds) {
 function setCover(release) {
   if (!release || !release.cover_url) {
     elements.albumCover.className = "cover-placeholder";
-    elements.albumCover.innerHTML = '<span id="cover-initials">VINYL</span>';
+    elements.albumCover.replaceChildren();
+    const placeholder = document.createElement("span");
+    placeholder.id = "cover-initials";
+    placeholder.textContent = "VINYL";
+    elements.albumCover.appendChild(placeholder);
     return;
   }
 
   elements.albumCover.className = "";
-  elements.albumCover.innerHTML = `<img class="cover-image" alt="Capa de ${release.title}" src="${release.cover_url}">`;
+  elements.albumCover.replaceChildren();
+  const image = document.createElement("img");
+  image.className = "cover-image";
+  image.alt = `Capa de ${release.title}`;
+  image.src = release.cover_url;
+  elements.albumCover.appendChild(image);
 }
 
 function renderState(state) {
@@ -141,7 +150,11 @@ function recordClip() {
   recording = true;
   lastRecognitionAt = Date.now();
 
-  const recorder = new MediaRecorder(mediaStream, { mimeType: "audio/webm" });
+  const mimeType = preferredAudioMimeType();
+  const recorder = new MediaRecorder(
+    mediaStream,
+    mimeType ? { mimeType } : undefined,
+  );
   const chunks = [];
   recorder.ondataavailable = (event) => {
     if (event.data.size > 0) chunks.push(event.data);
@@ -161,6 +174,11 @@ function recordClip() {
   };
   recorder.start();
   window.setTimeout(() => recorder.stop(), 10000);
+}
+
+function preferredAudioMimeType() {
+  const options = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
+  return options.find((type) => MediaRecorder.isTypeSupported(type)) || "";
 }
 
 elements.syncButton.addEventListener("click", async () => {
