@@ -24,7 +24,37 @@ def _optional_path(value: str | None) -> Path | None:
     return Path(value).expanduser() if value else None
 
 
+def _parse_env_value(value: str) -> str:
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+        return value[1:-1]
+    return value.split(" #", 1)[0].strip()
+
+
+def _load_dotenv() -> None:
+    if os.environ.get("VINYL_DISABLE_DOTENV") == "1":
+        return
+
+    env_path = Path(os.environ.get("VINYL_ENV_FILE", ".env")).expanduser()
+    if not env_path.exists():
+        return
+
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        if line.startswith("export "):
+            line = line[len("export ") :].strip()
+
+        key, value = line.split("=", 1)
+        key = key.strip()
+        if key:
+            os.environ.setdefault(key, _parse_env_value(value))
+
+
 def load_config() -> Config:
+    _load_dotenv()
+
     data_dir = Path(os.environ.get("VINYL_DATA_DIR", "data")).expanduser()
     static_dir = Path(os.environ.get("VINYL_STATIC_DIR", "static")).expanduser()
     database_path = Path(

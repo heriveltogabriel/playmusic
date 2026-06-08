@@ -13,13 +13,17 @@ Minimalist vinyl now-playing display for a Raspberry Pi server and an Android ph
 
 ## Configuration
 
-Copy `.env.example` values into your shell environment before running the server.
+Copy `.env.example` to `.env` and fill in your local values. The `.env` file is
+ignored by git so secrets stay local.
 
 Required for recognition:
 
-```bash
-export AUDD_API_TOKEN="your-token"
+```env
+AUDD_API_TOKEN=your-token
 ```
+
+Shell environment values still take priority over `.env`, which is useful for
+temporary overrides.
 
 Required for Android microphone capture in Chrome:
 

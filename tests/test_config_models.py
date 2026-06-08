@@ -14,6 +14,7 @@ class ConfigAndModelTests(unittest.TestCase):
             try:
                 os.environ.clear()
                 os.environ.update({
+                    "VINYL_DISABLE_DOTENV": "1",
                     "VINYL_DATA_DIR": tmp,
                     "VINYL_PORT": "8123",
                     "AUDD_API_TOKEN": "secret-token",
@@ -26,6 +27,36 @@ class ConfigAndModelTests(unittest.TestCase):
                 self.assertEqual(config.audd_api_token, "secret-token")
                 self.assertEqual(config.database_path, Path(tmp) / "vinyl_display.sqlite3")
                 self.assertEqual(config.static_dir.name, "static")
+            finally:
+                os.environ.clear()
+                os.environ.update(old_env)
+
+    def test_load_config_reads_dotenv_without_overriding_env(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env_path = Path(tmp) / ".env"
+            env_path.write_text(
+                "\n".join(
+                    [
+                        "AUDD_API_TOKEN=dotenv-token",
+                        "VINYL_PORT=9001",
+                        "VINYL_DATA_DIR=dotenv-data",
+                    ]
+                ),
+                encoding="utf-8",
+            )
+            old_env = os.environ.copy()
+            try:
+                os.environ.clear()
+                os.environ.update({
+                    "VINYL_ENV_FILE": str(env_path),
+                    "VINYL_PORT": "8123",
+                })
+
+                config = load_config()
+
+                self.assertEqual(config.audd_api_token, "dotenv-token")
+                self.assertEqual(config.port, 8123)
+                self.assertEqual(config.data_dir, Path("dotenv-data"))
             finally:
                 os.environ.clear()
                 os.environ.update(old_env)
