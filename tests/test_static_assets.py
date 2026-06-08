@@ -1,3 +1,4 @@
+import re
 import unittest
 from pathlib import Path
 
@@ -29,6 +30,11 @@ class StaticAssetTests(unittest.TestCase):
 
         self.assertIn("background: #050505", css)
         self.assertNotIn("letter-spacing: -", css)
+        self.assertNotIn("font-size: clamp", css)
+        font_size_declarations = re.findall(r"font-size:[^;]+;", css)
+        self.assertFalse(
+            [declaration for declaration in font_size_declarations if "vw" in declaration],
+        )
 
 
 if __name__ == "__main__":
