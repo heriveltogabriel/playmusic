@@ -46,7 +46,14 @@ class VinylDisplayApp:
         filename: str = "clip.webm",
     ) -> dict[str, Any]:
         self.playback.set_identifying()
-        recognition = self.audd_client.recognize(audio_bytes, filename=filename)
+        try:
+            recognition = self.audd_client.recognize(audio_bytes, filename=filename)
+        except Exception as error:
+            self.playback.set_listening()
+            return {
+                "status": "recognition_unavailable",
+                "message": str(error),
+            }
         if recognition is None:
             self.playback.set_listening()
             return {"status": "no_result"}

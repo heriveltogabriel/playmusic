@@ -56,6 +56,11 @@ class EmptyAudDClient:
         )
 
 
+class FailingAudDClient:
+    def recognize(self, audio_bytes, filename="clip.webm"):
+        raise RuntimeError("AUDD_API_TOKEN is required for recognition")
+
+
 class AppServiceTests(unittest.TestCase):
     def test_sync_collection_returns_count(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -101,6 +106,18 @@ class AppServiceTests(unittest.TestCase):
 
             self.assertEqual(response["status"], "not_found")
             self.assertIn("Disco não encontrado", app.state()["message"])
+
+    def test_recognize_audio_returns_to_listening_when_provider_unavailable(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = CatalogStore(Path(tmp) / "catalog.sqlite3")
+            app = VinylDisplayApp(store, FakeDiscogsClient(), FailingAudDClient())
+
+            response = app.recognize_audio(b"audio-data", filename="clip.webm")
+            state = app.state()
+
+            self.assertEqual(response["status"], "recognition_unavailable")
+            self.assertEqual(state["status"], "listening")
+            self.assertIn("AUDD_API_TOKEN", response["message"])
 
 
 if __name__ == "__main__":
