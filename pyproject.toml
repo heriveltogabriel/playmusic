@@ -1,0 +1,8 @@
+[project]
+name = "vinyl-display"
+version = "0.1.0"
+description = "Local vinyl listening display for Raspberry Pi and Android"
+requires-python = ">=3.11"
+
+[tool.vinyl-display]
+test-command = "python -m unittest discover -v"
