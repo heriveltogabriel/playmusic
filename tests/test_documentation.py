@@ -17,6 +17,7 @@ class DocumentationTests(unittest.TestCase):
     def test_readme_includes_run_and_sync_commands(self):
         readme = (ROOT / "README.md").read_text()
 
+        self.assertIn("python3 -m vinyl_display.server", readme)
         self.assertIn("python -m vinyl_display.server", readme)
         self.assertIn("POST /api/sync", readme)
         self.assertIn("https://", readme)

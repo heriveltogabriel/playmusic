@@ -33,8 +33,10 @@ The browser microphone API requires a secure context. On the Raspberry Pi, run t
 ## Run
 
 ```bash
-python -m vinyl_display.server
+python3 -m vinyl_display.server
 ```
+
+If your Raspberry Pi maps `python` to Python 3, `python -m vinyl_display.server` also works.
 
 Open the Android phone at:
 
@@ -68,5 +70,5 @@ POST /api/recognize
 ## Tests
 
 ```bash
-python -m unittest discover -v
+python3 -m unittest discover -v
 ```
