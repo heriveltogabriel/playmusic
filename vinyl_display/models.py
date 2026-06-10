@@ -41,6 +41,9 @@ class Release:
     discogs_url: str
     rating: int = 0
     auditions: int = 0
+    genres: list[str] = field(default_factory=list)
+    styles: list[str] = field(default_factory=list)
+    synced_at: float = 0.0
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -57,6 +60,9 @@ class Release:
             "discogs_url": self.discogs_url,
             "rating": self.rating,
             "auditions": self.auditions,
+            "genres": self.genres,
+            "styles": self.styles,
+            "synced_at": self.synced_at,
         }
 
     @classmethod
@@ -75,6 +81,9 @@ class Release:
             discogs_url=str(payload.get("discogs_url", "")),
             rating=int(payload.get("rating", 0)),
             auditions=int(payload.get("auditions", 0)),
+            genres=list(payload.get("genres", [])),
+            styles=list(payload.get("styles", [])),
+            synced_at=float(payload.get("synced_at", 0.0)),
         )
 
 

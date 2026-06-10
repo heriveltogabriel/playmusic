@@ -160,7 +160,7 @@ class CatalogStore:
         with self._connect() as connection:
             rows = connection.execute(
                 """
-                SELECT r.payload_json, COALESCE(s.rating, 0) as rating, COALESCE(s.auditions, 0) as auditions
+                SELECT r.payload_json, r.synced_at, COALESCE(s.rating, 0) as rating, COALESCE(s.auditions, 0) as auditions
                 FROM releases r
                 LEFT JOIN release_stats s ON r.release_id = s.release_id
                 ORDER BY r.artist, r.title
@@ -172,6 +172,7 @@ class CatalogStore:
             data = json.loads(row["payload_json"])
             data["rating"] = row["rating"]
             data["auditions"] = row["auditions"]
+            data["synced_at"] = row["synced_at"]
             releases.append(Release.from_dict(data))
         return releases
 

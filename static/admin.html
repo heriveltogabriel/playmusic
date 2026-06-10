@@ -98,36 +98,113 @@
         </section>
 
         <!-- Main View Panels -->
-        <!-- 1. Grid Panel (for Collection & Ranking) -->
+        <!-- Main View Panels -->
+        <!-- 1. Grid Panel (for Collection) -->
         <div id="grid-view" class="view-panel active">
           <div id="album-grid" class="album-grid">
             <!-- Cards will be dynamically injected here -->
           </div>
         </div>
 
-        <!-- 2. Statistics Panel -->
-        <div id="stats-view" class="view-panel">
-          <div class="stats-container">
-            <div class="stats-card">
-              <h3>Total de Discos</h3>
-              <p id="stat-total-lps" class="stat-value">0</p>
-              <span class="stat-desc">Álbuns na coleção local</span>
-            </div>
-            <div class="stats-card">
-              <h3>Total de Audições</h3>
-              <p id="stat-total-listens" class="stat-value">0</p>
-              <span class="stat-desc">Vezes tocados no vinil</span>
-            </div>
-            <div class="stats-card highlight-card">
-              <h3>Mais Ouvido</h3>
-              <div id="stat-most-listened" class="stat-album-meta">
-                <p class="meta-placeholder">Nenhum disco ouvido ainda</p>
+        <!-- 2. Ranking View Panel -->
+        <div id="ranking-view" class="view-panel">
+          <!-- Podium layout -->
+          <div id="podium-container" class="podium-container">
+            <!-- Silver (#2) -->
+            <div id="podium-silver" class="podium-spot silver">
+              <div class="podium-circle-wrapper">
+                <div class="position-badge">#2</div>
+                <img id="podium-silver-cover" class="podium-cover" src="/static/logo_lp_da_semana.png" alt="Capa">
+              </div>
+              <div class="podium-info">
+                <h3 id="podium-silver-title">Aja</h3>
+                <p id="podium-silver-artist">Steely Dan</p>
+                <span id="podium-silver-auditions" class="podium-plays">1 audição</span>
               </div>
             </div>
-            <div class="stats-card highlight-card">
-              <h3>Melhor Avaliado</h3>
-              <div id="stat-top-rated" class="stat-album-meta">
-                <p class="meta-placeholder">Nenhum disco avaliado ainda</p>
+            
+            <!-- Gold (#1) -->
+            <div id="podium-gold" class="podium-spot gold">
+              <div class="crown-icon">👑</div>
+              <div class="podium-circle-wrapper">
+                <div class="position-badge">#1</div>
+                <img id="podium-gold-cover" class="podium-cover" src="/static/logo_lp_da_semana.png" alt="Capa">
+              </div>
+              <div class="podium-info">
+                <h3 id="podium-gold-title">Harvest Moon</h3>
+                <p id="podium-gold-artist">Neil Young</p>
+                <span id="podium-gold-auditions" class="podium-plays">2 audições</span>
+              </div>
+            </div>
+            
+            <!-- Bronze (#3) -->
+            <div id="podium-bronze" class="podium-spot bronze">
+              <div class="podium-circle-wrapper">
+                <div class="position-badge">#3</div>
+                <img id="podium-bronze-cover" class="podium-cover" src="/static/logo_lp_da_semana.png" alt="Capa">
+              </div>
+              <div class="podium-info">
+                <h3 id="podium-bronze-title">Band On The Run</h3>
+                <p id="podium-bronze-artist">Wings</p>
+                <span id="podium-bronze-auditions" class="podium-plays">1 audição</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Outros Discos Ouvidos list -->
+          <div class="other-listens-section">
+            <h2>Outros Discos Ouvidos</h2>
+            <div id="other-listens-list" class="other-listens-list">
+              <!-- Position #4+ lists -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Statistics Panel -->
+        <div id="stats-view" class="view-panel">
+          <div class="stats-top-cards">
+            <div class="stats-card">
+              <h3>TOTAL DE LPS</h3>
+              <p id="stat-total-lps" class="stat-value">0</p>
+            </div>
+            <div class="stats-card">
+              <h3>ARTISTAS DIFERENTES</h3>
+              <p id="stat-different-artists" class="stat-value">0</p>
+            </div>
+            <div class="stats-card">
+              <h3>FAVORITADOS</h3>
+              <p id="stat-favorited-count" class="stat-value">0</p>
+            </div>
+            <div class="stats-card">
+              <h3>MÉDIA DE AVALIAÇÃO</h3>
+              <p id="stat-average-rating" class="stat-value">0.0</p>
+            </div>
+          </div>
+
+          <!-- Advanced Stats Lists Grid -->
+          <div class="stats-sections-grid">
+            <div class="stats-section-box">
+              <h2>Distribuição por Gênero</h2>
+              <div id="genre-distribution-list" class="stats-list-container">
+                <!-- Genre distribution items -->
+              </div>
+            </div>
+            <div class="stats-section-box">
+              <h2>LPs por Audição</h2>
+              <div id="lps-by-auditions-list" class="stats-list-container">
+                <!-- LPs ranked by auditions -->
+              </div>
+            </div>
+            <div class="stats-section-box">
+              <h2>Artistas Mais Colecionados</h2>
+              <div id="top-artists-list" class="stats-list-container">
+                <!-- Most collected artists list -->
+              </div>
+            </div>
+            <div class="stats-section-box">
+              <h2>Últimos Adicionados</h2>
+              <div id="recent-additions-list" class="stats-list-container recent-additions-list">
+                <!-- Recently synchronized releases -->
               </div>
             </div>
           </div>

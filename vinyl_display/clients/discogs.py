@@ -119,6 +119,8 @@ def release_from_discogs(payload: dict[str, Any]) -> Release:
         formats=_format_values(payload),
         tracks=tracks,
         discogs_url=str(payload.get("uri") or ""),
+        genres=list(payload.get("genres") or []),
+        styles=list(payload.get("styles") or []),
     )
 
 

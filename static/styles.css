@@ -1540,3 +1540,403 @@ h1 {
   }
 }
 
+/* Advanced Statistics Dashboard & List Layouts */
+.stats-top-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+  width: 100%;
+}
+
+.stats-top-cards .stats-card {
+  text-align: left;
+}
+
+.stats-top-cards .stats-card h3 {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.stats-top-cards .stats-card .stat-value {
+  margin: 0;
+  font-size: 2.8rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.1;
+  text-shadow: 0 0 10px rgba(230, 92, 0, 0.2);
+}
+
+.stats-sections-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  width: 100%;
+  margin-bottom: 40px;
+}
+
+@media (max-width: 900px) {
+  .stats-sections-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.stats-section-box {
+  background: var(--panel);
+  border: 1px solid rgba(234, 229, 217, 0.06);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stats-section-box h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.stats-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+/* Progress bar list rows */
+.stats-list-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.list-row-text {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.list-row-label {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.list-row-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.list-row-bar-wrapper {
+  width: 100%;
+  height: 6px;
+  background: rgba(234, 229, 217, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.list-row-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent) 0%, #ff2a6d 100%);
+  border-radius: 3px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Most Collected Artists badge list rows */
+.artist-list-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: rgba(234, 229, 217, 0.02);
+  border: 1px solid rgba(234, 229, 217, 0.05);
+  border-radius: 8px;
+  width: 100%;
+}
+
+.artist-rank-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.artist-count-badge {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent) 0%, #ff2a6d 100%);
+  padding: 4px 10px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(230, 92, 0, 0.2);
+}
+
+/* Recently Added list rows */
+.recent-addition-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(234, 229, 217, 0.04);
+}
+
+.recent-addition-row:last-child {
+  border-bottom: none;
+}
+
+.recent-cover {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: #111;
+  border: 1px solid rgba(234, 229, 217, 0.08);
+  flex-shrink: 0;
+}
+
+.recent-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+  flex: 1;
+}
+
+.recent-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recent-artist {
+  font-size: 0.85rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recent-date {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--soft);
+  flex-shrink: 0;
+}
+
+/* Visual Podium for Ranking Tab */
+.podium-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 32px;
+  margin: 40px auto;
+  width: 100%;
+  max-width: 700px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgba(234, 229, 217, 0.08);
+}
+
+.podium-spot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  flex: 1;
+}
+
+.podium-spot.gold {
+  z-index: 10;
+}
+
+.podium-spot.silver, .podium-spot.bronze {
+  z-index: 5;
+}
+
+.podium-circle-wrapper {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  padding: 6px;
+  background: var(--panel);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+  margin-bottom: 16px;
+  transition: transform 0.3s ease;
+}
+
+.podium-spot.gold .podium-circle-wrapper {
+  width: 140px;
+  height: 140px;
+  border: 3px solid #ffb300;
+  box-shadow: 0 0 20px rgba(255, 179, 0, 0.3), 0 12px 36px rgba(0, 0, 0, 0.7);
+}
+
+.podium-spot.silver .podium-circle-wrapper {
+  border: 3px solid #b0bec5;
+  box-shadow: 0 0 16px rgba(176, 190, 197, 0.2), 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+.podium-spot.bronze .podium-circle-wrapper {
+  border: 3px solid #a1887f;
+  box-shadow: 0 0 16px rgba(161, 136, 127, 0.2), 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+.podium-circle-wrapper:hover {
+  transform: scale(1.05);
+}
+
+.podium-cover {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #000;
+}
+
+.position-badge {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #111;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #fff;
+  border: 2px solid currentColor;
+}
+
+.podium-spot.gold .position-badge {
+  color: #ffb300;
+}
+
+.podium-spot.silver .position-badge {
+  color: #b0bec5;
+}
+
+.podium-spot.bronze .position-badge {
+  color: #a1887f;
+}
+
+.crown-icon {
+  font-size: 1.8rem;
+  margin-bottom: -10px;
+  z-index: 15;
+  filter: drop-shadow(0 2px 4px rgba(255, 179, 0, 0.4));
+}
+
+.podium-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  width: 100%;
+}
+
+.podium-info h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.podium-info p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.podium-plays {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 4px;
+}
+
+/* Other Listens Section under Podium */
+.other-listens-section {
+  max-width: 700px;
+  margin: 40px auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.other-listens-section h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.other-listens-list {
+  background: var(--panel);
+  border: 1px solid rgba(234, 229, 217, 0.06);
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (max-width: 500px) {
+  .podium-container {
+    gap: 12px;
+  }
+  .podium-circle-wrapper {
+    width: 80px;
+    height: 80px;
+  }
+  .podium-spot.gold .podium-circle-wrapper {
+    width: 96px;
+    height: 96px;
+  }
+  .podium-info h3 {
+    max-width: 100px;
+    font-size: 0.9rem;
+  }
+  .podium-info p {
+    max-width: 100px;
+    font-size: 0.8rem;
+  }
+}
+
+

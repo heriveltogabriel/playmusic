@@ -82,9 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderCurrentTab() {
     // Hide all view panels
-    elements.gridView.classList.remove("active");
-    elements.statsView.classList.remove("active");
-    elements.suggestionView.classList.remove("active");
+    document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
     
     // Reset specific subheaders
     elements.filtersPanel.style.display = "none";
@@ -101,16 +99,13 @@ document.addEventListener("DOMContentLoaded", () => {
       renderAlbumGrid();
     } else if (activeTab === "ranking") {
       elements.pageTitle.textContent = "Ranking de Audições";
-      elements.filtersPanel.style.display = "flex";
-      elements.gridView.classList.add("active");
-      
-      // Lock sort to auditions descending for ranking view
-      sortOption = "auditions";
-      elements.sortSelect.value = "auditions";
-      elements.sortSelect.disabled = true;
-      renderAlbumGrid();
+      const rankingView = document.getElementById("ranking-view");
+      if (rankingView) {
+        rankingView.classList.add("active");
+      }
+      renderRankingTab();
     } else if (activeTab === "stats") {
-      elements.pageTitle.textContent = "Estatísticas da Coleção";
+      elements.pageTitle.textContent = "Estatísticas";
       elements.statsView.classList.add("active");
       renderStatsTab();
     } else if (activeTab === "suggestion") {
@@ -331,47 +326,278 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderStatsTab() {
     if (!stats) return;
 
-    elements.statTotalLps.textContent = stats.total_releases;
-    elements.statTotalListens.textContent = stats.total_auditions;
+    // Set top cards values
+    document.getElementById("stat-total-lps").textContent = stats.total_releases || 0;
+    document.getElementById("stat-different-artists").textContent = stats.different_artists || 0;
+    document.getElementById("stat-favorited-count").textContent = stats.favorited_count || 0;
+    document.getElementById("stat-average-rating").textContent = stats.average_rating !== undefined ? stats.average_rating.toFixed(1) : "0.0";
 
-    // Render most listened meta
-    elements.statMostListened.replaceChildren();
-    if (stats.top_listened) {
-      const img = document.createElement("img");
-      img.src = stats.top_listened.cover_url || "/static/logo_lp_da_semana.png";
-      img.className = "stat-cover-thumb";
-      elements.statMostListened.appendChild(img);
+    // 1. Genre Distribution List
+    const genreContainer = document.getElementById("genre-distribution-list");
+    genreContainer.replaceChildren();
+    if (stats.genre_distribution && stats.genre_distribution.length > 0) {
+      stats.genre_distribution.forEach(genre => {
+        const row = document.createElement("div");
+        row.className = "stats-list-row";
 
-      const info = document.createElement("div");
-      info.className = "stat-info-right";
-      info.innerHTML = `
-        <strong>${stats.top_listened.title}</strong>
-        <span>${stats.top_listened.artist}</span>
-        <span class="highlight-stat-lbl">${stats.top_listened.auditions} audições</span>
-      `;
-      elements.statMostListened.appendChild(info);
+        const textDiv = document.createElement("div");
+        textDiv.className = "list-row-text";
+
+        const labelSpan = document.createElement("span");
+        labelSpan.className = "list-row-label";
+        labelSpan.textContent = genre.name;
+
+        const valueSpan = document.createElement("span");
+        valueSpan.className = "list-row-value";
+        valueSpan.textContent = `${genre.count} (${genre.percentage}%)`;
+
+        textDiv.appendChild(labelSpan);
+        textDiv.appendChild(valueSpan);
+
+        const barWrapper = document.createElement("div");
+        barWrapper.className = "list-row-bar-wrapper";
+
+        const bar = document.createElement("div");
+        bar.className = "list-row-bar";
+        bar.style.width = `${genre.percentage}%`;
+
+        barWrapper.appendChild(bar);
+        row.appendChild(textDiv);
+        row.appendChild(barWrapper);
+        genreContainer.appendChild(row);
+      });
     } else {
-      elements.statMostListened.innerHTML = '<p class="meta-placeholder">Nenhum disco ouvido ainda</p>';
+      genreContainer.innerHTML = '<p class="meta-placeholder">Nenhum gênero catalogado</p>';
     }
 
-    // Render top rated meta
-    elements.statTopRated.replaceChildren();
-    if (stats.top_rated) {
-      const img = document.createElement("img");
-      img.src = stats.top_rated.cover_url || "/static/logo_lp_da_semana.png";
-      img.className = "stat-cover-thumb";
-      elements.statTopRated.appendChild(img);
+    // 2. LPs by Auditions List
+    const lpsAuditionsContainer = document.getElementById("lps-by-auditions-list");
+    lpsAuditionsContainer.replaceChildren();
+    if (stats.top_listened_all && stats.top_listened_all.length > 0) {
+      const maxAuditions = stats.top_listened_all[0].auditions || 1;
+      // Show top 5 in the stats tab
+      stats.top_listened_all.slice(0, 5).forEach(album => {
+        const row = document.createElement("div");
+        row.className = "stats-list-row";
 
-      const info = document.createElement("div");
-      info.className = "stat-info-right";
-      info.innerHTML = `
-        <strong>${stats.top_rated.title}</strong>
-        <span>${stats.top_rated.artist}</span>
-        <span class="highlight-stat-lbl">${"★".repeat(stats.top_rated.rating)}${"☆".repeat(5 - stats.top_rated.rating)}</span>
-      `;
-      elements.statTopRated.appendChild(info);
+        const textDiv = document.createElement("div");
+        textDiv.className = "list-row-text";
+
+        const labelSpan = document.createElement("span");
+        labelSpan.className = "list-row-label";
+        labelSpan.textContent = `${album.title} - ${album.artist}`;
+
+        const valueSpan = document.createElement("span");
+        valueSpan.className = "list-row-value";
+        valueSpan.textContent = `${album.auditions} ${album.auditions === 1 ? 'audição' : 'audições'}`;
+
+        textDiv.appendChild(labelSpan);
+        textDiv.appendChild(valueSpan);
+
+        const barWrapper = document.createElement("div");
+        barWrapper.className = "list-row-bar-wrapper";
+
+        const bar = document.createElement("div");
+        bar.className = "list-row-bar";
+        const pct = Math.round((album.auditions / maxAuditions) * 100);
+        bar.style.width = `${pct}%`;
+
+        barWrapper.appendChild(bar);
+        row.appendChild(textDiv);
+        row.appendChild(barWrapper);
+        lpsAuditionsContainer.appendChild(row);
+      });
     } else {
-      elements.statTopRated.innerHTML = '<p class="meta-placeholder">Nenhum disco avaliado ainda</p>';
+      lpsAuditionsContainer.innerHTML = '<p class="meta-placeholder">Nenhum disco ouvido ainda</p>';
+    }
+
+    // 3. Artistas Mais Colecionados
+    const topArtistsContainer = document.getElementById("top-artists-list");
+    topArtistsContainer.replaceChildren();
+    if (stats.artist_ranking && stats.artist_ranking.length > 0) {
+      stats.artist_ranking.forEach((artist, index) => {
+        const row = document.createElement("div");
+        row.className = "artist-list-row";
+
+        const leftSpan = document.createElement("span");
+        leftSpan.className = "artist-rank-name";
+        leftSpan.textContent = `#${index + 1} ${artist.name}`;
+
+        const rightSpan = document.createElement("span");
+        rightSpan.className = "artist-count-badge";
+        rightSpan.textContent = `${artist.count} LPs`;
+
+        row.appendChild(leftSpan);
+        row.appendChild(rightSpan);
+        topArtistsContainer.appendChild(row);
+      });
+    } else {
+      topArtistsContainer.innerHTML = '<p class="meta-placeholder">Nenhum artista cadastrado</p>';
+    }
+
+    // 4. Últimos Adicionados
+    const recentContainer = document.getElementById("recent-additions-list");
+    recentContainer.replaceChildren();
+    if (stats.last_added && stats.last_added.length > 0) {
+      // Show top 5
+      stats.last_added.slice(0, 5).forEach(album => {
+        const row = document.createElement("div");
+        row.className = "recent-addition-row";
+
+        const img = document.createElement("img");
+        img.className = "recent-cover";
+        img.src = album.cover_url || "/static/logo_lp_da_semana.png";
+        img.alt = `Capa de ${album.title}`;
+
+        const infoDiv = document.createElement("div");
+        infoDiv.className = "recent-info";
+
+        const titleStrong = document.createElement("strong");
+        titleStrong.className = "recent-title";
+        titleStrong.textContent = album.title;
+
+        const artistSpan = document.createElement("span");
+        artistSpan.className = "recent-artist";
+        artistSpan.textContent = album.artist;
+
+        infoDiv.appendChild(titleStrong);
+        infoDiv.appendChild(artistSpan);
+
+        const dateSpan = document.createElement("span");
+        dateSpan.className = "recent-date";
+        
+        // Format date from timestamp
+        let formattedDate = "N/A";
+        if (album.synced_at) {
+          const date = new Date(album.synced_at * 1000);
+          const day = String(date.getDate()).padStart(2, '0');
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const year = date.getFullYear();
+          formattedDate = `${day}/${month}/${year}`;
+        }
+        dateSpan.textContent = formattedDate;
+
+        row.appendChild(img);
+        row.appendChild(infoDiv);
+        row.appendChild(dateSpan);
+        recentContainer.appendChild(row);
+      });
+    } else {
+      recentContainer.innerHTML = '<p class="meta-placeholder">Nenhum disco adicionado recentemente</p>';
+    }
+  }
+
+  // 6b. Ranking rendering
+  function renderRankingTab() {
+    if (!stats || !stats.top_listened_all) return;
+
+    const topList = stats.top_listened_all;
+
+    // Podium spots elements
+    const spots = {
+      gold: {
+        spot: document.getElementById("podium-gold"),
+        cover: document.getElementById("podium-gold-cover"),
+        title: document.getElementById("podium-gold-title"),
+        artist: document.getElementById("podium-gold-artist"),
+        auditions: document.getElementById("podium-gold-auditions")
+      },
+      silver: {
+        spot: document.getElementById("podium-silver"),
+        cover: document.getElementById("podium-silver-cover"),
+        title: document.getElementById("podium-silver-title"),
+        artist: document.getElementById("podium-silver-artist"),
+        auditions: document.getElementById("podium-silver-auditions")
+      },
+      bronze: {
+        spot: document.getElementById("podium-bronze"),
+        cover: document.getElementById("podium-bronze-cover"),
+        title: document.getElementById("podium-bronze-title"),
+        artist: document.getElementById("podium-bronze-artist"),
+        auditions: document.getElementById("podium-bronze-auditions")
+      }
+    };
+
+    // Hide all spots by default
+    spots.gold.spot.style.display = "none";
+    spots.silver.spot.style.display = "none";
+    spots.bronze.spot.style.display = "none";
+
+    // #1 Gold
+    if (topList.length > 0) {
+      const album = topList[0];
+      spots.gold.cover.src = album.cover_url || "/static/logo_lp_da_semana.png";
+      spots.gold.title.textContent = album.title;
+      spots.gold.artist.textContent = album.artist;
+      spots.gold.auditions.textContent = `${album.auditions} ${album.auditions === 1 ? 'audição' : 'audições'}`;
+      spots.gold.spot.style.display = "flex";
+    }
+
+    // #2 Silver
+    if (topList.length > 1) {
+      const album = topList[1];
+      spots.silver.cover.src = album.cover_url || "/static/logo_lp_da_semana.png";
+      spots.silver.title.textContent = album.title;
+      spots.silver.artist.textContent = album.artist;
+      spots.silver.auditions.textContent = `${album.auditions} ${album.auditions === 1 ? 'audição' : 'audições'}`;
+      spots.silver.spot.style.display = "flex";
+    }
+
+    // #3 Bronze
+    if (topList.length > 2) {
+      const album = topList[2];
+      spots.bronze.cover.src = album.cover_url || "/static/logo_lp_da_semana.png";
+      spots.bronze.title.textContent = album.title;
+      spots.bronze.artist.textContent = album.artist;
+      spots.bronze.auditions.textContent = `${album.auditions} ${album.auditions === 1 ? 'audição' : 'audições'}`;
+      spots.bronze.spot.style.display = "flex";
+    }
+
+    // Render "#4+ Outros Discos Ouvidos"
+    const otherContainer = document.getElementById("other-listens-list");
+    otherContainer.replaceChildren();
+
+    const otherAlbums = topList.slice(3);
+    if (otherAlbums.length > 0) {
+      const maxAuditions = topList[0].auditions || 1;
+      otherAlbums.forEach((album, index) => {
+        const rank = index + 4; // index 0 is rank #4
+
+        const row = document.createElement("div");
+        row.className = "stats-list-row";
+
+        const textDiv = document.createElement("div");
+        textDiv.className = "list-row-text";
+
+        const labelSpan = document.createElement("span");
+        labelSpan.className = "list-row-label";
+        labelSpan.textContent = `#${rank} - ${album.title} - ${album.artist}`;
+
+        const valueSpan = document.createElement("span");
+        valueSpan.className = "list-row-value";
+        valueSpan.textContent = `${album.auditions} ${album.auditions === 1 ? 'audição' : 'audições'}`;
+
+        textDiv.appendChild(labelSpan);
+        textDiv.appendChild(valueSpan);
+
+        const barWrapper = document.createElement("div");
+        barWrapper.className = "list-row-bar-wrapper";
+
+        const bar = document.createElement("div");
+        bar.className = "list-row-bar";
+        const pct = Math.round((album.auditions / maxAuditions) * 100);
+        bar.style.width = `${pct}%`;
+
+        barWrapper.appendChild(bar);
+        row.appendChild(textDiv);
+        row.appendChild(barWrapper);
+        otherContainer.appendChild(row);
+      });
+    } else {
+      const placeholder = document.createElement("p");
+      placeholder.className = "meta-placeholder";
+      placeholder.textContent = "Nenhum outro disco ouvido além do top 3";
+      otherContainer.appendChild(placeholder);
     }
   }
 

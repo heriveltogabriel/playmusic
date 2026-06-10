@@ -75,12 +75,65 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                 rng = random.Random(seed_val)
                 suggestion = rng.choice(sorted_releases)
                 
+            # Additional Aggregations
+            different_artists = len(set(r.get("artist", "").strip() for r in releases if r.get("artist")))
+            favorited_count = sum(1 for r in releases if r.get("rating", 0) == 5)
+            average_rating = round(sum(r.get("rating", 0) for r in rated_releases) / len(rated_releases), 1) if rated_releases else 0.0
+            
+            # Genre Distribution
+            from collections import Counter
+            genres = []
+            for r in releases:
+                for g in r.get("genres", []):
+                    if g:
+                        genres.append(g)
+            genre_counts = Counter(genres)
+            genre_distribution = []
+            for name, count in genre_counts.most_common():
+                pct = round((count / total_releases) * 100) if total_releases > 0 else 0
+                genre_distribution.append({
+                    "name": name,
+                    "count": count,
+                    "percentage": pct
+                })
+                
+            # Artist Ranking
+            artists = [r.get("artist", "").strip() for r in releases if r.get("artist")]
+            artist_counts = Counter(artists)
+            artist_ranking = []
+            for name, count in artist_counts.most_common(10):
+                artist_ranking.append({
+                    "name": name,
+                    "count": count
+                })
+                
+            # Last Added LPs
+            sorted_by_date = sorted(
+                releases,
+                key=lambda x: (x.get("synced_at") or 0.0, x.get("release_id")),
+                reverse=True
+            )
+            last_added = sorted_by_date[:10]
+            
+            # All Listened LPs sorted descending by audits, then alphabetically by artist/title
+            top_listened_all = sorted(
+                [r for r in releases if r.get("auditions", 0) > 0],
+                key=lambda x: (-x.get("auditions", 0), x.get("artist", "").lower(), x.get("title", "").lower())
+            )
+            
             self._json({
                 "total_releases": total_releases,
                 "total_auditions": total_auditions,
                 "top_rated": top_rated,
                 "top_listened": top_listened,
-                "suggestion": suggestion
+                "suggestion": suggestion,
+                "different_artists": different_artists,
+                "favorited_count": favorited_count,
+                "average_rating": average_rating,
+                "genre_distribution": genre_distribution,
+                "artist_ranking": artist_ranking,
+                "last_added": last_added,
+                "top_listened_all": top_listened_all
             })
             return
         if path.startswith("/static/"):
