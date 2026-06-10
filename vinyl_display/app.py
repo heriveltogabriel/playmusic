@@ -111,8 +111,33 @@ class VinylDisplayApp:
         releases = self.store.list_releases_with_stats()
         return [r.to_dict() for r in releases]
 
-    def add_manual_release(self, title: str, artist: str, year: int | None, cover_url: str) -> dict[str, Any]:
-        release = self.store.add_manual_release(title, artist, year, cover_url)
+    def add_manual_release(
+        self,
+        title: str,
+        artist: str,
+        year: int | None,
+        cover_url: str,
+        labels: list[str] = None,
+        catalog_numbers: list[str] = None,
+        genres: list[str] = None,
+        styles: list[str] = None,
+        notes: str = "",
+        rating: int = 0,
+        favorite: bool = False,
+    ) -> dict[str, Any]:
+        release = self.store.add_manual_release(
+            title=title,
+            artist=artist,
+            year=year,
+            cover_url=cover_url,
+            labels=labels,
+            catalog_numbers=catalog_numbers,
+            genres=genres,
+            styles=styles,
+            notes=notes,
+            rating=rating,
+            favorite=favorite,
+        )
         return {"status": "ok", "release": release.to_dict()}
 
     def update_release_rating(self, release_id: int, rating: int) -> dict[str, Any]:
@@ -122,5 +147,40 @@ class VinylDisplayApp:
     def increment_release_auditions(self, release_id: int) -> dict[str, Any]:
         count = self.store.increment_auditions(release_id)
         return {"status": "ok", "auditions": count}
+
+    def update_release_details(
+        self,
+        release_id: int,
+        title: str,
+        artist: str,
+        year: int | None,
+        genres: list[str],
+        styles: list[str],
+        labels: list[str],
+        catalog_numbers: list[str],
+        notes: str,
+        rating: int,
+    ) -> dict[str, Any]:
+        self.store.update_release_details(
+            release_id=release_id,
+            title=title,
+            artist=artist,
+            year=year,
+            genres=genres,
+            styles=styles,
+            labels=labels,
+            catalog_numbers=catalog_numbers,
+            notes=notes,
+            rating=rating,
+        )
+        return {"status": "ok"}
+
+    def delete_release(self, release_id: int) -> dict[str, Any]:
+        self.store.delete_release(release_id)
+        return {"status": "ok"}
+
+    def toggle_favorite(self, release_id: int) -> dict[str, Any]:
+        favorite = self.store.toggle_favorite(release_id)
+        return {"status": "ok", "favorite": favorite}
 
 

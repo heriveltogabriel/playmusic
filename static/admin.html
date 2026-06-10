@@ -1,264 +1,629 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#050505">
-    <title>LP da Semana - Catálogo</title>
-    <link rel="stylesheet" href="/static/styles.css">
-  </head>
-  <body class="admin-body">
-    <div class="admin-layout">
-      <!-- Left Sidebar -->
-      <aside class="admin-sidebar">
-        <div class="sidebar-brand">
-          <img src="/static/logo_lp_da_semana.png" alt="Logo" class="brand-logo">
-          <span class="brand-name">LP da Semana</span>
-        </div>
-        
-        <nav class="sidebar-menu">
-          <button class="menu-item active" data-tab="collection">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/>
-            </svg>
-            Minha Coleção
-          </button>
-          <button class="menu-item" data-tab="ranking">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
-            </svg>
-            Ranking de Audições
-          </button>
-          <button class="menu-item" data-tab="stats">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
-            </svg>
-            Estatísticas
-          </button>
-          <button class="menu-item" data-tab="suggestion">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-              <path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 19.4c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l1.9-1.9C9.22 19.58 10.57 20 12 20c4.97 0 9-4.03 9-9s-4.03-9-9-9zm0 15c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm1-8.5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5.67 1.5 1.5 1.5 1.5-.67 1.5-1.5z"/>
-            </svg>
-            Sugestão da Semana
-          </button>
-        </nav>
-        
-        <div class="sidebar-footer">
-          <span id="total-lps-label">TOTAL: 0 LPS</span>
-        </div>
-      </aside>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LP da Semana - Catálogo</title>
+  <!-- Google Fonts: Outfit for sleek modern UI, JetBrains Mono for metadata -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/admin.css">
+</head>
+<body>
+  <!-- Ambient background glow representing album colors -->
+  <div id="ambient-glow" class="ambient-glow"></div>
 
-      <!-- Main Content Area -->
-      <main class="admin-main">
-        <!-- Top Toolbar with Back Button -->
-        <header class="admin-header">
-          <div class="header-left">
-            <a href="/" class="btn-back" title="Voltar ao tocador de vinil">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+  <div class="app-container">
+    <!-- Left Sidebar: Navigation, Search, and Filters -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo-wrapper" style="margin-bottom: 12px;">
+          <img src="/static/logo_lp_da_semana.png" alt="Logo" class="logo-icon">
+          <span class="logo-text">LP da Semana</span>
+        </div>
+        <div class="back-player-wrapper">
+          <a href="/" class="btn btn-secondary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 500; font-size: 0.85rem; height: 36px; text-decoration: none; border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-secondary); background: rgba(255, 255, 255, 0.05); transition: var(--transition-fast);">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Voltar ao Player
+          </a>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <ul>
+          <li>
+            <button class="nav-btn active" data-view="catalog">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="9"></rect>
+                <rect x="14" y="3" width="7" height="5"></rect>
+                <rect x="14" y="12" width="7" height="9"></rect>
+                <rect x="3" y="16" width="7" height="5"></rect>
               </svg>
-              Voltar ao Player
-            </a>
-            <h1 id="page-title">Minha Coleção</h1>
-          </div>
-          <div class="header-right">
-            <button id="add-lp-button" class="btn-primary">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-              </svg>
-              Adicionar LP
+          Minha Coleção
             </button>
-          </div>
-        </header>
-
-        <!-- Filters / Search Subheader (Only visible on collection/ranking) -->
-        <section id="filters-panel" class="filters-panel">
-          <div class="filter-count">
-            <span id="filter-display-text">Exibindo 0 de 0 discos</span>
-          </div>
-          <div class="filter-controls">
-            <div class="search-box">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" class="search-icon">
-                <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+          </li>
+          <li>
+            <button class="nav-btn" data-view="timeline">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
               </svg>
-              <input type="text" id="search-input" placeholder="Buscar na coleção..." autocomplete="off">
+              Linha do Tempo
+            </button>
+          </li>
+          <li>
+            <button class="nav-btn" data-view="ranking">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+                <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+                <path d="M4 22h16"></path>
+                <path d="M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34"></path>
+                <path d="M12 2a4 4 0 0 1 4 4v7a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4Z"></path>
+              </svg>
+              Ranking de Audições
+            </button>
+          </li>
+          <li>
+            <button class="nav-btn" data-view="stats">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10"></line>
+                <line x1="12" y1="20" x2="12" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="14"></line>
+              </svg>
+              Estatísticas
+            </button>
+          </li>
+          <li>
+            <button class="nav-btn" data-view="player">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+              </svg>
+              Sugestão da Semana
+            </button>
+          </li>
+        </ul>
+      </nav>
+
+
+
+      <!-- Quick status indicator -->
+      <div class="sidebar-footer">
+        <div class="total-lps-text">Total: <span id="total-catalog-count">0</span> LPs</div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Header -->
+      <header class="app-header">
+        <div class="header-left">
+          <h1 id="view-title">Minha Coleção</h1>
+          <div id="active-filters-bar" class="active-filters-bar" style="display: none;">
+            <span class="active-filters-label">Filtros:</span>
+            <div id="active-filters-tags" class="active-filters-tags"></div>
+          </div>
+        </div>
+        <div class="header-right">
+          <button id="add-lp-btn" class="btn btn-primary btn-icon">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Adicionar LP
+          </button>
+        </div>
+      </header>
+
+      <!-- VIEW 1: SUGGESTIONS & HISTÓRICO -->
+      <section id="view-player" class="content-view">
+        <div class="suggestions-layout">
+          <!-- Left Column: Weekly Agenda and Selected Suggestion -->
+          <div class="suggestions-main-column">
+            <div class="section-card agenda-section">
+              <div class="card-header-row">
+                <div>
+                  <h2 class="card-title">Agenda da Semana 📅</h2>
+                  <p class="card-subtitle">Um LP sugerido para cada dia, priorizando os menos ouvidos.</p>
+                </div>
+                <button id="shuffle-agenda-btn" class="btn btn-secondary btn-icon" title="Sortear nova agenda para a semana">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                  </svg>
+                  Nova Agenda
+                </button>
+              </div>
+              
+              <!-- Horizontal Scrollable Agenda Container -->
+              <div id="agenda-scroll-container" class="agenda-scroll-container">
+                <!-- Dynamically populated 7 daily cards -->
+              </div>
             </div>
-            <div class="sort-box">
-              <label for="sort-select">Ordenar por:</label>
-              <select id="sort-select">
-                <option value="recent">Adicionado recentemente</option>
-                <option value="artist">Artista</option>
-                <option value="title">Título</option>
-                <option value="year">Ano de Lançamento</option>
-                <option value="rating">Avaliação (Estrelas)</option>
-                <option value="auditions">Número de Audições</option>
+
+            <!-- Featured Album Card for the selected day -->
+            <div class="section-card featured-suggestion-card">
+              <div class="card-header-row">
+                <div>
+                  <h3 class="card-title-sm" id="featured-day-label">Sugestão de Hoje</h3>
+                </div>
+              </div>
+              
+              <div class="suggestion-hero-card">
+                <div class="suggestion-hero-cover">
+                  <img id="suggested-cover-img" src="" alt="Capa da Sugestão" onerror="this.src='https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=300&auto=format&fit=crop'">
+                  <div class="plays-badge" title="Quantidade de vezes ouvido">
+                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
+                      <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                      <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+                    </svg>
+                    <span id="suggested-plays-count">0</span> audições
+                  </div>
+                </div>
+                
+                <div class="suggestion-hero-info">
+                  <h3 id="suggested-title" class="hero-title">Título</h3>
+                  <h4 id="suggested-artist" class="hero-artist">Artista</h4>
+                  
+                  <div class="hero-meta">
+                    <span id="suggested-year" class="hero-meta-item">Ano</span>
+                    <span id="suggested-label" class="hero-meta-item">Selo</span>
+                  </div>
+                  
+                  <div class="hero-tags">
+                    <div id="suggested-genres" class="tags-container"></div>
+                  </div>
+                  
+                  <div class="hero-actions">
+                    <button id="mark-listened-btn" class="btn btn-primary btn-icon btn-pulse">
+                      <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      Ouvi este Disco! 🎧
+                    </button>
+                    <button id="suggested-details-btn" class="btn btn-secondary">
+                      Ver Ficha
+                    </button>
+                    <button id="suggested-favorite-btn" class="btn btn-secondary btn-icon" title="Favoritar">
+                      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" class="star-icon">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                      </svg>
+                    </button>
+                  </div>
+
+                  <!-- Listen history dates -->
+                  <div class="hero-scrobble-history">
+                    <label class="scrobble-history-label">Histórico de Escuta:</label>
+                    <div id="suggested-history-dates" class="scrobble-history-list">
+                      <!-- Dynamically populated dates -->
+                    </div>
+                  </div>
+
+                  <!-- Mini notes shortcut -->
+                  <div class="hero-mini-notes">
+                    <textarea id="suggested-notes" placeholder="Anote observações sobre a audição deste álbum... (salva automaticamente)"></textarea>
+                    <div class="mini-notes-status" id="suggested-notes-status">Salvo automaticamente</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 4: RANKING DE AUDIÇÕES -->
+      <section id="view-ranking" class="content-view">
+        <div class="ranking-container">
+          <!-- Top 3 Podium -->
+          <div id="ranking-podium" class="ranking-podium">
+            <!-- Dynamically populated podium elements -->
+          </div>
+
+          <!-- Rest of the Ranking (positions 4+) -->
+          <div class="ranking-list-section" id="ranking-list-section">
+            <h3 class="ranking-section-title">Outros Discos Ouvidos</h3>
+            <div id="ranking-grid" class="ranking-grid">
+              <!-- Dynamically populated list of elements -->
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div id="ranking-empty-state" class="empty-state" style="display: none;">
+            <svg viewBox="0 0 24 24" width="64" height="64" stroke="currentColor" stroke-width="1.5" fill="none">
+              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+              <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+              <path d="M4 22h16"></path>
+              <path d="M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34"></path>
+              <path d="M12 2a4 4 0 0 1 4 4v7a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4Z"></path>
+            </svg>
+            <h3>Nenhum disco ouvido ainda</h3>
+            <p>Escute discos através da agenda da semana ou marque-os na sua coleção para iniciar o ranking!</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 5: TIMELINE (Linha do Tempo) -->
+      <section id="view-timeline" class="content-view">
+        <div class="timeline-header-actions">
+          <div class="search-input-group" style="flex: 1; max-width: 400px;">
+            <input type="text" id="timeline-search-input" placeholder="Filtrar linha do tempo (artista, álbum, gênero)...">
+          </div>
+          <div class="timeline-sort-selector" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <label for="timeline-sort-select">Ordem:</label>
+              <select id="timeline-sort-select">
+                <option value="added_desc">Mais Recentes Primeiro</option>
+                <option value="added_asc">Mais Antigos Primeiro</option>
+                <option value="release_desc">Ano de Lançamento (Decrescente)</option>
+                <option value="release_asc">Ano de Lançamento (Crescente)</option>
               </select>
             </div>
+            <button id="timeline-stats-btn" class="btn btn-secondary" style="height: 36px; padding: 0 12px; gap: 6px; font-size: 0.85rem;">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10"></line>
+                <line x1="12" y1="20" x2="12" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="14"></line>
+              </svg>
+              Estatísticas
+            </button>
           </div>
-        </section>
+        </div>
+        <div id="timeline-container" class="timeline-container">
+          <!-- Dynamically populated -->
+        </div>
+      </section>
 
-        <!-- Main View Panels -->
-        <!-- Main View Panels -->
-        <!-- 1. Grid Panel (for Collection) -->
-        <div id="grid-view" class="view-panel active">
-          <div id="album-grid" class="album-grid">
-            <!-- Cards will be dynamically injected here -->
+      <!-- VIEW 2: CATALOG (Minha Coleção) -->
+      <section id="view-catalog" class="content-view active">
+        <div class="catalog-toolbar">
+          <div class="toolbar-left">
+            <span class="results-text">Exibindo <span id="filtered-count">0</span> de <span id="total-count">0</span> discos</span>
+          </div>
+          
+          <div class="toolbar-search">
+            <div class="search-box">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="search-icon">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" id="catalog-search-input" placeholder="Buscar na coleção..." autocomplete="off">
+              <button id="clear-catalog-search-btn" class="clear-search-btn" title="Limpar busca" style="display: none;">&times;</button>
+            </div>
+          </div>
+
+          <div class="toolbar-right">
+            <label for="sort-select">Ordenar por:</label>
+            <select id="sort-select">
+              <option value="added_desc">Adicionado recentemente</option>
+              <option value="added_asc">Mais antigo na coleção</option>
+              <option value="year_desc">Ano de Lançamento (Novo-Antigo)</option>
+              <option value="year_asc">Ano de Lançamento (Antigo-Novo)</option>
+              <option value="title_asc">Título (A-Z)</option>
+              <option value="artist_asc">Artista (A-Z)</option>
+              <option value="rating_desc">Avaliação (Maior-Menor)</option>
+            </select>
           </div>
         </div>
 
-        <!-- 2. Ranking View Panel -->
-        <div id="ranking-view" class="view-panel">
-          <!-- Podium layout -->
-          <div id="podium-container" class="podium-container">
-            <!-- Silver (#2) -->
-            <div id="podium-silver" class="podium-spot silver">
-              <div class="podium-circle-wrapper">
-                <div class="position-badge">#2</div>
-                <img id="podium-silver-cover" class="podium-cover" src="/static/logo_lp_da_semana.png" alt="Capa">
-              </div>
-              <div class="podium-info">
-                <h3 id="podium-silver-title">Aja</h3>
-                <p id="podium-silver-artist">Steely Dan</p>
-                <span id="podium-silver-auditions" class="podium-plays">1 audição</span>
-              </div>
-            </div>
-            
-            <!-- Gold (#1) -->
-            <div id="podium-gold" class="podium-spot gold">
-              <div class="crown-icon">👑</div>
-              <div class="podium-circle-wrapper">
-                <div class="position-badge">#1</div>
-                <img id="podium-gold-cover" class="podium-cover" src="/static/logo_lp_da_semana.png" alt="Capa">
-              </div>
-              <div class="podium-info">
-                <h3 id="podium-gold-title">Harvest Moon</h3>
-                <p id="podium-gold-artist">Neil Young</p>
-                <span id="podium-gold-auditions" class="podium-plays">2 audições</span>
-              </div>
-            </div>
-            
-            <!-- Bronze (#3) -->
-            <div id="podium-bronze" class="podium-spot bronze">
-              <div class="podium-circle-wrapper">
-                <div class="position-badge">#3</div>
-                <img id="podium-bronze-cover" class="podium-cover" src="/static/logo_lp_da_semana.png" alt="Capa">
-              </div>
-              <div class="podium-info">
-                <h3 id="podium-bronze-title">Band On The Run</h3>
-                <p id="podium-bronze-artist">Wings</p>
-                <span id="podium-bronze-auditions" class="podium-plays">1 audição</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Outros Discos Ouvidos list -->
-          <div class="other-listens-section">
-            <h2>Outros Discos Ouvidos</h2>
-            <div id="other-listens-list" class="other-listens-list">
-              <!-- Position #4+ lists -->
-            </div>
-          </div>
+        <div id="lp-grid" class="lp-grid">
+          <!-- Cards dynamically populated -->
         </div>
 
-        <!-- 3. Statistics Panel -->
-        <div id="stats-view" class="view-panel">
-          <div class="stats-top-cards">
-            <div class="stats-card">
-              <h3>TOTAL DE LPS</h3>
-              <p id="stat-total-lps" class="stat-value">0</p>
+        <!-- Empty state -->
+        <div id="empty-state" class="empty-state" style="display: none;">
+          <svg viewBox="0 0 24 24" width="64" height="64" stroke="currentColor" stroke-width="1.5" fill="none">
+            <circle cx="12" cy="12" r="10" />
+            <circle cx="12" cy="12" r="3" />
+            <path d="M12 2v20M2 12h20" stroke-opacity="0.3" />
+          </svg>
+          <h3>Nenhum disco encontrado</h3>
+          <p>Tente ajustar os termos de busca ou remover os filtros ativos.</p>
+          <button id="empty-reset-btn" class="btn btn-primary">Limpar Todos os Filtros</button>
+        </div>
+      </section>
+
+      <!-- VIEW 3: STATS (Estatísticas) -->
+      <section id="view-stats" class="content-view">
+        <div class="stats-grid">
+          <!-- Quick Cards -->
+          <div class="stats-card-row">
+            <div class="stat-mini-card">
+              <div class="mini-card-label">Total de LPs</div>
+              <div id="stat-total-lps" class="mini-card-value">0</div>
             </div>
-            <div class="stats-card">
-              <h3>ARTISTAS DIFERENTES</h3>
-              <p id="stat-different-artists" class="stat-value">0</p>
+            <div class="stat-mini-card">
+              <div class="mini-card-label">Artistas Diferentes</div>
+              <div id="stat-total-artists" class="mini-card-value">0</div>
             </div>
-            <div class="stats-card">
-              <h3>FAVORITADOS</h3>
-              <p id="stat-favorited-count" class="stat-value">0</p>
+            <div class="stat-mini-card">
+              <div class="mini-card-label">Favoritados</div>
+              <div id="stat-total-starred" class="mini-card-value">0</div>
             </div>
-            <div class="stats-card">
-              <h3>MÉDIA DE AVALIAÇÃO</h3>
-              <p id="stat-average-rating" class="stat-value">0.0</p>
+            <div class="stat-mini-card">
+              <div class="mini-card-label">Média de Avaliação</div>
+              <div id="stat-avg-rating" class="mini-card-value">0.0</div>
             </div>
           </div>
 
-          <!-- Advanced Stats Lists Grid -->
-          <div class="stats-sections-grid">
-            <div class="stats-section-box">
-              <h2>Distribuição por Gênero</h2>
-              <div id="genre-distribution-list" class="stats-list-container">
-                <!-- Genre distribution items -->
+          <!-- Charts and Lists -->
+          <div class="stats-row">
+            <!-- Left: Top Genres -->
+            <div class="stats-section-card">
+              <h3>Distribuição por Gênero</h3>
+              <div id="genres-chart-container" class="custom-chart-list">
+                <!-- Dynamically generated bars -->
               </div>
             </div>
-            <div class="stats-section-box">
-              <h2>LPs por Audição</h2>
-              <div id="lps-by-auditions-list" class="stats-list-container">
-                <!-- LPs ranked by auditions -->
+
+            <!-- Right: Plays breakdown -->
+            <div class="stats-section-card">
+              <h3>LPs por Audição</h3>
+              <div id="plays-chart-container" class="custom-chart-list">
+                <!-- Dynamically generated bars -->
               </div>
             </div>
-            <div class="stats-section-box">
-              <h2>Artistas Mais Colecionados</h2>
-              <div id="top-artists-list" class="stats-list-container">
-                <!-- Most collected artists list -->
+          </div>
+
+          <div class="stats-row">
+            <!-- Left: Top Artists -->
+            <div class="stats-section-card">
+              <h3>Artistas Mais Colecionados</h3>
+              <div id="artists-ranking-container" class="custom-ranking-list">
+                <!-- Dynamically generated list -->
               </div>
             </div>
-            <div class="stats-section-box">
-              <h2>Últimos Adicionados</h2>
-              <div id="recent-additions-list" class="stats-list-container recent-additions-list">
-                <!-- Recently synchronized releases -->
+
+            <!-- Right: Recent additions list -->
+            <div class="stats-section-card">
+              <h3>Últimos Adicionados</h3>
+              <div id="recent-additions-container" class="custom-ranking-list">
+                <!-- Dynamically generated list -->
               </div>
             </div>
           </div>
         </div>
+      </section>
+    </main>
+  </div>
 
-        <!-- 3. Suggestion Panel -->
-        <div id="suggestion-view" class="view-panel">
-          <div class="suggestion-container">
-            <h2>Sua Sugestão da Semana</h2>
-            <p class="suggestion-intro">Toda semana escolhemos um LP diferente da sua coleção para você colocar na agulha.</p>
-            <div id="suggestion-card-target">
-              <!-- Suggestion album card will be placed here -->
+  <!-- ==================== DIALOGS & MODALS ==================== -->
+
+  <!-- 1. DIALOG: LP Details -->
+  <dialog id="lp-details-dialog" class="dialog-glass">
+    <div class="dialog-content details-dialog-content">
+      <button class="dialog-close-btn" data-dialog-close>&times;</button>
+      
+      <div class="details-dialog-layout">
+        <!-- Left: Large Cover Artwork -->
+        <div class="details-cover-container">
+          <img id="details-cover" src="" alt="Album Cover Large">
+        </div>
+
+        <!-- Right: Info Sheets -->
+        <div class="details-info-container">
+          <h2 id="details-title" class="details-title">Título</h2>
+          <h3 id="details-artist" class="details-artist">Artista</h3>
+
+          <hr class="dialog-separator">
+
+          <div class="details-grid">
+            <div class="details-item">
+              <div class="details-label">Lançamento</div>
+              <div id="details-year" class="details-value">0000</div>
+            </div>
+            <div class="details-item">
+              <div class="details-label">Gravadora / Selo</div>
+              <div id="details-label-name" class="details-value">-</div>
+            </div>
+            <div class="details-item">
+              <div class="details-label">Nº de Catálogo</div>
+              <div id="details-catno" class="details-value">-</div>
+            </div>
+            <div class="details-item">
+              <div class="details-label">Adicionado em</div>
+              <div id="details-date" class="details-value">-</div>
             </div>
           </div>
-        </div>
-      </main>
-    </div>
 
-    <!-- Add LP Modal Overlay -->
-    <div id="add-lp-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2 id="modal-title">Adicionar Novo LP</h2>
-          <button id="close-modal-btn" class="btn-close-modal" type="button" aria-label="Fechar">&times;</button>
+          <div class="details-tags-row">
+            <div class="tag-category">
+              <span>Gêneros:</span>
+              <div id="details-genres" class="tags-container"></div>
+            </div>
+            <div class="tag-category">
+              <span>Estilos:</span>
+              <div id="details-styles" class="tags-container"></div>
+            </div>
+          </div>
+
+          <div class="details-rating-block">
+            <span>Avaliação do Colecionador:</span>
+            <div id="details-rating-stars" class="rating-stars clickable-stars" data-lp-id="">
+              <!-- Dynamically populated clickable stars -->
+            </div>
+          </div>
+
+          <div class="details-notes-block">
+            <label>Notas Privadas:</label>
+            <div id="details-notes-text" class="details-notes-text"></div>
+          </div>
+
+          <!-- Actions Footer -->
+          <div class="dialog-actions-footer">
+            <button id="details-mark-listened" class="btn btn-primary btn-icon btn-pulse">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+              </svg>
+              Ouvi este Disco! (<span id="details-plays-count">0</span>)
+            </button>
+            <button id="details-edit-btn" class="btn btn-secondary">Editar Informações</button>
+            <button id="details-delete-btn" class="btn btn-danger-text">Excluir do Catálogo</button>
+          </div>
         </div>
-        <form id="add-lp-form" class="modal-form">
-          <div class="form-group">
-            <label for="lp-title">Título do Álbum *</label>
-            <input type="text" id="lp-title" required placeholder="Ex: Abbey Road">
-          </div>
-          <div class="form-group">
-            <label for="lp-artist">Artista *</label>
-            <input type="text" id="lp-artist" required placeholder="Ex: The Beatles">
-          </div>
-          <div class="form-group">
-            <label for="lp-year">Ano de Lançamento</label>
-            <input type="number" id="lp-year" min="1900" max="2030" placeholder="Ex: 1969">
-          </div>
-          <div class="form-group">
-            <label for="lp-cover">URL da Imagem da Capa</label>
-            <input type="url" id="lp-cover" placeholder="Ex: https://caminho.com/capa.jpg">
-            <span class="form-tip">Se deixar em branco, usaremos a capa padrão.</span>
-          </div>
-          <div class="form-actions">
-            <button type="button" id="cancel-lp-btn" class="btn-secondary">Cancelar</button>
-            <button type="submit" class="btn-primary">Salvar LP</button>
-          </div>
-        </form>
       </div>
     </div>
+  </dialog>
 
-    <!-- Error/Success toast -->
-    <div id="toast" class="toast hidden" role="alert"></div>
+  <!-- 2. DIALOG: LP Form (Add / Edit) -->
+  <dialog id="lp-form-dialog" class="dialog-glass">
+    <div class="dialog-content form-dialog-content">
+      <button class="dialog-close-btn" data-dialog-close>&times;</button>
+      <h2 id="form-dialog-title">Adicionar Novo LP</h2>
+      
+      <!-- Discogs Search Section (Only shown when adding a new LP) -->
+      <div id="discogs-search-section" class="discogs-search-section">
+        <div class="search-input-group">
+          <input type="text" id="discogs-search-input" placeholder="Buscar no Discogs (ex: Artista, Álbum, Gravadora)...">
+          <button type="button" id="discogs-search-btn" class="btn btn-primary">Buscar</button>
+          <button type="button" id="discogs-config-btn" class="btn btn-secondary btn-icon" title="Configurar Token do Discogs">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </button>
+        </div>
+        
+        <!-- Discogs Token Configuration Panel (collapsible) -->
+        <div id="discogs-token-config" class="discogs-token-config" style="display: none;">
+          <label for="discogs-token-input">Discogs Developer Personal Token:</label>
+          <div class="search-input-group" style="margin-bottom: 4px;">
+            <input type="password" id="discogs-token-input" placeholder="Insira seu token pessoal do Discogs...">
+            <button type="button" id="save-discogs-token-btn" class="btn btn-secondary">Salvar</button>
+          </div>
+          <span class="text-muted" style="font-size: 0.65rem;">Gere seu token em Discogs > Settings > Developers.</span>
+        </div>
+        
+        <!-- Search Results list -->
+        <div id="discogs-search-results" class="discogs-search-results" style="display: none;">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+      
+      <div class="form-divider" id="form-divider-text">ou preencha os dados manualmente</div>
+      
+      <form id="lp-entry-form" method="dialog">
+        <input type="hidden" id="form-lp-id">
+        
+        <div class="form-layout">
+          <!-- Left: Cover preview URL -->
+          <div class="form-cover-preview-panel">
+            <div class="cover-preview-box">
+              <img id="form-cover-preview" src="placeholder.png" alt="Cover Preview" onerror="this.src='https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=300&auto=format&fit=crop'">
+              <div id="form-preview-placeholder" class="preview-placeholder">Pré-visualização da Capa</div>
+            </div>
+            <div class="form-group">
+              <label for="form-cover-url">URL da Imagem da Capa</label>
+              <input type="url" id="form-cover-url" placeholder="https://exemplo.com/capa.jpg">
+            </div>
+          </div>
 
-    <script src="/static/admin.js" defer></script>
-  </body>
+          <!-- Right: Text inputs -->
+          <div class="form-fields-panel">
+            <div class="form-row">
+              <div class="form-group flex-2">
+                <label for="form-title">Título do Álbum *</label>
+                <input type="text" id="form-title" required placeholder="Ex: Seu Espião">
+              </div>
+              <div class="form-group flex-1">
+                <label for="form-year">Ano de Lançamento</label>
+                <input type="number" id="form-year" min="1900" max="2100" placeholder="Ex: 1984">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="form-artist">Artista / Banda *</label>
+              <input type="text" id="form-artist" required placeholder="Ex: Kid Abelha">
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="form-label">Selo / Gravadora</label>
+                <input type="text" id="form-label" placeholder="Ex: Elektra">
+              </div>
+              <div class="form-group">
+                <label for="form-catno">Nº de Catálogo</label>
+                <input type="text" id="form-catno" placeholder="Ex: BR 22.090">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="form-genres">Gêneros (separados por vírgula)</label>
+              <input type="text" id="form-genres" placeholder="Electronic, Rock, Latin">
+            </div>
+
+            <div class="form-group">
+              <label for="form-styles">Estilos (separados por vírgula)</label>
+              <input type="text" id="form-styles" placeholder="Pop Rock, New Wave, Synth-pop">
+            </div>
+
+            <div class="form-group">
+              <label for="form-notes">Notas do Colecionador</label>
+              <textarea id="form-notes" rows="3" placeholder="Comentários sobre a edição, estado do vinil, etc."></textarea>
+            </div>
+            
+            <div class="form-group">
+              <label>Avaliação Inicial</label>
+              <div id="form-rating-stars" class="rating-stars clickable-stars form-stars">
+                <!-- Stars will be populated here -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-submit-footer">
+          <button type="button" class="btn btn-secondary" data-dialog-close>Cancelar</button>
+          <button type="submit" id="form-submit-btn" class="btn btn-primary">Salvar LP</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+  
+  <!-- Dialog 3: Timeline Stats Dashboard -->
+  <dialog id="timeline-stats-dialog" class="dialog-glass">
+    <div class="dialog-content timeline-stats-dialog-content">
+      <button class="dialog-close-btn" id="timeline-stats-close">&times;</button>
+      <h2>Estatísticas da Linha do Tempo</h2>
+      
+      <!-- Indicator cards -->
+      <div class="timeline-stats-summary-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total adicionado (12 meses)</div>
+          <div class="stat-value" id="timeline-stat-total">0</div>
+          <div class="stat-desc">LPs adicionados</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Mês mais ativo</div>
+          <div class="stat-value" id="timeline-stat-most-active">-</div>
+          <div class="stat-desc" id="timeline-stat-most-active-count">0 discos</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Média mensal</div>
+          <div class="stat-value" id="timeline-stat-average">0,0</div>
+          <div class="stat-desc">Discos por mês</div>
+        </div>
+      </div>
+      
+      <!-- Chart -->
+      <h3 style="margin-top: 24px; margin-bottom: 16px; font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">Gráfico de Adições Mensais</h3>
+      <div id="timeline-monthly-chart" class="custom-chart-list">
+        <!-- Dynamically populated -->
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Canvas for dynamic color extraction (hidden) -->
+  <canvas id="color-thief-canvas" style="display: none;" width="50" height="50"></canvas>
+
+  <!-- Toast Notifications Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Database & Logic Scripts -->
+  <script src="/static/admin.js" defer></script>
+</body>
 </html>

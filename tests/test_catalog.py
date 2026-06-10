@@ -85,6 +85,44 @@ class CatalogStoreTests(unittest.TestCase):
             releases = store.list_releases_with_stats()
             self.assertEqual(releases[0].auditions, 2)
 
+            # Test favorite toggle
+            self.assertFalse(releases[0].favorite)
+            new_fav = store.toggle_favorite(manual.release_id)
+            self.assertTrue(new_fav)
+            releases = store.list_releases_with_stats()
+            self.assertTrue(releases[0].favorite)
+            
+            # Test edit release details (notes, genres, styles, etc.)
+            store.update_release_details(
+                release_id=manual.release_id,
+                title="Madonna Edited",
+                artist="Madonna",
+                year=1983,
+                genres=["Pop"],
+                styles=["Dance-pop"],
+                labels=["Sire"],
+                catalog_numbers=["SIR 25115"],
+                notes="Collector notes here",
+                rating=5,
+            )
+            releases = store.list_releases_with_stats()
+            self.assertEqual(releases[0].title, "Madonna Edited")
+            self.assertEqual(releases[0].genres, ["Pop"])
+            self.assertEqual(releases[0].notes, "Collector notes here")
+            self.assertEqual(releases[0].rating, 5)
+            
+            # Test increment auditions appends date to listen_dates list
+            self.assertEqual(len(releases[0].listen_dates), 2) # It was incremented twice above
+            new_auditions = store.increment_auditions(manual.release_id)
+            self.assertEqual(new_auditions, 3)
+            releases = store.list_releases_with_stats()
+            self.assertEqual(len(releases[0].listen_dates), 3)
+            self.assertTrue(releases[0].listen_dates[-1].endswith("Z"))
+            
+            # Test delete release
+            store.delete_release(manual.release_id)
+            self.assertEqual(store.collection_count(), 0)
+
 
 if __name__ == "__main__":
     unittest.main()

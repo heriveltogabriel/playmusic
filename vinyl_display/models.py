@@ -44,6 +44,9 @@ class Release:
     genres: list[str] = field(default_factory=list)
     styles: list[str] = field(default_factory=list)
     synced_at: float = 0.0
+    notes: str = ""
+    favorite: bool = False
+    listen_dates: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -63,6 +66,9 @@ class Release:
             "genres": self.genres,
             "styles": self.styles,
             "synced_at": self.synced_at,
+            "notes": self.notes,
+            "favorite": self.favorite,
+            "listen_dates": self.listen_dates,
         }
 
     @classmethod
@@ -84,6 +90,9 @@ class Release:
             genres=list(payload.get("genres", [])),
             styles=list(payload.get("styles", [])),
             synced_at=float(payload.get("synced_at", 0.0)),
+            notes=str(payload.get("notes", "")),
+            favorite=bool(payload.get("favorite", False)),
+            listen_dates=list(payload.get("listen_dates", [])),
         )
 
 

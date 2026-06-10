@@ -50,6 +50,54 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
         if path == "/api/admin/releases":
             self._json(self.app.list_admin_releases())
             return
+        if path == "/api/search":
+            from urllib.parse import parse_qs, quote_plus
+            import urllib.request
+            from urllib.error import HTTPError
+            
+            query_params = parse_qs(urlparse(self.path).query)
+            q = query_params.get("q", [""])[0]
+            token = query_params.get("token", [""])[0]
+            
+            if not token:
+                body = json.dumps({"error": "Token do Discogs não fornecido"}).encode("utf-8")
+                self.send_response(HTTPStatus.BAD_REQUEST)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
+                
+            discogs_url = f"https://api.discogs.com/database/search?q={quote_plus(q)}&type=release"
+            req = urllib.request.Request(discogs_url)
+            req.add_header("User-Agent", "VinylDisplayAdmin/1.0")
+            req.add_header("Authorization", f"Discogs token={token}")
+            
+            try:
+                with urllib.request.urlopen(req, timeout=15) as response:
+                    res_data = json.loads(response.read().decode("utf-8"))
+                    self._json(res_data)
+            except HTTPError as error:
+                try:
+                    err_body = error.read().decode("utf-8")
+                    err_json = json.loads(err_body)
+                    err_msg = err_json.get("message", str(error))
+                except Exception:
+                    err_msg = str(error)
+                body = json.dumps({"error": f"Erro do Discogs: {err_msg}"}).encode("utf-8")
+                self.send_response(error.code)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+            except Exception as e:
+                body = json.dumps({"error": str(e)}).encode("utf-8")
+                self.send_response(HTTPStatus.INTERNAL_SERVER_ERROR)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+            return
         if path == "/api/admin/stats":
             releases = self.app.list_admin_releases()
             total_releases = len(releases)
@@ -173,7 +221,78 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                 except ValueError:
                     year = None
             cover_url = payload.get("cover_url", "")
-            self._json(self.app.add_manual_release(title, artist, year, cover_url))
+            labels = payload.get("labels")
+            catalog_numbers = payload.get("catalog_numbers")
+            genres = payload.get("genres")
+            styles = payload.get("styles")
+            notes = payload.get("notes", "")
+            rating = int(payload.get("rating", 0))
+            favorite = bool(payload.get("favorite", False))
+            
+            self._json(
+                self.app.add_manual_release(
+                    title=title,
+                    artist=artist,
+                    year=year,
+                    cover_url=cover_url,
+                    labels=labels,
+                    catalog_numbers=catalog_numbers,
+                    genres=genres,
+                    styles=styles,
+                    notes=notes,
+                    rating=rating,
+                    favorite=favorite,
+                )
+            )
+            return
+        if path.startswith("/api/admin/releases/") and path.endswith("/edit"):
+            parts = path.split("/")
+            release_id = int(parts[4])
+            length = int(self.headers.get("Content-Length", "0"))
+            body_bytes = self.rfile.read(length)
+            payload = json.loads(body_bytes.decode("utf-8"))
+            
+            title = payload.get("title", "")
+            artist = payload.get("artist", "")
+            year = payload.get("year")
+            if year is not None:
+                try:
+                    year = int(year)
+                except ValueError:
+                    year = None
+            cover_url = payload.get("cover_url", "")
+            labels = payload.get("labels")
+            catalog_numbers = payload.get("catalog_numbers")
+            genres = payload.get("genres")
+            styles = payload.get("styles")
+            notes = payload.get("notes", "")
+            rating = int(payload.get("rating", 0))
+            
+            self._json(
+                self.app.update_release_details(
+                    release_id=release_id,
+                    title=title,
+                    artist=artist,
+                    year=year,
+                    cover_url=cover_url,
+                    labels=labels,
+                    catalog_numbers=catalog_numbers,
+                    genres=genres,
+                    styles=styles,
+                    notes=notes,
+                    rating=rating,
+                )
+            )
+            return
+        if path.startswith("/api/admin/releases/") and path.endswith("/delete"):
+            parts = path.split("/")
+            release_id = int(parts[4])
+            self._json(self.app.delete_release(release_id))
+            return
+        if path.startswith("/api/admin/releases/") and path.endswith("/favorite"):
+            parts = path.split("/")
+            release_id = int(parts[4])
+            self._json(self.app.toggle_favorite(release_id))
             return
         if path.startswith("/api/admin/releases/") and path.endswith("/rate"):
             parts = path.split("/")

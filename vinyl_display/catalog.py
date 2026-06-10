@@ -59,6 +59,25 @@ class CatalogStore:
             import dataclasses
             release = dataclasses.replace(release, synced_at=synced_time)
             
+        # Merge with existing local fields if they exist to prevent sync overwrite
+        existing = self.get_release(release.release_id)
+        if existing:
+            import dataclasses
+            # Keep existing local edits if the incoming release does not specify them
+            notes = release.notes if release.notes else existing.notes
+            favorite = release.favorite if release.favorite else existing.favorite
+            listen_dates = release.listen_dates if release.listen_dates else existing.listen_dates
+            rating = release.rating if release.rating else existing.rating
+            auditions = release.auditions if release.auditions else existing.auditions
+            release = dataclasses.replace(
+                release,
+                notes=notes,
+                favorite=favorite,
+                listen_dates=listen_dates,
+                rating=rating,
+                auditions=auditions
+            )
+            
         payload_json = json.dumps(release.to_dict(), ensure_ascii=False, sort_keys=True)
         with self._connect() as connection:
             connection.execute(
@@ -84,6 +103,17 @@ class CatalogStore:
                     payload_json,
                     synced_time,
                 ),
+            )
+            # Ensure rating and auditions are synced in release_stats table too
+            connection.execute(
+                """
+                INSERT INTO release_stats (release_id, rating, auditions)
+                VALUES (?, ?, ?)
+                ON CONFLICT(release_id) DO UPDATE SET
+                    rating = excluded.rating,
+                    auditions = excluded.auditions
+                """,
+                (release.release_id, release.rating, release.auditions),
             )
 
     def get_release(self, release_id: int) -> Release | None:
@@ -133,6 +163,10 @@ class CatalogStore:
         return None if row is None else str(row["value"])
 
     def increment_auditions(self, release_id: int) -> int:
+        import datetime
+        now_str = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+        
+        # 1. Update release_stats table
         with self._connect() as connection:
             connection.execute(
                 """
@@ -147,7 +181,23 @@ class CatalogStore:
                 "SELECT auditions FROM release_stats WHERE release_id = ?",
                 (release_id,),
             ).fetchone()
-        return int(row["auditions"]) if row else 1
+            auditions = int(row["auditions"]) if row else 1
+
+        # 2. Update release payload
+        release = self.get_release(release_id)
+        if release:
+            import dataclasses
+            # Make sure listen_dates is a list (could be missing/None)
+            listen_dates = list(release.listen_dates) if release.listen_dates is not None else []
+            listen_dates.append(now_str)
+            updated_release = dataclasses.replace(
+                release,
+                auditions=auditions,
+                listen_dates=listen_dates
+            )
+            self.upsert_release(updated_release)
+            
+        return auditions
 
     def update_rating(self, release_id: int, rating: int) -> None:
         with self._connect() as connection:
@@ -160,6 +210,11 @@ class CatalogStore:
                 """,
                 (release_id, rating),
             )
+        release = self.get_release(release_id)
+        if release:
+            import dataclasses
+            updated_release = dataclasses.replace(release, rating=rating)
+            self.upsert_release(updated_release)
 
     def list_releases_with_stats(self) -> list[Release]:
         with self._connect() as connection:
@@ -181,7 +236,20 @@ class CatalogStore:
             releases.append(Release.from_dict(data))
         return releases
 
-    def add_manual_release(self, title: str, artist: str, year: int | None, cover_url: str) -> Release:
+    def add_manual_release(
+        self,
+        title: str,
+        artist: str,
+        year: int | None,
+        cover_url: str,
+        labels: list[str] = None,
+        catalog_numbers: list[str] = None,
+        genres: list[str] = None,
+        styles: list[str] = None,
+        notes: str = "",
+        rating: int = 0,
+        favorite: bool = False,
+    ) -> Release:
         with self._connect() as connection:
             # Generate next local ID (negative values to prevent overlap with Discogs positive IDs)
             row = connection.execute("SELECT MIN(release_id) FROM releases").fetchone()
@@ -195,15 +263,65 @@ class CatalogStore:
                 year=year,
                 cover_url=cover_url or "/static/logo_lp_da_semana.png",
                 country="Local",
-                labels=["Self-Released"],
-                catalog_numbers=["LOCAL"],
+                labels=labels if labels is not None else ["Self-Released"],
+                catalog_numbers=catalog_numbers if catalog_numbers is not None else ["LOCAL"],
                 formats=["Vinyl"],
                 tracks=[],
                 discogs_url="",
-                rating=0,
-                auditions=0
+                rating=rating,
+                auditions=0,
+                genres=genres if genres is not None else [],
+                styles=styles if styles is not None else [],
+                notes=notes,
+                favorite=favorite,
+                listen_dates=[]
             )
             
             # Save using standard upsert
             self.upsert_release(release)
             return release
+
+    def update_release_details(
+        self,
+        release_id: int,
+        title: str,
+        artist: str,
+        year: int | None,
+        genres: list[str],
+        styles: list[str],
+        labels: list[str],
+        catalog_numbers: list[str],
+        notes: str,
+        rating: int,
+    ) -> None:
+        release = self.get_release(release_id)
+        if release:
+            import dataclasses
+            updated_release = dataclasses.replace(
+                release,
+                title=title,
+                artist=artist,
+                year=year,
+                genres=genres,
+                styles=styles,
+                labels=labels,
+                catalog_numbers=catalog_numbers,
+                notes=notes,
+                rating=rating,
+            )
+            self.upsert_release(updated_release)
+
+    def delete_release(self, release_id: int) -> None:
+        with self._connect() as connection:
+            connection.execute("DELETE FROM releases WHERE release_id = ?", (release_id,))
+            connection.execute("DELETE FROM release_stats WHERE release_id = ?", (release_id,))
+
+    def toggle_favorite(self, release_id: int) -> bool:
+        release = self.get_release(release_id)
+        if not release:
+            raise ValueError(f"Release {release_id} not found")
+        import dataclasses
+        new_fav = not release.favorite
+        updated_release = dataclasses.replace(release, favorite=new_fav)
+        self.upsert_release(updated_release)
+        return new_fav
