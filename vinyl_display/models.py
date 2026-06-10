@@ -39,6 +39,8 @@ class Release:
     formats: list[str]
     tracks: list[Track]
     discogs_url: str
+    rating: int = 0
+    auditions: int = 0
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -53,6 +55,8 @@ class Release:
             "formats": self.formats,
             "tracks": [track.to_dict() for track in self.tracks],
             "discogs_url": self.discogs_url,
+            "rating": self.rating,
+            "auditions": self.auditions,
         }
 
     @classmethod
@@ -69,6 +73,8 @@ class Release:
             formats=list(payload.get("formats", [])),
             tracks=[Track.from_dict(track) for track in payload.get("tracks", [])],
             discogs_url=str(payload.get("discogs_url", "")),
+            rating=int(payload.get("rating", 0)),
+            auditions=int(payload.get("auditions", 0)),
         )
 
 

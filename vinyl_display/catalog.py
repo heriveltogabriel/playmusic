@@ -36,6 +36,16 @@ class CatalogStore:
             )
             connection.execute(
                 """
+                CREATE TABLE IF NOT EXISTS release_stats (
+                    release_id INTEGER PRIMARY KEY,
+                    rating INTEGER DEFAULT 0,
+                    auditions INTEGER DEFAULT 0,
+                    FOREIGN KEY(release_id) REFERENCES releases(release_id) ON DELETE CASCADE
+                )
+                """
+            )
+            connection.execute(
+                """
                 CREATE TABLE IF NOT EXISTS sync_metadata (
                     key TEXT PRIMARY KEY,
                     value TEXT NOT NULL
@@ -116,3 +126,78 @@ class CatalogStore:
                 (key,),
             ).fetchone()
         return None if row is None else str(row["value"])
+
+    def increment_auditions(self, release_id: int) -> int:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO release_stats (release_id, auditions)
+                VALUES (?, 1)
+                ON CONFLICT(release_id) DO UPDATE SET
+                    auditions = auditions + 1
+                """,
+                (release_id,),
+            )
+            row = connection.execute(
+                "SELECT auditions FROM release_stats WHERE release_id = ?",
+                (release_id,),
+            ).fetchone()
+        return int(row["auditions"]) if row else 1
+
+    def update_rating(self, release_id: int, rating: int) -> None:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO release_stats (release_id, rating)
+                VALUES (?, ?)
+                ON CONFLICT(release_id) DO UPDATE SET
+                    rating = excluded.rating
+                """,
+                (release_id, rating),
+            )
+
+    def list_releases_with_stats(self) -> list[Release]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT r.payload_json, COALESCE(s.rating, 0) as rating, COALESCE(s.auditions, 0) as auditions
+                FROM releases r
+                LEFT JOIN release_stats s ON r.release_id = s.release_id
+                ORDER BY r.artist, r.title
+                """
+            ).fetchall()
+        
+        releases = []
+        for row in rows:
+            data = json.loads(row["payload_json"])
+            data["rating"] = row["rating"]
+            data["auditions"] = row["auditions"]
+            releases.append(Release.from_dict(data))
+        return releases
+
+    def add_manual_release(self, title: str, artist: str, year: int | None, cover_url: str) -> Release:
+        with self._connect() as connection:
+            # Generate next local ID (negative values to prevent overlap with Discogs positive IDs)
+            row = connection.execute("SELECT MIN(release_id) FROM releases").fetchone()
+            min_id = row[0] if row[0] is not None else 0
+            new_id = min_id - 1 if min_id < 0 else -1
+            
+            release = Release(
+                release_id=new_id,
+                title=title,
+                artist=artist,
+                year=year,
+                cover_url=cover_url or "/static/logo_lp_da_semana.png",
+                country="Local",
+                labels=["Self-Released"],
+                catalog_numbers=["LOCAL"],
+                formats=["Vinyl"],
+                tracks=[],
+                discogs_url="",
+                rating=0,
+                auditions=0
+            )
+            
+            # Save using standard upsert
+            self.upsert_release(release)
+            return release

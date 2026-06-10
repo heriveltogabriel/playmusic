@@ -44,6 +44,45 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
         if path == "/":
             self._send_static("index.html")
             return
+        if path == "/admin" or path == "/admin/":
+            self._send_static("admin.html")
+            return
+        if path == "/api/admin/releases":
+            self._json(self.app.list_admin_releases())
+            return
+        if path == "/api/admin/stats":
+            releases = self.app.list_admin_releases()
+            total_releases = len(releases)
+            total_auditions = sum(r.get("auditions", 0) for r in releases)
+            
+            # Find top rated
+            rated_releases = [r for r in releases if r.get("rating", 0) > 0]
+            top_rated = max(rated_releases, key=lambda x: x["rating"]) if rated_releases else None
+            
+            # Find top listened
+            listened_releases = [r for r in releases if r.get("auditions", 0) > 0]
+            top_listened = max(listened_releases, key=lambda x: x["auditions"]) if listened_releases else None
+            
+            # Suggestion of the week: select deterministically based on year + week_number
+            import datetime
+            suggestion = None
+            if releases:
+                now = datetime.datetime.now()
+                year, week_num, _ = now.isocalendar()
+                seed_val = year * 100 + week_num
+                import random
+                sorted_releases = sorted(releases, key=lambda x: x["release_id"])
+                rng = random.Random(seed_val)
+                suggestion = rng.choice(sorted_releases)
+                
+            self._json({
+                "total_releases": total_releases,
+                "total_auditions": total_auditions,
+                "top_rated": top_rated,
+                "top_listened": top_listened,
+                "suggestion": suggestion
+            })
+            return
         if path.startswith("/static/"):
             self._send_static(path.removeprefix("/static/"))
             return
@@ -67,6 +106,35 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
         if path == "/api/playback/prev":
             self.app.playback.skip_prev()
             self._json(self.app.state())
+            return
+        if path == "/api/admin/releases/add":
+            length = int(self.headers.get("Content-Length", "0"))
+            body_bytes = self.rfile.read(length)
+            payload = json.loads(body_bytes.decode("utf-8"))
+            title = payload.get("title", "")
+            artist = payload.get("artist", "")
+            year = payload.get("year")
+            if year is not None:
+                try:
+                    year = int(year)
+                except ValueError:
+                    year = None
+            cover_url = payload.get("cover_url", "")
+            self._json(self.app.add_manual_release(title, artist, year, cover_url))
+            return
+        if path.startswith("/api/admin/releases/") and path.endswith("/rate"):
+            parts = path.split("/")
+            release_id = int(parts[4])
+            length = int(self.headers.get("Content-Length", "0"))
+            body_bytes = self.rfile.read(length)
+            payload = json.loads(body_bytes.decode("utf-8"))
+            rating = int(payload.get("rating", 0))
+            self._json(self.app.update_release_rating(release_id, rating))
+            return
+        if path.startswith("/api/admin/releases/") and path.endswith("/listen"):
+            parts = path.split("/")
+            release_id = int(parts[4])
+            self._json(self.app.increment_release_auditions(release_id))
             return
         self.send_error(HTTPStatus.NOT_FOUND)
 

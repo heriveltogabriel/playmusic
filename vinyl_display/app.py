@@ -107,3 +107,20 @@ class VinylDisplayApp:
             "recognition": recognition_payload,
         }
 
+    def list_admin_releases(self) -> list[dict[str, Any]]:
+        releases = self.store.list_releases_with_stats()
+        return [r.to_dict() for r in releases]
+
+    def add_manual_release(self, title: str, artist: str, year: int | None, cover_url: str) -> dict[str, Any]:
+        release = self.store.add_manual_release(title, artist, year, cover_url)
+        return {"status": "ok", "release": release.to_dict()}
+
+    def update_release_rating(self, release_id: int, rating: int) -> dict[str, Any]:
+        self.store.update_rating(release_id, rating)
+        return {"status": "ok"}
+
+    def increment_release_auditions(self, release_id: int) -> dict[str, Any]:
+        count = self.store.increment_auditions(release_id)
+        return {"status": "ok", "auditions": count}
+
+

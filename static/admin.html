@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#050505">
+    <title>LP da Semana - Catálogo</title>
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body class="admin-body">
+    <div class="admin-layout">
+      <!-- Left Sidebar -->
+      <aside class="admin-sidebar">
+        <div class="sidebar-brand">
+          <img src="/static/logo_lp_da_semana.png" alt="Logo" class="brand-logo">
+          <span class="brand-name">LP da Semana</span>
+        </div>
+        
+        <nav class="sidebar-menu">
+          <button class="menu-item active" data-tab="collection">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/>
+            </svg>
+            Minha Coleção
+          </button>
+          <button class="menu-item" data-tab="ranking">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+            </svg>
+            Ranking de Audições
+          </button>
+          <button class="menu-item" data-tab="stats">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+            </svg>
+            Estatísticas
+          </button>
+          <button class="menu-item" data-tab="suggestion">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 19.4c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l1.9-1.9C9.22 19.58 10.57 20 12 20c4.97 0 9-4.03 9-9s-4.03-9-9-9zm0 15c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6zm1-8.5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5.67 1.5 1.5 1.5 1.5-.67 1.5-1.5z"/>
+            </svg>
+            Sugestão da Semana
+          </button>
+        </nav>
+        
+        <div class="sidebar-footer">
+          <span id="total-lps-label">TOTAL: 0 LPS</span>
+        </div>
+      </aside>
+
+      <!-- Main Content Area -->
+      <main class="admin-main">
+        <!-- Top Toolbar with Back Button -->
+        <header class="admin-header">
+          <div class="header-left">
+            <a href="/" class="btn-back" title="Voltar ao tocador de vinil">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+              </svg>
+              Voltar ao Player
+            </a>
+            <h1 id="page-title">Minha Coleção</h1>
+          </div>
+          <div class="header-right">
+            <button id="add-lp-button" class="btn-primary">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+              </svg>
+              Adicionar LP
+            </button>
+          </div>
+        </header>
+
+        <!-- Filters / Search Subheader (Only visible on collection/ranking) -->
+        <section id="filters-panel" class="filters-panel">
+          <div class="filter-count">
+            <span id="filter-display-text">Exibindo 0 de 0 discos</span>
+          </div>
+          <div class="filter-controls">
+            <div class="search-box">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" class="search-icon">
+                <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+              </svg>
+              <input type="text" id="search-input" placeholder="Buscar na coleção..." autocomplete="off">
+            </div>
+            <div class="sort-box">
+              <label for="sort-select">Ordenar por:</label>
+              <select id="sort-select">
+                <option value="recent">Adicionado recentemente</option>
+                <option value="artist">Artista</option>
+                <option value="title">Título</option>
+                <option value="year">Ano de Lançamento</option>
+                <option value="rating">Avaliação (Estrelas)</option>
+                <option value="auditions">Número de Audições</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <!-- Main View Panels -->
+        <!-- 1. Grid Panel (for Collection & Ranking) -->
+        <div id="grid-view" class="view-panel active">
+          <div id="album-grid" class="album-grid">
+            <!-- Cards will be dynamically injected here -->
+          </div>
+        </div>
+
+        <!-- 2. Statistics Panel -->
+        <div id="stats-view" class="view-panel">
+          <div class="stats-container">
+            <div class="stats-card">
+              <h3>Total de Discos</h3>
+              <p id="stat-total-lps" class="stat-value">0</p>
+              <span class="stat-desc">Álbuns na coleção local</span>
+            </div>
+            <div class="stats-card">
+              <h3>Total de Audições</h3>
+              <p id="stat-total-listens" class="stat-value">0</p>
+              <span class="stat-desc">Vezes tocados no vinil</span>
+            </div>
+            <div class="stats-card highlight-card">
+              <h3>Mais Ouvido</h3>
+              <div id="stat-most-listened" class="stat-album-meta">
+                <p class="meta-placeholder">Nenhum disco ouvido ainda</p>
+              </div>
+            </div>
+            <div class="stats-card highlight-card">
+              <h3>Melhor Avaliado</h3>
+              <div id="stat-top-rated" class="stat-album-meta">
+                <p class="meta-placeholder">Nenhum disco avaliado ainda</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Suggestion Panel -->
+        <div id="suggestion-view" class="view-panel">
+          <div class="suggestion-container">
+            <h2>Sua Sugestão da Semana</h2>
+            <p class="suggestion-intro">Toda semana escolhemos um LP diferente da sua coleção para você colocar na agulha.</p>
+            <div id="suggestion-card-target">
+              <!-- Suggestion album card will be placed here -->
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Add LP Modal Overlay -->
+    <div id="add-lp-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="modal-title">Adicionar Novo LP</h2>
+          <button id="close-modal-btn" class="btn-close-modal" type="button" aria-label="Fechar">&times;</button>
+        </div>
+        <form id="add-lp-form" class="modal-form">
+          <div class="form-group">
+            <label for="lp-title">Título do Álbum *</label>
+            <input type="text" id="lp-title" required placeholder="Ex: Abbey Road">
+          </div>
+          <div class="form-group">
+            <label for="lp-artist">Artista *</label>
+            <input type="text" id="lp-artist" required placeholder="Ex: The Beatles">
+          </div>
+          <div class="form-group">
+            <label for="lp-year">Ano de Lançamento</label>
+            <input type="number" id="lp-year" min="1900" max="2030" placeholder="Ex: 1969">
+          </div>
+          <div class="form-group">
+            <label for="lp-cover">URL da Imagem da Capa</label>
+            <input type="url" id="lp-cover" placeholder="Ex: https://caminho.com/capa.jpg">
+            <span class="form-tip">Se deixar em branco, usaremos a capa padrão.</span>
+          </div>
+          <div class="form-actions">
+            <button type="button" id="cancel-lp-btn" class="btn-secondary">Cancelar</button>
+            <button type="submit" class="btn-primary">Salvar LP</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Error/Success toast -->
+    <div id="toast" class="toast hidden" role="alert"></div>
+
+    <script src="/static/admin.js" defer></script>
+  </body>
+</html>

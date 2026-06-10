@@ -52,6 +52,39 @@ class CatalogStoreTests(unittest.TestCase):
             self.assertEqual(candidates[0][0].title, "Abbey Road")
             self.assertEqual(candidates[0][1].title, "Come Together")
 
+    def test_stats_and_manual_release(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = CatalogStore(Path(tmp) / "catalog.sqlite3")
+            store.initialize()
+            
+            # Test manual release addition
+            manual = store.add_manual_release("Madonna", "Madonna", 1983, "http://madonna.png")
+            self.assertEqual(manual.title, "Madonna")
+            self.assertEqual(manual.artist, "Madonna")
+            self.assertEqual(manual.year, 1983)
+            self.assertEqual(manual.cover_url, "http://madonna.png")
+            self.assertTrue(manual.release_id < 0) # Negative ID
+            
+            # Test stats default
+            releases = store.list_releases_with_stats()
+            self.assertEqual(len(releases), 1)
+            self.assertEqual(releases[0].rating, 0)
+            self.assertEqual(releases[0].auditions, 0)
+            
+            # Test update rating
+            store.update_rating(manual.release_id, 4)
+            releases = store.list_releases_with_stats()
+            self.assertEqual(releases[0].rating, 4)
+            
+            # Test increment auditions
+            new_auditions = store.increment_auditions(manual.release_id)
+            self.assertEqual(new_auditions, 1)
+            new_auditions = store.increment_auditions(manual.release_id)
+            self.assertEqual(new_auditions, 2)
+            
+            releases = store.list_releases_with_stats()
+            self.assertEqual(releases[0].auditions, 2)
+
 
 if __name__ == "__main__":
     unittest.main()
