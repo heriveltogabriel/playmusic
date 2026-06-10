@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from vinyl_display.models import Release, Track, TrackMatch
@@ -11,6 +11,21 @@ from vinyl_display.models import Release, Track, TrackMatch
 class ActivePlayback:
     match: TrackMatch
     started_at: float
+
+
+def get_track_side(position: str) -> str:
+    if not position:
+        return ""
+    pos = position.strip().upper()
+    if pos.startswith("SIDE "):
+        return pos
+    side = ""
+    for char in pos:
+        if char.isalpha():
+            side += char
+        else:
+            break
+    return side
 
 
 class PlaybackController:
@@ -62,12 +77,31 @@ class PlaybackController:
             }
 
         release = self.active.match.release
-        track, progress = self._track_at_elapsed(
+        track, progress, is_side_finished = self._track_at_elapsed(
             release,
             self.active.match.track,
             int(now - self.active.started_at),
         )
         next_track = self._next_track(release, track)
+
+        if is_side_finished:
+            curr_side = get_track_side(track.position)
+            if next_track:
+                next_side = get_track_side(next_track.position)
+                msg = f"Fim do Lado {curr_side}. Por favor, vire o disco para o Lado {next_side}!"
+            else:
+                msg = "Fim do disco! Por favor, recoloque o vinil ou troque de álbum."
+
+            return {
+                "status": "waiting_flip",
+                "message": msg,
+                "release": release.to_dict(),
+                "track": track.to_dict(),
+                "next_track": None if next_track is None else next_track.to_dict(),
+                "progress_seconds": progress,
+                "duration_seconds": track.duration_seconds,
+                "last_recognition": self.last_recognition,
+            }
 
         return {
             "status": "playing",
@@ -85,20 +119,34 @@ class PlaybackController:
         release: Release,
         initial_track: Track,
         elapsed: int,
-    ) -> tuple[Track, int]:
+    ) -> tuple[Track, int, bool]:
         try:
             start_index = release.tracks.index(initial_track)
         except ValueError:
-            return initial_track, max(0, elapsed)
+            return initial_track, max(0, elapsed), False
 
+        initial_side = get_track_side(initial_track.position)
         remaining = max(0, elapsed)
+        last_track_of_side = initial_track
+
         for track in release.tracks[start_index:]:
+            track_side = get_track_side(track.position)
+
+            # Se o lado mudou, significa que completamos todas as faixas do lado anterior
+            if initial_side and track_side and track_side != initial_side:
+                return last_track_of_side, last_track_of_side.duration_seconds or 0, True
+
             if track.duration_seconds is None:
-                return track, remaining
+                return track, remaining, False
+
             if remaining < track.duration_seconds:
-                return track, remaining
+                return track, remaining, False
+
             remaining -= track.duration_seconds
-        return release.tracks[-1], release.tracks[-1].duration_seconds or remaining
+            last_track_of_side = track
+
+        # Se completou todas as faixas e ainda sobrou tempo
+        return last_track_of_side, last_track_of_side.duration_seconds or 0, True
 
     def _next_track(self, release: Release, track: Track) -> Track | None:
         try:
@@ -115,30 +163,36 @@ class PlaybackController:
             return
         now = now or time.time()
         release = self.active.match.release
-        current_track, _ = self._track_at_elapsed(
+        current_track, _, _ = self._track_at_elapsed(
             release,
             self.active.match.track,
             int(now - self.active.started_at),
         )
         next_track = self._next_track(release, current_track)
         if next_track is not None:
-            try:
-                start_index = release.tracks.index(self.active.match.track)
-                next_index = release.tracks.index(next_track)
-                elapsed_needed = 0
-                for track in release.tracks[start_index:next_index]:
-                    elapsed_needed += track.duration_seconds or 0
-                self.active.started_at = now - elapsed_needed
-            except ValueError:
-                self.active.match.track = next_track
+            curr_side = get_track_side(current_track.position)
+            next_side = get_track_side(next_track.position)
+            if curr_side and next_side and curr_side != next_side:
+                self.active.match = replace(self.active.match, track=next_track)
                 self.active.started_at = now
+            else:
+                try:
+                    start_index = release.tracks.index(self.active.match.track)
+                    next_index = release.tracks.index(next_track)
+                    elapsed_needed = 0
+                    for track in release.tracks[start_index:next_index]:
+                        elapsed_needed += track.duration_seconds or 0
+                    self.active.started_at = now - elapsed_needed
+                except ValueError:
+                    self.active.match = replace(self.active.match, track=next_track)
+                    self.active.started_at = now
 
     def skip_prev(self, now: float | None = None) -> None:
         if self.active is None:
             return
         now = now or time.time()
         release = self.active.match.release
-        current_track, progress = self._track_at_elapsed(
+        current_track, progress, _ = self._track_at_elapsed(
             release,
             self.active.match.track,
             int(now - self.active.started_at),
@@ -163,13 +217,19 @@ class PlaybackController:
 
         if index > 0:
             prev_track = release.tracks[index - 1]
-            try:
-                start_index = release.tracks.index(self.active.match.track)
-                prev_index = index - 1
-                elapsed_needed = 0
-                for track in release.tracks[start_index:prev_index]:
-                    elapsed_needed += track.duration_seconds or 0
-                self.active.started_at = now - elapsed_needed
-            except ValueError:
-                self.active.match.track = prev_track
+            curr_side = get_track_side(current_track.position)
+            prev_side = get_track_side(prev_track.position)
+            if curr_side and prev_side and curr_side != prev_side:
+                self.active.match = replace(self.active.match, track=prev_track)
                 self.active.started_at = now
+            else:
+                try:
+                    start_index = release.tracks.index(self.active.match.track)
+                    prev_index = index - 1
+                    elapsed_needed = 0
+                    for track in release.tracks[start_index:prev_index]:
+                        elapsed_needed += track.duration_seconds or 0
+                    self.active.started_at = now - elapsed_needed
+                except ValueError:
+                    self.active.match = replace(self.active.match, track=prev_track)
+                    self.active.started_at = now

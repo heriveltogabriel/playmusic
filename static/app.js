@@ -109,7 +109,7 @@ function renderState(state) {
   elements.prevButton.disabled = true;
   elements.nextButton.disabled = true;
 
-  if (state.status === "playing" && state.release && state.track) {
+  if ((state.status === "playing" || state.status === "waiting_flip") && state.release && state.track) {
     const release = state.release;
     const track = state.track;
 
@@ -128,29 +128,52 @@ function renderState(state) {
     // Habilitar botões se estiver tocando e animar vinil
     elements.prevButton.disabled = false;
     elements.nextButton.disabled = !state.next_track;
-    if (elements.vinylWrapper) {
-      elements.vinylWrapper.classList.add("playing");
-    }
-    document.body.classList.add("is-playing");
 
-    // Calculate next auto-listen timestamp when the track ends
-    const progress = state.progress_seconds || 0;
-    const duration = track.duration_seconds;
-    if (duration && progress < duration) {
-      const remaining = duration - progress;
-      window.nextAutoListenAt = Date.now() + (remaining * 1000);
+    if (state.status === "playing") {
+      if (elements.vinylWrapper) {
+        elements.vinylWrapper.classList.add("playing");
+      }
+      document.body.classList.add("is-playing");
+
+      // Calculate next auto-listen timestamp when the track ends
+      const progress = state.progress_seconds || 0;
+      const duration = track.duration_seconds;
+      if (duration && progress < duration) {
+        const remaining = duration - progress;
+        window.nextAutoListenAt = Date.now() + (remaining * 1000);
+      } else {
+        if (!window.nextAutoListenAt || window.nextAutoListenAt < Date.now()) {
+          window.nextAutoListenAt = lastRecognitionAt + 45000;
+        }
+      }
+
+      // Update local playback tracker for smooth interpolation
+      playbackTracker.active = true;
+      playbackTracker.baseProgress = progress;
+      playbackTracker.duration = duration || 0;
+      playbackTracker.lastUpdate = Date.now();
+      updateProgressBar();
     } else {
-      if (!window.nextAutoListenAt || window.nextAutoListenAt < Date.now()) {
-        window.nextAutoListenAt = lastRecognitionAt + 45000;
+      // state.status === "waiting_flip"
+      if (elements.vinylWrapper) {
+        elements.vinylWrapper.classList.remove("playing"); // Para de girar e recolhe o disco
+      }
+      document.body.classList.add("is-playing");
+
+      // Zera o cooldown de escuta para o microfone captar imediatamente a música quando o disco virar
+      window.nextAutoListenAt = 0;
+
+      // Desativa o tracker local e preenche a barra de progresso em 100%
+      playbackTracker.active = false;
+      if (elements.progressBar) elements.progressBar.style.width = "100%";
+      if (elements.progressTimeCurrent) elements.progressTimeCurrent.textContent = formatTime(track.duration_seconds);
+      if (elements.progressTimeTotal) elements.progressTimeTotal.textContent = formatTime(track.duration_seconds);
+
+      // Exibe instrução de virar o disco ou fim de reprodução
+      if (state.message) {
+        elements.albumLine.textContent = state.message;
       }
     }
-
-    // Update local playback tracker for smooth interpolation
-    playbackTracker.active = true;
-    playbackTracker.baseProgress = progress;
-    playbackTracker.duration = duration || 0;
-    playbackTracker.lastUpdate = Date.now();
-    updateProgressBar();
     return;
   }
 
@@ -195,6 +218,7 @@ function labelForStatus(status) {
     listening: "Ouvindo",
     identifying: "Identificando",
     playing: "Tocando",
+    waiting_flip: "Vire o Disco",
     not_found: "Não encontrado",
     syncing: "Sincronizando",
     offline: "Offline",

@@ -77,12 +77,18 @@ class PlaybackControllerTests(unittest.TestCase):
         controller = PlaybackController()
         controller.handle_match(match_at_a1(), now=1000)
 
-        # Advance to last track (B1 is the 3rd track, A1=261s, A2=183s)
-        # B1 starts at 1000 + 444. Let's check at 1000 + 450.
+        # Ao passar de 444s, o Lado A terminou e entra em waiting_flip no final de A2
         state = controller.current_state(now=1450)
+        self.assertEqual(state["status"], "waiting_flip")
+        self.assertEqual(state["track"]["position"], "A2")
+
+        # Pular próxima (skip_next) deve avançar para B1
+        controller.skip_next(now=1450)
+        state = controller.current_state(now=1450)
+        self.assertEqual(state["status"], "playing")
         self.assertEqual(state["track"]["position"], "B1")
 
-        # Try to skip next. B1 is the last track, so it should stay on B1.
+        # Tentar pular próxima no último elemento (B1) não deve fazer nada
         controller.skip_next(now=1450)
         state = controller.current_state(now=1450)
         self.assertEqual(state["track"]["position"], "B1")
@@ -109,6 +115,75 @@ class PlaybackControllerTests(unittest.TestCase):
         state = controller.current_state(now=1263)
         self.assertEqual(state["track"]["position"], "A1")
         self.assertEqual(state["progress_seconds"], 0)
+
+    def test_progress_reaches_end_of_side_enters_waiting_flip(self):
+        controller = PlaybackController()
+        controller.handle_match(match_at_a1(), now=1000)
+
+        # Side A has Come Together (261s) + Something (183s) = 444s.
+        # At now = 1000 + 444, Side A has finished.
+        state = controller.current_state(now=1444)
+
+        self.assertEqual(state["status"], "waiting_flip")
+        self.assertEqual(state["track"]["position"], "A2")
+        self.assertEqual(state["progress_seconds"], 183)
+        self.assertEqual(state["next_track"]["position"], "B1")
+        self.assertIn("Fim do Lado A. Por favor, vire o disco para o Lado B!", state["message"])
+
+    def test_progress_reaches_end_of_last_side_shows_end_message(self):
+        controller = PlaybackController()
+        match = match_at_a1()
+        # Start directly on B1
+        controller.handle_match(TrackMatch(
+            release=match.release,
+            track=match.release.tracks[2],  # B1
+            score=100,
+            reason="test"
+        ), now=1000)
+
+        # B1 duration is 185s. At 1185, it finishes.
+        state = controller.current_state(now=1185)
+
+        self.assertEqual(state["status"], "waiting_flip")
+        self.assertEqual(state["track"]["position"], "B1")
+        self.assertEqual(state["progress_seconds"], 185)
+        self.assertIsNone(state["next_track"])
+        self.assertIn("Fim do disco! Por favor, recoloque o vinil ou troque de álbum.", state["message"])
+
+    def test_progress_cd_numeric_positions_does_not_pause_on_side(self):
+        # A CD has numeric positions like "1", "2"
+        release = Release(
+            release_id=12345,
+            title="CD Title",
+            artist="CD Artist",
+            year=2020,
+            cover_url="https://example.test/cover.jpg",
+            country="US",
+            labels=["Label"],
+            catalog_numbers=["123"],
+            formats=["CD"],
+            tracks=[
+                Track("1", "Track 1", 100),
+                Track("2", "Track 2", 100),
+            ],
+            discogs_url="https://www.discogs.com/release/12345",
+        )
+        match = TrackMatch(release=release, track=release.tracks[0], score=100, reason="test")
+        controller = PlaybackController()
+        controller.handle_match(match, now=1000)
+
+        # At elapsed = 120s (now=1120), we are on Track 2 (pos "2").
+        # Since it's numeric, we don't have side boundaries. It should play "2" normally.
+        state = controller.current_state(now=1120)
+        self.assertEqual(state["status"], "playing")
+        self.assertEqual(state["track"]["position"], "2")
+        self.assertEqual(state["progress_seconds"], 20)
+
+        # At elapsed = 200s (now=1200), we finished the entire release.
+        state = controller.current_state(now=1200)
+        self.assertEqual(state["status"], "waiting_flip")
+        self.assertEqual(state["progress_seconds"], 100)
+        self.assertIn("Fim do disco!", state["message"])
 
 
 if __name__ == "__main__":
