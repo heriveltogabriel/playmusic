@@ -78,14 +78,15 @@ function updateProgressBar() {
 
 function setCover(release) {
   if (!release || !release.cover_url) {
-    elements.albumCover.className = "cover-placeholder";
+    elements.albumCover.className = "";
     elements.albumCover.replaceChildren();
-    const placeholder = document.createElement("span");
-    placeholder.id = "cover-initials";
-    placeholder.textContent = "VINYL";
-    elements.albumCover.appendChild(placeholder);
+    const image = document.createElement("img");
+    image.className = "cover-image";
+    image.alt = "LOGO LP DA SEMANA";
+    image.src = "/static/logo_lp_da_semana.jpg";
+    elements.albumCover.appendChild(image);
     if (elements.vinylLabel) {
-      elements.vinylLabel.style.backgroundImage = "";
+      elements.vinylLabel.style.backgroundImage = "url(/static/logo_lp_da_semana.jpg)";
     }
     return;
   }
@@ -103,13 +104,19 @@ function setCover(release) {
 }
 
 function renderState(state) {
-  elements.statusLabel.textContent = labelForStatus(state.status);
+  const hasNextTrack = !!state.next_track;
+  elements.statusLabel.textContent = labelForStatus(state.status, hasNextTrack);
 
   // Desabilitar botões por padrão
   elements.prevButton.disabled = true;
   elements.nextButton.disabled = true;
 
-  if ((state.status === "playing" || state.status === "waiting_flip") && state.release && state.track) {
+  // Nós só mantemos a tela no modo "Tocando" (com capa da música e título) se:
+  // - O status for "playing"
+  // - OU se for "waiting_flip" E houver uma próxima música (ou seja, tem outro lado a ser tocado)
+  const isPlayingActive = (state.status === "playing" || (state.status === "waiting_flip" && state.next_track)) && state.release && state.track;
+
+  if (isPlayingActive) {
     const release = state.release;
     const track = state.track;
 
@@ -154,7 +161,7 @@ function renderState(state) {
       playbackTracker.lastUpdate = Date.now();
       updateProgressBar();
     } else {
-      // state.status === "waiting_flip"
+      // state.status === "waiting_flip" com próxima música ativa
       if (elements.vinylWrapper) {
         elements.vinylWrapper.classList.remove("playing"); // Para de girar e recolhe o disco
       }
@@ -169,7 +176,7 @@ function renderState(state) {
       if (elements.progressTimeCurrent) elements.progressTimeCurrent.textContent = formatTime(track.duration_seconds);
       if (elements.progressTimeTotal) elements.progressTimeTotal.textContent = formatTime(track.duration_seconds);
 
-      // Exibe instrução de virar o disco ou fim de reprodução
+      // Exibe instrução de virar o disco
       if (state.message) {
         elements.albumLine.textContent = state.message;
       }
@@ -177,20 +184,26 @@ function renderState(state) {
     return;
   }
 
-  setCover(null);
-  if (elements.nextTrackTitle) elements.nextTrackTitle.textContent = "";
-  elements.nextTrack.style.display = "none";
+  // ESTADO DE ESPERA / OCIOSO (Sem música tocando)
+  setCover(null); // Renderiza a logo do LP DA SEMANA
+  
   if (elements.vinylWrapper) {
     elements.vinylWrapper.classList.remove("playing");
   }
   document.body.classList.remove("is-playing");
 
-  // Deactivate local playback tracker
+  // Desativa o tracker local de reprodução
   playbackTracker.active = false;
   playbackTracker.baseProgress = 0;
   playbackTracker.duration = 0;
   playbackTracker.lastUpdate = 0;
   updateProgressBar();
+
+  // Sempre mostra o bloco de Próxima Música no estado ocioso com a mensagem pedida
+  if (elements.nextTrackTitle) {
+    elements.nextTrackTitle.textContent = "Coloque novo disco para tocar";
+    elements.nextTrack.style.display = "block";
+  }
 
   if (state.status === "not_found") {
     elements.trackTitle.textContent = "Não encontrado";
@@ -208,22 +221,30 @@ function renderState(state) {
     return;
   }
 
-  elements.trackTitle.textContent = "Aguardando música";
-  elements.artistName.textContent = "Coloque um disco para tocar";
-  elements.albumLine.textContent = `${state.collection_count || 0} discos sincronizados`;
+  // Caso padrão (listening / ocioso ou waiting_flip sem próxima música)
+  elements.trackTitle.textContent = "LP DA SEMANA";
+  elements.artistName.textContent = "Conversas em Vinil";
+  
+  if (state.status === "waiting_flip" && !state.next_track) {
+    elements.albumLine.textContent = state.message || "Fim do disco!";
+    window.nextAutoListenAt = 0; // Garante escuta ativada imediata
+  } else {
+    elements.albumLine.textContent = `${state.collection_count || 0} discos sincronizados`;
+  }
 }
 
-function labelForStatus(status) {
+function labelForStatus(status, hasNextTrack) {
   const labels = {
-    listening: "Ouvindo",
+    listening: "AGUARDANDO NOVO DISCO",
     identifying: "Identificando",
     playing: "Tocando",
-    waiting_flip: "Vire o Disco",
+    waiting_flip: hasNextTrack ? "VIRE O DISCO" : "AGUARDANDO NOVO DISCO",
     not_found: "Não encontrado",
     syncing: "Sincronizando",
     offline: "Offline",
   };
-  return labels[status] || "Ouvindo";
+  return labels[status] || "AGUARDANDO NOVO DISCO";
+}
 }
 
 async function pollState() {
