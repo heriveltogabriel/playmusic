@@ -1018,7 +1018,12 @@ function sortFilteredLps() {
     } else if (sort === 'title_asc') {
       return a.title.localeCompare(b.title);
     } else if (sort === 'artist_asc') {
-      return a.artist.localeCompare(b.artist);
+      const cmp = a.artist.localeCompare(b.artist);
+      if (cmp !== 0) return cmp;
+      const yA = a.year || 9999;
+      const yB = b.year || 9999;
+      if (yA !== yB) return yA - yB;
+      return a.title.localeCompare(b.title);
     } else if (sort === 'rating_desc') {
       return (b.rating || 0) - (a.rating || 0);
     }
@@ -1465,45 +1470,47 @@ function renderStats() {
   document.getElementById('stat-avg-rating').textContent = avgRating;
   
   // 1. Genres Stats Bar Chart
-  const genreCounts = {};
-  state.lps.forEach(lp => {
-    lp.genres.forEach(g => { genreCounts[g] = (genreCounts[g] || 0) + 1; });
-  });
-  const allGenresSorted = Object.entries(genreCounts).sort((a,b) => b[1] - a[1]);
-  const genresSorted = allGenresSorted.slice(0, 5);
-  
-  // Ensure "Jazz" is included if it exists in the collection and is not already in the top 5
-  const hasJazz = genresSorted.some(([name]) => name.toLowerCase() === 'jazz');
-  if (!hasJazz) {
-    const jazzEntry = allGenresSorted.find(([name]) => name.toLowerCase() === 'jazz');
-    if (jazzEntry) {
-      genresSorted.push(jazzEntry);
-    }
-  }
-  
   const genresCont = document.getElementById('genres-chart-container');
-  genresCont.innerHTML = '';
-  
-  genresSorted.forEach(([name, count]) => {
-    const pct = totalLps > 0 ? Math.round((count / totalLps) * 100) : 0;
-    const barRow = document.createElement('div');
-    barRow.classList.add('chart-bar-row');
-    barRow.innerHTML = `
-      <div class="chart-bar-labels">
-        <span class="chart-label-name">${name}</span>
-        <span class="chart-label-val">${count} (${pct}%)</span>
-      </div>
-      <div class="chart-bar-track">
-        <div class="chart-bar-fill" style="width: 0%"></div>
-      </div>
-    `;
-    genresCont.appendChild(barRow);
+  if (genresCont) {
+    const genreCounts = {};
+    state.lps.forEach(lp => {
+      lp.genres.forEach(g => { genreCounts[g] = (genreCounts[g] || 0) + 1; });
+    });
+    const allGenresSorted = Object.entries(genreCounts).sort((a,b) => b[1] - a[1]);
+    const genresSorted = allGenresSorted.slice(0, 5);
     
-    // Trigger transition delay
-    setTimeout(() => {
-      barRow.querySelector('.chart-bar-fill').style.width = `${pct}%`;
-    }, 100);
-  });
+    // Ensure "Jazz" is included if it exists in the collection and is not already in the top 5
+    const hasJazz = genresSorted.some(([name]) => name.toLowerCase() === 'jazz');
+    if (!hasJazz) {
+      const jazzEntry = allGenresSorted.find(([name]) => name.toLowerCase() === 'jazz');
+      if (jazzEntry) {
+        genresSorted.push(jazzEntry);
+      }
+    }
+    
+    genresCont.innerHTML = '';
+    
+    genresSorted.forEach(([name, count]) => {
+      const pct = totalLps > 0 ? Math.round((count / totalLps) * 100) : 0;
+      const barRow = document.createElement('div');
+      barRow.classList.add('chart-bar-row');
+      barRow.innerHTML = `
+        <div class="chart-bar-labels">
+          <span class="chart-label-name">${name}</span>
+          <span class="chart-label-val">${count} (${pct}%)</span>
+        </div>
+        <div class="chart-bar-track">
+          <div class="chart-bar-fill" style="width: 0%"></div>
+        </div>
+      `;
+      genresCont.appendChild(barRow);
+      
+      // Trigger transition delay
+      setTimeout(() => {
+        barRow.querySelector('.chart-bar-fill').style.width = `${pct}%`;
+      }, 100);
+    });
+  }
   
   // 2. Plays Stats Bar Chart (LPs por Audição)
   const sortedLpsByPlays = [...state.lps]
