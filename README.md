@@ -41,7 +41,26 @@ export VINYL_KEY_FILE="/path/to/local-key.pem"
 
 The browser microphone API requires a secure context. On the Raspberry Pi, run this app through HTTPS using a local certificate that the Android device trusts.
 
-## Run
+## Quick Installation on Raspberry Pi
+
+We provide an automated setup script that installs required system dependencies, generates local self-signed SSL/TLS certificates, copies configuration files, and sets up a `systemd` service so that the app starts automatically when your Raspberry Pi boots.
+
+To run the setup:
+
+```bash
+chmod +x setup_pi.sh
+./setup_pi.sh
+```
+
+Once completed, fill in your API keys in the generated `.env` file and restart the service:
+
+```bash
+sudo systemctl restart vinyl-display
+```
+
+## Run Manually
+
+If you prefer to run the server manually without `systemd`:
 
 ```bash
 python3 -m vinyl_display.server
@@ -49,10 +68,10 @@ python3 -m vinyl_display.server
 
 If your Raspberry Pi maps `python` to Python 3, `python -m vinyl_display.server` also works.
 
-Open the Android phone at:
+Open the browser at:
 
 ```text
-https://raspberrypi.local:8080
+https://<raspberry-pi-ip-or-host>:8080
 ```
 
 ## Sync Collection
