@@ -54,6 +54,11 @@ class CatalogStore:
             )
 
     def upsert_release(self, release: Release) -> None:
+        synced_time = release.synced_at or time.time()
+        if release.synced_at == 0.0:
+            import dataclasses
+            release = dataclasses.replace(release, synced_at=synced_time)
+            
         payload_json = json.dumps(release.to_dict(), ensure_ascii=False, sort_keys=True)
         with self._connect() as connection:
             connection.execute(
@@ -77,7 +82,7 @@ class CatalogStore:
                     release.year,
                     release.cover_url,
                     payload_json,
-                    time.time(),
+                    synced_time,
                 ),
             )
 

@@ -180,14 +180,45 @@ class DiscogsClient:
             self.sleep_func(self.page_delay_seconds)
         return release_ids
 
+    def collection_releases_meta(self) -> list[tuple[int, str | None]]:
+        releases_meta: list[tuple[int, str | None]] = []
+        page = 1
+        while True:
+            url = (
+                f"{self.api_base}/users/{self.username}/collection/folders/0/releases"
+                f"?per_page=100&page={page}"
+            )
+            payload = self._request_json(url)
+            for item in payload.get("releases", []):
+                releases_meta.append((int(item["id"]), item.get("date_added")))
+            pagination = payload.get("pagination") or {}
+            if int(pagination.get("page", page)) >= int(pagination.get("pages", page)):
+                break
+            page += 1
+            self.sleep_func(self.page_delay_seconds)
+        return releases_meta
+
     def release_details(self, release_id: int) -> Release:
         payload = self._request_json(f"{self.api_base}/releases/{release_id}")
         return release_from_discogs(payload)
 
     def sync_collection(self, store: CatalogStore) -> int:
         count = 0
-        for release_id in self.collection_release_ids():
-            store.upsert_release(self.release_details(release_id))
+        import datetime
+        import dataclasses
+        for release_id, date_added_str in self.collection_releases_meta():
+            release = self.release_details(release_id)
+            synced_at = 0.0
+            if date_added_str:
+                try:
+                    val = date_added_str.replace('Z', '+00:00')
+                    dt = datetime.datetime.fromisoformat(val)
+                    synced_at = dt.timestamp()
+                except Exception as e:
+                    print(f"[DISCOGS] Error parsing date_added '{date_added_str}': {e}")
+            if synced_at > 0.0:
+                release = dataclasses.replace(release, synced_at=synced_at)
+            store.upsert_release(release)
             count += 1
             self.sleep_func(self.page_delay_seconds)
         store.set_metadata("discogs_last_sync_count", str(count))

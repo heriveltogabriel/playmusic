@@ -133,9 +133,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // Sorting
     filtered.sort((a, b) => {
       if (sortOption === "recent") {
-        // Releases are naturally ordered by insert or ID on server
-        // Negative IDs are manually added, positive are synced from Discogs.
-        // We will sort descending by release_id to show newest additions first
+        const tA = a.synced_at || 0;
+        const tB = b.synced_at || 0;
+        if (tB !== tA) {
+          return tB - tA; // Newest additions first
+        }
         return b.release_id - a.release_id;
       }
       if (sortOption === "artist") {

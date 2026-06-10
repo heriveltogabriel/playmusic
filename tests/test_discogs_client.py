@@ -17,7 +17,7 @@ class FakeJsonTransport:
         if url.endswith("/collection/folders/0/releases?per_page=100&page=1"):
             return {
                 "pagination": {"page": 1, "pages": 1, "items": 1},
-                "releases": [{"id": 14192689}],
+                "releases": [{"id": 14192689, "date_added": "2026-06-08T12:00:00-03:00"}],
             }
         if url.endswith("/releases/14192689"):
             return {
@@ -92,6 +92,10 @@ class DiscogsClientTests(unittest.TestCase):
             self.assertEqual(release.catalog_numbers, ["B0030719-01"])
             self.assertEqual(release.tracks[0].duration_seconds, 261)
             self.assertEqual(store.get_metadata("discogs_last_sync_count"), "1")
+            
+            import datetime
+            expected_timestamp = datetime.datetime.fromisoformat("2026-06-08T12:00:00-03:00").timestamp()
+            self.assertEqual(release.synced_at, expected_timestamp)
 
     def test_sync_retries_discogs_rate_limit(self):
         with tempfile.TemporaryDirectory() as tmp:
