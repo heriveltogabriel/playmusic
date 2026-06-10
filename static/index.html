@@ -20,21 +20,21 @@
 
       <section class="cover-panel">
         <div class="vinyl-wrapper">
-          <div id="album-cover" class="cover-placeholder">
-            <span id="cover-initials">VINYL</span>
+          <div id="album-cover">
+            <img class="cover-image" src="/static/logo_lp_da_semana.jpg" alt="LOGO LP DA SEMANA">
           </div>
           <div class="vinyl-disc">
             <div class="vinyl-disc-inner">
-              <div class="vinyl-label"></div>
+              <div class="vinyl-label" style="background-image: url('/static/logo_lp_da_semana.jpg');"></div>
             </div>
           </div>
         </div>
       </section>
 
       <section class="now-playing">
-        <p id="status-label" class="status-label">Ouvindo</p>
-        <h1 id="track-title">Aguardando música</h1>
-        <p id="artist-name" class="artist-name">Coloque um disco para tocar</p>
+        <p id="status-label" class="status-label">AGUARDANDO NOVO DISCO</p>
+        <h1 id="track-title">LP DA SEMANA</h1>
+        <p id="artist-name" class="artist-name">Conversas em Vinil</p>
         <p id="album-line" class="album-line">Coleção Discogs sincronizada localmente</p>
         <div class="progress-container">
           <div class="progress-bar-track">
@@ -46,9 +46,9 @@
           </div>
         </div>
         <div class="next-track-container">
-          <div id="next-track" class="next-track">
+          <div id="next-track" class="next-track" style="display: block;">
             <span class="next-track-label">Próxima Música:</span>
-            <div id="next-track-title" class="next-track-title"></div>
+            <div id="next-track-title" class="next-track-title">Coloque novo disco para tocar</div>
           </div>
           <div class="media-nav-buttons">
             <button id="prev-button" class="btn-media-nav" type="button" aria-label="Anterior" disabled>
