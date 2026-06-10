@@ -1,94 +1,92 @@
 # Vinyl Display
 
-Minimalist vinyl now-playing display for a Raspberry Pi server and an Android/iOS phone.
+Tela de exibição minimalista (estilo "now playing") de disco de vinil para servidor Raspberry Pi e celulares Android/iOS.
 
-## What It Does
+## O Que Faz
 
-- **Syncs Discogs Collection**: Local catalog mirroring for fast offline matches.
-- **Design Retrô Bauhaus (Amber Landscape)**: AMOLED-friendly charcoal, warm cream, and rust-amber colors with a spinning and sliding vinyl disc animation, optimized for landscape mobile viewports.
-- **Dynamic iOS Microphone Access**: Initiates the microphone and Web Audio `AudioContext` securely within user touch/click handlers to bypass iOS Safari autoplay and silent capture restrictions.
-- **Real-Time PCM Resampling**: Performs client-side linear resampling to convert native device sample rates (e.g. 48kHz) to 44.1kHz mono 16-bit signed PCM on the fly for Shazam Core recognition.
-- **Time-Based Scheduled Listening (Cooldown)**: Suspends microphone capture during track playback, scheduling the next query only near the end of the current song to save API credits and CPU.
-- **Smooth Real-Time Progress Bar**: Interpolates progress locally at 250ms ticks for fluid animations and updates current/total times in `M:SS` format.
-- **AMOLED Glassmorphism Error Popups**: Captures network, server (500), and microphone block failures, presenting a custom warning dialog instead of failing silently.
-- **PWA Integration**: Includes a web manifest (`manifest.json`) for installing the app as a standalone web application on Android/iOS home screens.
+- **Sincroniza Coleção do Discogs**: Espelhamento de catálogo local para correspondências rápidas offline.
+- **Design Retrô Bauhaus (Amber Landscape)**: Paleta AMOLED de carvão fosco, creme analógico quente e laranja ferrugem/âmbar com animação de disco de vinil girando e deslizando, otimizada para telas móveis no modo paisagem.
+- **Acesso Dinâmico ao Microfone no iOS**: Inicializa o microfone e o `AudioContext` da Web Audio API de forma segura dentro de eventos de toque/clique do usuário para contornar restrições de reprodução automática e captura silenciosa do iOS Safari.
+- **Reamostragem de PCM em Tempo Real**: Realiza reamostragem linear no cliente para converter as taxas nativas do dispositivo (ex. 48kHz) para PCM de 16 bits assinado mono a 44.1kHz dinamicamente para reconhecimento via Shazam Core.
+- **Escuta Agendada Baseada em Tempo (Cooldown)**: Suspende a captura do microfone durante a reprodução da faixa, agendando a próxima consulta apenas próximo ao final da música atual para economizar uso de CPU e créditos de API.
+- **Barra de Progresso Suave em Tempo Real**: Interpola o progresso localmente em intervalos de 250ms para animações fluidas e atualiza o tempo decorrido e total no formato `M:SS`.
+- **Popups de Erro AMOLED Glassmorphism**: Captura falhas de rede, erros internos do servidor (500) e bloqueios de microfone, apresentando um diálogo de aviso personalizado em vez de falhar silenciosamente.
+- **Integração PWA**: Inclui um manifesto web (`manifest.json`) que permite instalar o aplicativo como um aplicativo autônomo na tela inicial do Android/iOS.
 
-## Configuration
+## Configuração
 
-Copy `.env.example` to `.env` and fill in your local values. The `.env` file is
-ignored by git so secrets stay local.
+Copie o arquivo `.env.example` para `.env` e preencha com as suas credenciais locais. O arquivo `.env` é ignorado pelo git para que seus segredos permaneçam locais.
 
-Required for recognition (either AudD or Shazam via RapidAPI):
+Necessário para o reconhecimento (AudD ou Shazam via RapidAPI):
 
 ```env
-# Option 1: AudD
-AUDD_API_TOKEN=your-token
+# Opção 1: AudD
+AUDD_API_TOKEN=seu-token
 
-# Option 2: Shazam (via RapidAPI)
-RAPIDAPI_SHAZAM_KEY=your-rapidapi-key
+# Opção 2: Shazam (via RapidAPI)
+RAPIDAPI_SHAZAM_KEY=sua-chave-rapidapi
 RAPIDAPI_SHAZAM_HOST=shazam-core.p.rapidapi.com
 ```
 
-Shell environment values still take priority over `.env`, which is useful for
-temporary overrides.
+As variáveis de ambiente do terminal ainda têm prioridade sobre o arquivo `.env`, o que é útil para substituições temporárias.
 
-Required for Android microphone capture in Chrome:
+Configurações para captura de microfone no Android/Chrome:
 
 ```bash
-export VINYL_CERT_FILE="/path/to/local-cert.pem"
-export VINYL_KEY_FILE="/path/to/local-key.pem"
+export VINYL_CERT_FILE="/caminho/para/cert-local.pem"
+export VINYL_KEY_FILE="/caminho/para/key-local.pem"
 ```
 
-The browser microphone API requires a secure context. On the Raspberry Pi, run this app through HTTPS using a local certificate that the Android device trusts.
+A API de microfone do navegador exige um contexto seguro (HTTPS). No Raspberry Pi, execute este aplicativo via HTTPS usando um certificado local no qual o celular confie.
 
-## Quick Installation on Raspberry Pi
+## Instalação Rápida no Raspberry Pi
 
-We provide an automated setup script that installs required system dependencies, generates local self-signed SSL/TLS certificates, copies configuration files, and sets up a `systemd` service so that the app starts automatically when your Raspberry Pi boots.
+Disponibilizamos um script de configuração automatizado que instala as dependências de sistema necessárias, gera certificados SSL/TLS locais autoassinados, copia os arquivos de configuração e configura um serviço `systemd` para que o aplicativo seja iniciado automaticamente quando o Raspberry Pi ligar.
 
-To run the setup:
+Para executar a instalação:
 
 ```bash
 chmod +x setup_pi.sh
 ./setup_pi.sh
 ```
 
-Once completed, fill in your API keys in the generated `.env` file and restart the service:
+Depois de concluído, preencha suas chaves de API no arquivo `.env` gerado e reinicie o serviço:
 
 ```bash
 sudo systemctl restart vinyl-display
 ```
 
-## Run Manually
+## Execução Manual
 
-If you prefer to run the server manually without `systemd`:
+Se preferir rodar o servidor manualmente sem usar o `systemd`:
 
 ```bash
 python3 -m vinyl_display.server
 ```
 
-If your Raspberry Pi maps `python` to Python 3, `python -m vinyl_display.server` also works.
+Se o seu Raspberry Pi mapear `python` para o Python 3, `python -m vinyl_display.server` também funciona.
 
-Open the browser at:
+Abra o navegador em:
 
 ```text
-https://<raspberry-pi-ip-or-host>:8080
+https://<ip-ou-host-do-raspberry-pi>:8080
 ```
 
-## Sync Collection
+## Sincronizar Coleção
 
-The server exposes:
+O servidor expõe o seguinte endpoint:
 
 ```text
 POST /api/sync
 ```
 
-From another machine on the same network:
+De outra máquina na mesma rede:
 
 ```bash
 curl -X POST https://raspberrypi.local:8080/api/sync
 ```
 
-## Useful API Endpoints
+## Endpoints Úteis da API
 
 ```text
 GET  /api/health
@@ -97,7 +95,7 @@ POST /api/sync
 POST /api/recognize
 ```
 
-## Tests
+## Testes
 
 ```bash
 python3 -m unittest discover -v
