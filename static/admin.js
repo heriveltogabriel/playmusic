@@ -735,10 +735,10 @@ async function toggleFavoriteState(id) {
 // ==================== CANVAS DYNAMIC COLOR GLOW ====================
 function updateAmbientGlow(imageUrl) {
   const ambientGlow = document.getElementById('ambient-glow');
-  const fallbackColor = 'rgba(255, 45, 85, 0.08)';
+  const fallbackColor = 'rgba(230, 92, 0, 0.08)';
   
   if (!imageUrl) {
-    ambientGlow.style.background = `radial-gradient(circle at 70% 30%, ${fallbackColor} 0%, rgba(12, 12, 28, 0) 60%)`;
+    ambientGlow.style.background = `radial-gradient(circle at 70% 30%, ${fallbackColor} 0%, rgba(12, 12, 12, 0) 60%)`;
     return;
   }
   
@@ -780,7 +780,7 @@ function updateAmbientGlow(imageUrl) {
           b = Math.min(255, Math.round(b * (255 / max) * 0.8));
         }
         
-        ambientGlow.style.background = `radial-gradient(circle at 65% 35%, rgba(${r}, ${g}, ${b}, 0.14) 0%, rgba(12, 12, 28, 0) 65%)`;
+        ambientGlow.style.background = `radial-gradient(circle at 65% 35%, rgba(${r}, ${g}, ${b}, 0.14) 0%, rgba(12, 12, 12, 0) 65%)`;
       } else {
         throw new Error("Too dark or too light");
       }
@@ -788,14 +788,14 @@ function updateAmbientGlow(imageUrl) {
       // Fallback: Generate a nice deterministic color based on the title string
       const activeLp = state.agenda[state.selectedAgendaIndex];
       const stringColor = hashStringToColor(activeLp ? activeLp.title : 'LP da Semana');
-      ambientGlow.style.background = `radial-gradient(circle at 65% 35%, ${stringColor} 0%, rgba(12, 12, 28, 0) 65%)`;
+      ambientGlow.style.background = `radial-gradient(circle at 65% 35%, ${stringColor} 0%, rgba(12, 12, 12, 0) 65%)`;
     }
   };
   
   img.onerror = () => {
     const activeLp = state.agenda[state.selectedAgendaIndex];
     const stringColor = hashStringToColor(activeLp ? activeLp.title : 'LP da Semana');
-    ambientGlow.style.background = `radial-gradient(circle at 65% 35%, ${stringColor} 0%, rgba(12, 12, 28, 0) 65%)`;
+    ambientGlow.style.background = `radial-gradient(circle at 65% 35%, ${stringColor} 0%, rgba(12, 12, 12, 0) 65%)`;
   };
   
   img.src = imageUrl;
