@@ -89,4 +89,10 @@ class AudDClient:
         )
         with urllib.request.urlopen(request, timeout=45) as response:
             payload = json.loads(response.read().decode("utf-8"))
+        if payload.get("status") == "error":
+            error_info = payload.get("error", {})
+            error_msg = error_info.get("error_message", "Unknown AudD error")
+            error_code = error_info.get("error_code", "Unknown code")
+            raise RuntimeError(f"AudD API error {error_code}: {error_msg}")
         return parse_audd_response(payload)
+

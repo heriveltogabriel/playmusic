@@ -29,7 +29,7 @@ class StaticAssetTests(unittest.TestCase):
     def test_css_is_amoled_friendly_and_has_no_negative_letter_spacing(self):
         css = (ROOT / "static" / "styles.css").read_text()
 
-        self.assertIn("background: #050505", css)
+        self.assertIn("background: var(--bg)", css)
         self.assertNotIn("letter-spacing: -", css)
         self.assertNotIn("font-size: clamp", css)
         font_size_declarations = re.findall(r"font-size:[^;]+;", css)

@@ -57,6 +57,10 @@ class RecognitionMatchingTests(unittest.TestCase):
     def test_normalize_text_removes_case_and_punctuation_noise(self):
         self.assertEqual(normalize_text("  Come Together! "), "come together")
         self.assertEqual(normalize_text("Beatles, The"), "beatles the")
+        self.assertEqual(normalize_text("See the Sky About to Rain (2003 Remaster)"), "see the sky about to rain")
+        self.assertEqual(normalize_text("Come Together - Remastered 2009"), "come together")
+        self.assertEqual(normalize_text("Vida Louca Vida (Ao Vivo)"), "vida louca vida")
+        self.assertEqual(normalize_text("O Tempo Não Para - Acústico"), "o tempo nao para")
 
     def test_matcher_finds_track_in_collection(self):
         store = make_store()

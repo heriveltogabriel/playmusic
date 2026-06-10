@@ -4,6 +4,7 @@ from typing import Any
 
 from vinyl_display.catalog import CatalogStore
 from vinyl_display.clients.audd import AudDClient
+from vinyl_display.clients.shazam import ShazamClient
 from vinyl_display.clients.discogs import DiscogsClient
 from vinyl_display.matcher import CollectionMatcher
 from vinyl_display.playback import PlaybackController
@@ -14,7 +15,7 @@ class VinylDisplayApp:
         self,
         store: CatalogStore,
         discogs_client: DiscogsClient,
-        audd_client: AudDClient,
+        audd_client: AudDClient | ShazamClient | Any,
     ):
         self.store = store
         self.discogs_client = discogs_client
@@ -46,18 +47,33 @@ class VinylDisplayApp:
         filename: str = "clip.webm",
     ) -> dict[str, Any]:
         self.playback.set_identifying()
+        import struct
+        import math
+        rms = 0.0
+        if len(audio_bytes) >= 2:
+            count = len(audio_bytes) // 2
+            try:
+                shorts = struct.unpack(f"<{count}h", audio_bytes[:count*2])
+                sum_squares = sum((s / 32768.0) ** 2 for s in shorts)
+                rms = math.sqrt(sum_squares / count)
+            except Exception as e:
+                print(f"[RECOGNIZE] Error calculating RMS: {e}")
+        print(f"[RECOGNIZE] Received audio data: {len(audio_bytes)} bytes, filename: {filename}, RMS Volume: {rms:.5f}")
         try:
             recognition = self.audd_client.recognize(audio_bytes, filename=filename)
         except Exception as error:
             self.playback.set_listening()
+            print(f"[RECOGNIZE] Recognition client raised exception: {error}")
             return {
                 "status": "recognition_unavailable",
                 "message": str(error),
             }
         if recognition is None:
             self.playback.set_listening()
+            print("[RECOGNIZE] Recognition returned no result (music not recognized).")
             return {"status": "no_result"}
 
+        print(f"[RECOGNIZE] Recognized: '{recognition.title}' by '{recognition.artist}' (album: '{recognition.album or ''}', confidence: {recognition.confidence})")
         match = self.matcher.match(recognition)
         recognition_payload = {
             "title": recognition.title,
@@ -66,19 +82,28 @@ class VinylDisplayApp:
             "provider": recognition.provider,
             "confidence": recognition.confidence,
         }
+        offset = 0.0
+        if recognition.raw and "matches" in recognition.raw:
+            matches = recognition.raw["matches"]
+            if matches and isinstance(matches, list) and len(matches) > 0:
+                offset = float(matches[0].get("offset", 0.0))
+
         if match is None:
             self.playback.handle_not_found(
                 title=recognition.title,
                 artist=recognition.artist,
             )
+            print(f"[RECOGNIZE] Track not found in local Discogs collection database.")
             return {
                 "status": "not_found",
                 "recognition": recognition_payload,
             }
 
-        self.playback.handle_match(match)
+        self.playback.handle_match(match, offset=offset)
+        print(f"[RECOGNIZE] Match found in local collection! release: '{match.release.title}', track: '{match.track.title}' (score: {match.score}, reason: {match.reason}, offset: {offset}s)")
         return {
             "status": "matched",
             "match": match.to_dict(),
             "recognition": recognition_payload,
         }
+

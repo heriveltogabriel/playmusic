@@ -1,25 +1,32 @@
 # Vinyl Display
 
-Minimalist vinyl now-playing display for a Raspberry Pi server and an Android phone.
+Minimalist vinyl now-playing display for a Raspberry Pi server and an Android/iOS phone.
 
 ## What It Does
 
-- Syncs the public Discogs collection for `heriveltogabriel`.
-- Serves a local PWA for the OnePlus 5.
-- Captures short microphone clips from the browser.
-- Sends clips to AudD for recognition.
-- Matches recognized tracks only against the local Discogs catalog.
-- Shows a not-found message when the record is not in the collection.
+- **Syncs Discogs Collection**: Local catalog mirroring for fast offline matches.
+- **Design Retrô Bauhaus (Amber Landscape)**: AMOLED-friendly charcoal, warm cream, and rust-amber colors with a spinning and sliding vinyl disc animation, optimized for landscape mobile viewports.
+- **Dynamic iOS Microphone Access**: Initiates the microphone and Web Audio `AudioContext` securely within user touch/click handlers to bypass iOS Safari autoplay and silent capture restrictions.
+- **Real-Time PCM Resampling**: Performs client-side linear resampling to convert native device sample rates (e.g. 48kHz) to 44.1kHz mono 16-bit signed PCM on the fly for Shazam Core recognition.
+- **Time-Based Scheduled Listening (Cooldown)**: Suspends microphone capture during track playback, scheduling the next query only near the end of the current song to save API credits and CPU.
+- **Smooth Real-Time Progress Bar**: Interpolates progress locally at 250ms ticks for fluid animations and updates current/total times in `M:SS` format.
+- **AMOLED Glassmorphism Error Popups**: Captures network, server (500), and microphone block failures, presenting a custom warning dialog instead of failing silently.
+- **PWA Integration**: Includes a web manifest (`manifest.json`) for installing the app as a standalone web application on Android/iOS home screens.
 
 ## Configuration
 
 Copy `.env.example` to `.env` and fill in your local values. The `.env` file is
 ignored by git so secrets stay local.
 
-Required for recognition:
+Required for recognition (either AudD or Shazam via RapidAPI):
 
 ```env
+# Option 1: AudD
 AUDD_API_TOKEN=your-token
+
+# Option 2: Shazam (via RapidAPI)
+RAPIDAPI_SHAZAM_KEY=your-rapidapi-key
+RAPIDAPI_SHAZAM_HOST=shazam-core.p.rapidapi.com
 ```
 
 Shell environment values still take priority over `.env`, which is useful for

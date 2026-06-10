@@ -10,6 +10,8 @@ class Config:
     discogs_user: str
     discogs_user_agent: str
     audd_api_token: str
+    rapidapi_shazam_key: str
+    rapidapi_shazam_host: str
     data_dir: Path
     database_path: Path
     static_dir: Path
@@ -18,6 +20,7 @@ class Config:
     clip_seconds: int
     cert_file: Path | None
     key_file: Path | None
+
 
 
 def _optional_path(value: str | None) -> Path | None:
@@ -68,6 +71,10 @@ def load_config() -> Config:
             "VinylDisplayMVP/0.1 +https://localhost",
         ),
         audd_api_token=os.environ.get("AUDD_API_TOKEN", ""),
+        rapidapi_shazam_key=os.environ.get("RAPIDAPI_SHAZAM_KEY", ""),
+        rapidapi_shazam_host=os.environ.get(
+            "RAPIDAPI_SHAZAM_HOST", "shazam-core.p.rapidapi.com"
+        ),
         data_dir=data_dir,
         database_path=database_path,
         static_dir=static_dir,

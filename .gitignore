@@ -3,3 +3,6 @@
 __pycache__/
 *.py[cod]
 data/
+certs/
+static-backup-v1/
+static-backup-v2/

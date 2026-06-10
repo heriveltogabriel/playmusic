@@ -11,6 +11,7 @@ from urllib.parse import urlparse
 from vinyl_display.app import VinylDisplayApp
 from vinyl_display.catalog import CatalogStore
 from vinyl_display.clients.audd import AudDClient
+from vinyl_display.clients.shazam import ShazamClient
 from vinyl_display.clients.discogs import DiscogsClient
 from vinyl_display.config import Config, load_config
 
@@ -18,8 +19,14 @@ from vinyl_display.config import Config, load_config
 def build_app(config: Config) -> VinylDisplayApp:
     store = CatalogStore(config.database_path)
     discogs = DiscogsClient(config.discogs_user, config.discogs_user_agent)
-    audd = AudDClient(config.audd_api_token)
-    return VinylDisplayApp(store, discogs, audd)
+    if config.rapidapi_shazam_key:
+        recognizer = ShazamClient(config.rapidapi_shazam_key, config.rapidapi_shazam_host)
+        print("[SERVER] Using Shazam (via RapidAPI) for music recognition.")
+    else:
+        recognizer = AudDClient(config.audd_api_token)
+        print("[SERVER] Using AudD for music recognition.")
+    return VinylDisplayApp(store, discogs, recognizer)
+
 
 
 class VinylRequestHandler(SimpleHTTPRequestHandler):
@@ -52,6 +59,14 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             audio_bytes = self.rfile.read(length)
             filename = self.headers.get("X-Clip-Filename", "clip.webm")
             self._json(self.app.recognize_audio(audio_bytes, filename=filename))
+            return
+        if path == "/api/playback/next":
+            self.app.playback.skip_next()
+            self._json(self.app.state())
+            return
+        if path == "/api/playback/prev":
+            self.app.playback.skip_prev()
+            self._json(self.app.state())
             return
         self.send_error(HTTPStatus.NOT_FOUND)
 

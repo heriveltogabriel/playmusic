@@ -9,8 +9,25 @@ from vinyl_display.models import RecognitionResult, TrackMatch
 
 def normalize_text(value: str | None) -> str:
     value = value or ""
+    # Normalize unicode and strip accents/diacritics first
     normalized = unicodedata.normalize("NFKD", value)
     ascii_text = normalized.encode("ascii", "ignore").decode("ascii")
+
+    # Remove terms like (Remaster), [Live], (Ao Vivo), (Acústico)
+    ascii_text = re.sub(
+        r"\s*[\(\[][^\]\)]*?(remaster|live|mono|stereo|single|version|edit|mix|remix|digitally|ao vivo|acustico|unplugged)[^\]\)]*?[\)\]]",
+        "",
+        ascii_text,
+        flags=re.IGNORECASE,
+    )
+    # Remove trailing terms after a hyphen
+    ascii_text = re.sub(
+        r"\s*-\s*.*?(remaster|live|mono|stereo|single|version|edit|mix|remix|ao vivo|acustico|unplugged).*$",
+        "",
+        ascii_text,
+        flags=re.IGNORECASE,
+    )
+    # Keep alphanumeric characters and spaces
     ascii_text = re.sub(r"[^a-zA-Z0-9]+", " ", ascii_text)
     return " ".join(ascii_text.lower().split())
 

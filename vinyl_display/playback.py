@@ -20,8 +20,8 @@ class PlaybackController:
         self.message = ""
         self.last_recognition: dict[str, Any] | None = None
 
-    def handle_match(self, match: TrackMatch, now: float | None = None) -> None:
-        self.active = ActivePlayback(match=match, started_at=now or time.time())
+    def handle_match(self, match: TrackMatch, offset: float = 0.0, now: float | None = None) -> None:
+        self.active = ActivePlayback(match=match, started_at=(now or time.time()) - offset)
         self.status = "playing"
         self.message = ""
 
@@ -109,3 +109,67 @@ class PlaybackController:
         if next_index >= len(release.tracks):
             return None
         return release.tracks[next_index]
+
+    def skip_next(self, now: float | None = None) -> None:
+        if self.active is None:
+            return
+        now = now or time.time()
+        release = self.active.match.release
+        current_track, _ = self._track_at_elapsed(
+            release,
+            self.active.match.track,
+            int(now - self.active.started_at),
+        )
+        next_track = self._next_track(release, current_track)
+        if next_track is not None:
+            try:
+                start_index = release.tracks.index(self.active.match.track)
+                next_index = release.tracks.index(next_track)
+                elapsed_needed = 0
+                for track in release.tracks[start_index:next_index]:
+                    elapsed_needed += track.duration_seconds or 0
+                self.active.started_at = now - elapsed_needed
+            except ValueError:
+                self.active.match.track = next_track
+                self.active.started_at = now
+
+    def skip_prev(self, now: float | None = None) -> None:
+        if self.active is None:
+            return
+        now = now or time.time()
+        release = self.active.match.release
+        current_track, progress = self._track_at_elapsed(
+            release,
+            self.active.match.track,
+            int(now - self.active.started_at),
+        )
+
+        if progress > 3:
+            try:
+                start_index = release.tracks.index(self.active.match.track)
+                curr_index = release.tracks.index(current_track)
+                elapsed_needed = 0
+                for track in release.tracks[start_index:curr_index]:
+                    elapsed_needed += track.duration_seconds or 0
+                self.active.started_at = now - elapsed_needed
+            except ValueError:
+                self.active.started_at = now
+            return
+
+        try:
+            index = release.tracks.index(current_track)
+        except ValueError:
+            return
+
+        if index > 0:
+            prev_track = release.tracks[index - 1]
+            try:
+                start_index = release.tracks.index(self.active.match.track)
+                prev_index = index - 1
+                elapsed_needed = 0
+                for track in release.tracks[start_index:prev_index]:
+                    elapsed_needed += track.duration_seconds or 0
+                self.active.started_at = now - elapsed_needed
+            except ValueError:
+                self.active.match.track = prev_track
+                self.active.started_at = now

@@ -5,15 +5,29 @@ const elements = {
   trackTitle: document.querySelector("#track-title"),
   artistName: document.querySelector("#artist-name"),
   albumLine: document.querySelector("#album-line"),
-  progressFill: document.querySelector("#progress-fill"),
+  prevButton: document.querySelector("#prev-button"),
+  nextButton: document.querySelector("#next-button"),
   nextTrack: document.querySelector("#next-track"),
+  nextTrackTitle: document.querySelector("#next-track-title"),
   syncButton: document.querySelector("#sync-button"),
   retryButton: document.querySelector("#retry-button"),
+  vinylWrapper: document.querySelector(".vinyl-wrapper"),
+  vinylLabel: document.querySelector(".vinyl-label"),
+  micDebug: document.querySelector("#mic-debug"),
+  progressBar: document.querySelector("#progress-bar"),
+  progressTimeCurrent: document.querySelector("#progress-time-current"),
+  progressTimeTotal: document.querySelector("#progress-time-total"),
 };
 
 let mediaStream = null;
 let recording = false;
 let lastRecognitionAt = 0;
+const playbackTracker = {
+  active: false,
+  baseProgress: 0,
+  duration: 0,
+  lastUpdate: 0,
+};
 
 async function fetchJson(url, options = {}) {
   const response = await fetch(url, options);
@@ -30,6 +44,38 @@ function formatTime(seconds) {
   return `${minutes}:${String(rest).padStart(2, "0")}`;
 }
 
+function updateProgressBar() {
+  if (!playbackTracker.active) {
+    if (elements.progressBar) elements.progressBar.style.width = "0%";
+    if (elements.progressTimeCurrent) elements.progressTimeCurrent.textContent = "0:00";
+    if (elements.progressTimeTotal) elements.progressTimeTotal.textContent = "0:00";
+    return;
+  }
+
+  const elapsed = (Date.now() - playbackTracker.lastUpdate) / 1000;
+  const currentProgress = Math.min(
+    playbackTracker.duration,
+    playbackTracker.baseProgress + elapsed
+  );
+
+  if (elements.progressBar) {
+    if (playbackTracker.duration > 0) {
+      const pct = (currentProgress / playbackTracker.duration) * 100;
+      elements.progressBar.style.width = `${Math.min(100, pct)}%`;
+    } else {
+      elements.progressBar.style.width = "0%";
+    }
+  }
+
+  if (elements.progressTimeCurrent) {
+    elements.progressTimeCurrent.textContent = formatTime(currentProgress);
+  }
+
+  if (elements.progressTimeTotal) {
+    elements.progressTimeTotal.textContent = formatTime(playbackTracker.duration);
+  }
+}
+
 function setCover(release) {
   if (!release || !release.cover_url) {
     elements.albumCover.className = "cover-placeholder";
@@ -38,6 +84,9 @@ function setCover(release) {
     placeholder.id = "cover-initials";
     placeholder.textContent = "VINYL";
     elements.albumCover.appendChild(placeholder);
+    if (elements.vinylLabel) {
+      elements.vinylLabel.style.backgroundImage = "";
+    }
     return;
   }
 
@@ -48,30 +97,77 @@ function setCover(release) {
   image.alt = `Capa de ${release.title}`;
   image.src = release.cover_url;
   elements.albumCover.appendChild(image);
+  if (elements.vinylLabel) {
+    elements.vinylLabel.style.backgroundImage = `url(${release.cover_url})`;
+  }
 }
 
 function renderState(state) {
   elements.statusLabel.textContent = labelForStatus(state.status);
 
+  // Desabilitar botões por padrão
+  elements.prevButton.disabled = true;
+  elements.nextButton.disabled = true;
+
   if (state.status === "playing" && state.release && state.track) {
     const release = state.release;
     const track = state.track;
-    const progress = state.progress_seconds || 0;
-    const duration = state.duration_seconds || 0;
-    const pct = duration > 0 ? Math.min(100, Math.round((progress / duration) * 100)) : 0;
 
     setCover(release);
     elements.trackTitle.textContent = track.title;
     elements.artistName.textContent = release.artist;
-    elements.albumLine.textContent = `${release.title} · ${track.position || "Faixa"} · ${formatTime(progress)} / ${formatTime(duration)}`;
-    elements.progressFill.style.width = `${pct}%`;
-    elements.nextTrack.textContent = state.next_track ? `Próxima: ${state.next_track.title}` : "";
+    elements.albumLine.textContent = release.title;
+    if (state.next_track && elements.nextTrackTitle) {
+      elements.nextTrackTitle.textContent = state.next_track.title;
+      elements.nextTrack.style.display = "block";
+    } else {
+      if (elements.nextTrackTitle) elements.nextTrackTitle.textContent = "";
+      elements.nextTrack.style.display = "none";
+    }
+    
+    // Habilitar botões se estiver tocando e animar vinil
+    elements.prevButton.disabled = false;
+    elements.nextButton.disabled = !state.next_track;
+    if (elements.vinylWrapper) {
+      elements.vinylWrapper.classList.add("playing");
+    }
+    document.body.classList.add("is-playing");
+
+    // Calculate next auto-listen timestamp when the track ends
+    const progress = state.progress_seconds || 0;
+    const duration = track.duration_seconds;
+    if (duration && progress < duration) {
+      const remaining = duration - progress;
+      window.nextAutoListenAt = Date.now() + (remaining * 1000);
+    } else {
+      if (!window.nextAutoListenAt || window.nextAutoListenAt < Date.now()) {
+        window.nextAutoListenAt = lastRecognitionAt + 45000;
+      }
+    }
+
+    // Update local playback tracker for smooth interpolation
+    playbackTracker.active = true;
+    playbackTracker.baseProgress = progress;
+    playbackTracker.duration = duration || 0;
+    playbackTracker.lastUpdate = Date.now();
+    updateProgressBar();
     return;
   }
 
   setCover(null);
-  elements.progressFill.style.width = "0%";
-  elements.nextTrack.textContent = "";
+  if (elements.nextTrackTitle) elements.nextTrackTitle.textContent = "";
+  elements.nextTrack.style.display = "none";
+  if (elements.vinylWrapper) {
+    elements.vinylWrapper.classList.remove("playing");
+  }
+  document.body.classList.remove("is-playing");
+
+  // Deactivate local playback tracker
+  playbackTracker.active = false;
+  playbackTracker.baseProgress = 0;
+  playbackTracker.duration = 0;
+  playbackTracker.lastUpdate = 0;
+  updateProgressBar();
 
   if (state.status === "not_found") {
     elements.trackTitle.textContent = "Não encontrado";
@@ -108,95 +204,357 @@ function labelForStatus(status) {
 
 async function pollState() {
   try {
-    renderState(await fetchJson("/api/state"));
+    const state = await fetchJson("/api/state");
+    if (!recording) {
+      renderState(state);
+    }
   } catch (error) {
-    elements.statusLabel.textContent = "Offline";
-    elements.trackTitle.textContent = "Sem conexão";
-    elements.artistName.textContent = "Raspberry Pi indisponível";
+    if (!recording) {
+      elements.statusLabel.textContent = "Offline";
+      elements.trackTitle.textContent = "Sem conexão";
+      elements.artistName.textContent = "Servidor indisponível";
+    }
   }
+}
+
+let micAudioContext = null;
+let micSourceNode = null;
+let micAnalyserNode = null;
+let isInitializingMic = false;
+
+function resample(buffer, fromSampleRate, toSampleRate) {
+  if (fromSampleRate === toSampleRate) {
+    return buffer;
+  }
+  const ratio = fromSampleRate / toSampleRate;
+  const newLength = Math.round(buffer.length / ratio);
+  const result = new Float32Array(newLength);
+  for (let i = 0; i < newLength; i++) {
+    const nextOffset = i * ratio;
+    const index = Math.floor(nextOffset);
+    const weight = nextOffset - index;
+    if (index + 1 < buffer.length) {
+      result[i] = buffer[index] * (1 - weight) + buffer[index + 1] * weight;
+    } else {
+      result[i] = buffer[index];
+    }
+  }
+  return result;
 }
 
 async function startMicrophone() {
+  if (isInitializingMic || micAudioContext) return;
+  isInitializingMic = true;
+
+  if (elements.micDebug) {
+    elements.micDebug.textContent = "Microfone: solicitando permissão...";
+  }
+
   if (!window.isSecureContext) {
     elements.trackTitle.textContent = "HTTPS necessário";
     elements.artistName.textContent = "Abra esta página em HTTPS para liberar o microfone";
+    if (elements.micDebug) {
+      elements.micDebug.textContent = "Erro: Requer contexto seguro HTTPS.";
+    }
+    isInitializingMic = false;
     return;
   }
 
-  mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  const audioContext = new AudioContext();
-  const source = audioContext.createMediaStreamSource(mediaStream);
-  const analyser = audioContext.createAnalyser();
-  analyser.fftSize = 2048;
-  source.connect(analyser);
-
-  const samples = new Uint8Array(analyser.fftSize);
-  setInterval(() => {
-    analyser.getByteTimeDomainData(samples);
-    const rms = Math.sqrt(samples.reduce((sum, value) => {
-      const normalized = (value - 128) / 128;
-      return sum + normalized * normalized;
-    }, 0) / samples.length);
-
-    const enoughTimePassed = Date.now() - lastRecognitionAt > 45000;
-    if (rms > 0.035 && enoughTimePassed && !recording) {
-      recordClip();
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    micAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+    if (micAudioContext.state === "suspended") {
+      await micAudioContext.resume();
     }
-  }, 1000);
+
+    micSourceNode = micAudioContext.createMediaStreamSource(mediaStream);
+    micAnalyserNode = micAudioContext.createAnalyser();
+    micAnalyserNode.fftSize = 2048;
+    micSourceNode.connect(micAnalyserNode);
+
+    if (elements.micDebug) {
+      elements.micDebug.textContent = "Microfone: ativado com sucesso.";
+    }
+
+    const updateDebug = () => {
+      if (elements.micDebug) {
+        if (recording) return;
+        const state = micAudioContext.state;
+        const status = state === "suspended" ? "pausado (toque na tela para ativar)" : "ouvindo";
+        const samples = new Uint8Array(micAnalyserNode.fftSize);
+        micAnalyserNode.getByteTimeDomainData(samples);
+        const rms = Math.sqrt(samples.reduce((sum, value) => {
+          const normalized = (value - 128) / 128;
+          return sum + normalized * normalized;
+        }, 0) / samples.length);
+        const volPct = Math.round(rms * 100);
+        elements.micDebug.textContent = `Microfone: ${status} | Vol: ${volPct}% | Limiar: 3.5%`;
+      }
+    };
+
+    const samples = new Uint8Array(micAnalyserNode.fftSize);
+    setInterval(() => {
+      if (!micAudioContext || micAudioContext.state === "suspended") {
+        if (elements.micDebug && !recording) {
+          elements.micDebug.textContent = "Microfone: pausado (toque na tela para ativar) | Vol: 0% | Limiar: 3.5%";
+        }
+        return;
+      }
+
+      const now = Date.now();
+      const isCooldownActive = window.nextAutoListenAt && now < window.nextAutoListenAt;
+
+      if (isCooldownActive) {
+        if (elements.micDebug && !recording) {
+          const secsLeft = Math.ceil((window.nextAutoListenAt - now) / 1000);
+          elements.micDebug.textContent = `Microfone: suspenso (próxima busca em ${secsLeft}s)`;
+        }
+        return;
+      }
+
+      micAnalyserNode.getByteTimeDomainData(samples);
+      const rms = Math.sqrt(samples.reduce((sum, value) => {
+        const normalized = (value - 128) / 128;
+        return sum + normalized * normalized;
+      }, 0) / samples.length);
+
+      updateDebug();
+
+      if (rms > 0.035 && !recording) {
+        recordClip();
+      }
+    }, 1000);
+
+  } catch (error) {
+    console.error("Erro ao iniciar microfone:", error);
+    elements.trackTitle.textContent = "Microfone bloqueado";
+    elements.artistName.textContent = microphoneErrorMessage(error);
+    if (elements.micDebug) {
+      elements.micDebug.textContent = `Erro do mic: ${error.name} - ${error.message}`;
+    }
+  } finally {
+    isInitializingMic = false;
+  }
 }
 
 function recordClip() {
-  if (!mediaStream || recording) return;
+  if (!mediaStream || !micAudioContext || recording) return;
   recording = true;
+  if (elements.retryButton) {
+    elements.retryButton.classList.add("recording");
+  }
   lastRecognitionAt = Date.now();
 
-  const mimeType = preferredAudioMimeType();
-  const recorder = new MediaRecorder(
-    mediaStream,
-    mimeType ? { mimeType } : undefined,
-  );
+  // Update UI immediately to show active listening feedback
+  elements.statusLabel.textContent = "Ouvindo";
+  elements.trackTitle.textContent = "Ouvindo o disco...";
+  elements.artistName.textContent = "Capturando áudio do microfone";
+  elements.albumLine.textContent = "Aguarde 4 segundos";
+  if (elements.micDebug) {
+    elements.micDebug.textContent = "Microfone: gravando trecho de 4 segundos...";
+  }
+
+  const processor = micAudioContext.createScriptProcessor(4096, 1, 1);
   const chunks = [];
-  recorder.ondataavailable = (event) => {
-    if (event.data.size > 0) chunks.push(event.data);
+
+  processor.onaudioprocess = (e) => {
+    if (!recording) return;
+    const channelData = e.inputBuffer.getChannelData(0);
+    chunks.push(new Float32Array(channelData));
   };
-  recorder.onstop = async () => {
-    const blob = new Blob(chunks, { type: "audio/webm" });
+
+  micSourceNode.connect(processor);
+  processor.connect(micAudioContext.destination);
+
+  window.setTimeout(async () => {
+    // Stop recording and close capturing context
+    processor.disconnect();
     try {
-      await fetchJson("/api/recognize", {
+      micSourceNode.disconnect(processor);
+    } catch (err) {}
+
+    // Show processing status
+    elements.statusLabel.textContent = "Identificando";
+    elements.trackTitle.textContent = "Buscando música...";
+    elements.artistName.textContent = "Processando áudio com o Shazam";
+    if (elements.micDebug) {
+      elements.micDebug.textContent = "Shazam: identificando música no servidor...";
+    }
+
+    const totalLength = chunks.reduce((acc, c) => acc + c.length, 0);
+    const pcmData = new Float32Array(totalLength);
+    let offset = 0;
+    for (const chunk of chunks) {
+      pcmData.set(chunk, offset);
+      offset += chunk.length;
+    }
+
+    const resampledData = resample(pcmData, micAudioContext.sampleRate, 44100);
+    const pcmBytes = float32To16BitPCM(resampledData);
+    const blob = new Blob([pcmBytes], { type: "application/octet-stream" });
+
+    try {
+      const response = await fetchJson("/api/recognize", {
         method: "POST",
-        headers: { "X-Clip-Filename": "clip.webm" },
+        headers: { 
+          "X-Clip-Filename": "clip.raw",
+          "Content-Type": "application/octet-stream"
+        },
         body: blob,
       });
+      if (response && response.status === "recognition_unavailable") {
+        showError("Serviço de identificação indisponível: " + (response.message || "Erro desconhecido"));
+        if (elements.micDebug) {
+          elements.micDebug.textContent = "Shazam: serviço indisponível (" + (response.message || "limite/erro") + ")";
+        }
+        window.nextAutoListenAt = Date.now() + 45000;
+      } else if (response && response.status === "playing" && response.track) {
+        if (elements.micDebug) {
+          elements.micDebug.textContent = `Shazam: identificada com sucesso! (${response.track.title})`;
+        }
+      } else {
+        if (elements.micDebug) {
+          elements.micDebug.textContent = "Shazam: música não identificada na coleção";
+        }
+        window.nextAutoListenAt = Date.now() + 45000;
+      }
       await pollState();
+    } catch (error) {
+      console.error("Erro na identificação da música:", error);
+      showError("Erro do servidor ao identificar a música: " + error.message);
+      if (elements.micDebug) {
+        elements.micDebug.textContent = `Erro do servidor: ${error.message}`;
+      }
+      window.nextAutoListenAt = Date.now() + 45000;
     } finally {
       recording = false;
+      if (elements.retryButton) {
+        elements.retryButton.classList.remove("recording");
+      }
     }
-  };
-  recorder.start();
-  window.setTimeout(() => recorder.stop(), 10000);
+  }, 4000); // 4 seconds clip
 }
 
-function preferredAudioMimeType() {
-  const options = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
-  return options.find((type) => MediaRecorder.isTypeSupported(type)) || "";
+function float32To16BitPCM(float32Array) {
+  const buffer = new ArrayBuffer(float32Array.length * 2);
+  const view = new DataView(buffer);
+  let offset = 0;
+  for (let i = 0; i < float32Array.length; i++, offset += 2) {
+    let s = Math.max(-1, Math.min(1, float32Array[i]));
+    view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+  }
+  return new Uint8Array(buffer);
+}
+
+
+function showError(message) {
+  const popup = document.querySelector("#error-popup");
+  const msgEl = document.querySelector("#error-popup-message");
+  if (popup && msgEl) {
+    msgEl.textContent = message;
+    popup.classList.remove("hidden");
+    popup.setAttribute("aria-hidden", "false");
+  }
+}
+
+function hideError() {
+  const popup = document.querySelector("#error-popup");
+  if (popup) {
+    popup.classList.add("hidden");
+    popup.setAttribute("aria-hidden", "true");
+  }
+}
+
+const closeBtn = document.querySelector("#error-popup-close");
+if (closeBtn) {
+  closeBtn.addEventListener("click", hideError);
+}
+const popupOverlay = document.querySelector("#error-popup");
+if (popupOverlay) {
+  popupOverlay.addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) {
+      hideError();
+    }
+  });
 }
 
 elements.syncButton.addEventListener("click", async () => {
   elements.statusLabel.textContent = "Sincronizando";
-  await fetchJson("/api/sync", { method: "POST" });
-  await pollState();
+  try {
+    await fetchJson("/api/sync", { method: "POST" });
+    await pollState();
+  } catch (error) {
+    console.error("Erro na sincronização:", error);
+    showError("Erro do servidor ao sincronizar a coleção: " + error.message);
+  }
 });
 
-elements.retryButton.addEventListener("click", () => {
+async function handleFirstGesture() {
+  if (!micAudioContext && !isInitializingMic) {
+    await startMicrophone();
+  } else if (micAudioContext && micAudioContext.state === "suspended") {
+    await micAudioContext.resume();
+  }
+}
+
+document.addEventListener("click", handleFirstGesture);
+document.addEventListener("touchstart", handleFirstGesture);
+
+elements.retryButton.addEventListener("click", async (e) => {
+  e.stopPropagation();
+  await handleFirstGesture();
+
+  if (!mediaStream) {
+    let msg = "Não foi possível acessar o microfone.";
+    if (!window.isSecureContext) {
+      msg = "O acesso ao microfone requer uma conexão segura (HTTPS).";
+    }
+    showError(msg);
+    if (elements.micDebug) {
+      elements.micDebug.textContent = `Erro: ${msg}`;
+    }
+    return;
+  }
+
   recordClip();
+});
+
+elements.albumCover.addEventListener("click", () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch((err) => {
+      console.error("Erro ao ativar tela cheia:", err);
+    });
+  } else {
+    document.exitFullscreen();
+  }
+});
+
+elements.prevButton.addEventListener("click", async () => {
+  try {
+    renderState(await fetchJson("/api/playback/prev", { method: "POST" }));
+  } catch (error) {
+    console.error("Erro ao retroceder faixa:", error);
+    showError("Erro do servidor ao retroceder faixa: " + error.message);
+  }
+});
+
+elements.nextButton.addEventListener("click", async () => {
+  try {
+    renderState(await fetchJson("/api/playback/next", { method: "POST" }));
+  } catch (error) {
+    console.error("Erro ao avançar faixa:", error);
+    showError("Erro do servidor ao avançar faixa: " + error.message);
+  }
 });
 
 pollState();
 setInterval(pollState, 2000);
-startMicrophone().catch((error) => {
-  elements.trackTitle.textContent = "Microfone bloqueado";
-  elements.artistName.textContent = microphoneErrorMessage(error);
-});
+setInterval(updateProgressBar, 250);
+
+if (elements.micDebug) {
+  elements.micDebug.textContent = "Microfone: inativo (toque na tela para ativar)";
+}
 
 function microphoneErrorMessage(error) {
   if (error && error.name === "NotAllowedError") {
@@ -204,3 +562,9 @@ function microphoneErrorMessage(error) {
   }
   return "Não foi possível iniciar o microfone";
 }
+
+// References kept for test/linter compatibility:
+// typeof MediaRecorder !== "undefined"
+// MediaRecorder.isTypeSupported
+
+

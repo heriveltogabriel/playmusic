@@ -62,6 +62,54 @@ class PlaybackControllerTests(unittest.TestCase):
         self.assertEqual(state["status"], "not_found")
         self.assertIn("Disco não encontrado", state["message"])
 
+    def test_skip_next_advances_track(self):
+        controller = PlaybackController()
+        controller.handle_match(match_at_a1(), now=1000)
+
+        # We are on A1. Skip next.
+        controller.skip_next(now=1010)
+
+        state = controller.current_state(now=1010)
+        self.assertEqual(state["track"]["position"], "A2")
+        self.assertEqual(state["progress_seconds"], 0)
+
+    def test_skip_next_on_last_track_does_nothing(self):
+        controller = PlaybackController()
+        controller.handle_match(match_at_a1(), now=1000)
+
+        # Advance to last track (B1 is the 3rd track, A1=261s, A2=183s)
+        # B1 starts at 1000 + 444. Let's check at 1000 + 450.
+        state = controller.current_state(now=1450)
+        self.assertEqual(state["track"]["position"], "B1")
+
+        # Try to skip next. B1 is the last track, so it should stay on B1.
+        controller.skip_next(now=1450)
+        state = controller.current_state(now=1450)
+        self.assertEqual(state["track"]["position"], "B1")
+
+    def test_skip_prev_restarts_track_if_progress_greater_than_3(self):
+        controller = PlaybackController()
+        controller.handle_match(match_at_a1(), now=1000)
+
+        # Current progress is 10 seconds (1010 - 1000)
+        controller.skip_prev(now=1010)
+
+        state = controller.current_state(now=1010)
+        self.assertEqual(state["track"]["position"], "A1")
+        self.assertEqual(state["progress_seconds"], 0)
+
+    def test_skip_prev_goes_to_previous_track_if_progress_3_or_less(self):
+        controller = PlaybackController()
+        controller.handle_match(match_at_a1(), now=1000)
+
+        # Advance to A2 (A2 starts at 1261).
+        # At 1263, progress on A2 is 2 seconds (<= 3).
+        controller.skip_prev(now=1263)
+
+        state = controller.current_state(now=1263)
+        self.assertEqual(state["track"]["position"], "A1")
+        self.assertEqual(state["progress_seconds"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

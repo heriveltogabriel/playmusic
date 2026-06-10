@@ -6,12 +6,28 @@
     <meta name="theme-color" content="#050505">
     <title>Vinyl Display</title>
     <link rel="stylesheet" href="/static/styles.css">
+    <link rel="manifest" href="/static/manifest.json">
   </head>
   <body>
     <main class="screen" aria-live="polite">
+      <nav class="top-controls" aria-label="Controles">
+        <button id="retry-button" class="btn-top-control" type="button" aria-label="Identificar">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
+          </svg>
+        </button>
+      </nav>
+
       <section class="cover-panel">
-        <div id="album-cover" class="cover-placeholder">
-          <span id="cover-initials">VINYL</span>
+        <div class="vinyl-wrapper">
+          <div id="album-cover" class="cover-placeholder">
+            <span id="cover-initials">VINYL</span>
+          </div>
+          <div class="vinyl-disc">
+            <div class="vinyl-disc-inner">
+              <div class="vinyl-label"></div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -20,16 +36,51 @@
         <h1 id="track-title">Aguardando música</h1>
         <p id="artist-name" class="artist-name">Coloque um disco para tocar</p>
         <p id="album-line" class="album-line">Coleção Discogs sincronizada localmente</p>
-        <div class="progress-track" aria-hidden="true">
-          <div id="progress-fill" class="progress-fill"></div>
+        <div class="progress-container">
+          <div class="progress-bar-track">
+            <div id="progress-bar" class="progress-bar"></div>
+          </div>
+          <div class="progress-time-info">
+            <span id="progress-time-current">0:00</span>
+            <span id="progress-time-total">0:00</span>
+          </div>
         </div>
-        <p id="next-track" class="next-track"></p>
+        <div class="next-track-container">
+          <div id="next-track" class="next-track">
+            <span class="next-track-label">Próxima Música:</span>
+            <div id="next-track-title" class="next-track-title"></div>
+          </div>
+          <div class="media-nav-buttons">
+            <button id="prev-button" class="btn-media-nav" type="button" aria-label="Anterior" disabled>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+              </svg>
+            </button>
+            <button id="sync-button" class="btn-media-nav" type="button" aria-label="Sincronizar">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
+              </svg>
+            </button>
+            <button id="next-button" class="btn-media-nav" type="button" aria-label="Próxima" disabled>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <path d="M6 18l8.5-6L6 6zm9-12h2v12h-2z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
       </section>
-
-      <nav class="controls" aria-label="Controles">
-        <button id="sync-button" type="button">Sincronizar</button>
-        <button id="retry-button" type="button">Identificar</button>
-      </nav>
+    <div id="error-popup" class="error-popup hidden" role="alert" aria-hidden="true">
+      <div class="error-popup-content">
+        <div class="error-popup-header">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+          </svg>
+          <h3>Ops, ocorreu um erro</h3>
+        </div>
+        <p id="error-popup-message"></p>
+        <button id="error-popup-close" class="btn-popup-close" type="button">Fechar</button>
+      </div>
+    </div>
     </main>
 
     <script src="/static/app.js" defer></script>

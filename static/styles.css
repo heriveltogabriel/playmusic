@@ -1,11 +1,12 @@
 :root {
   color-scheme: dark;
-  --bg: #050505;
-  --panel: #101010;
-  --text: #f4f1ea;
-  --muted: #a9a199;
-  --soft: #6f6860;
-  --accent: #d8b46a;
+  --bg: #0c0c0c;             /* Matte Charcoal */
+  --panel: #161616;          /* Charcoal Panel */
+  --text: #eae5d9;           /* Warm Cream */
+  --muted: #a09a8e;          /* Muted Cream */
+  --soft: #5e584f;           /* Soft dark gray */
+  --accent: #e65c00;          /* Matte Orange/Rust */
+  --glow: rgba(230, 92, 0, 0.4); /* Amber glow */
 }
 
 * {
@@ -17,38 +18,56 @@ body {
   width: 100%;
   height: 100%;
   margin: 0;
-  background: #050505;
+  background: var(--bg);
   color: var(--text);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-}
-
-body {
   overflow: hidden;
+  transition: background-color 0.5s ease;
 }
 
 button {
   min-height: 44px;
-  border: 1px solid rgba(244, 241, 234, 0.14);
+  border: 1px solid rgba(234, 229, 217, 0.14);
   border-radius: 8px;
-  background: rgba(244, 241, 234, 0.06);
+  background: rgba(234, 229, 217, 0.06);
   color: var(--text);
   font: inherit;
   padding: 0 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  background: rgba(234, 229, 217, 0.12);
+  border-color: rgba(230, 92, 0, 0.5);
 }
 
 .screen {
   width: 100vw;
   height: 100vh;
   display: grid;
-  grid-template-columns: minmax(320px, 48vw) 1fr;
-  gap: clamp(24px, 5vw, 64px);
+  grid-template-columns: minmax(300px, 45vw) 1fr;
+  gap: clamp(20px, 5vw, 64px);
   align-items: center;
-  padding: clamp(20px, 5vh, 56px) clamp(24px, 6vw, 72px);
+  padding: clamp(16px, 5vh, 56px) clamp(20px, 6vw, 72px);
+  transition: all 0.5s ease;
 }
 
 .cover-panel {
+  position: relative;
   width: 100%;
   aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+}
+
+/* Vinyl wrapper that holds cover and vinyl disc */
+.vinyl-wrapper {
+  position: relative;
+  width: 90%;
+  height: 90%;
+  display: grid;
+  place-items: center;
 }
 
 .cover-placeholder,
@@ -58,117 +77,555 @@ button {
   border-radius: 8px;
   background: var(--panel);
   object-fit: cover;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+  position: relative;
+  z-index: 5;
+  border: 1px solid rgba(234, 229, 217, 0.05);
 }
 
 .cover-placeholder {
   display: grid;
   place-items: center;
   color: var(--soft);
-  font-size: 4.5rem;
+  font-size: 3.5rem;
   font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+/* Vinyl disc sliding out and spinning */
+.vinyl-disc {
+  position: absolute;
+  top: 2.5%;
+  left: 2.5%;
+  width: 95%;
+  height: 95%;
+  border-radius: 50%;
+  z-index: 3;
+  transition: transform 1.2s cubic-bezier(0.25, 1, 0.5, 1);
+  transform: translateX(0);
+}
+
+.vinyl-disc-inner {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  /* Specular sheen (conic-gradient) + grooves (radial-gradient) */
+  background: 
+    conic-gradient(
+      from 0deg,
+      rgba(255, 255, 255, 0) 0deg,
+      rgba(255, 255, 255, 0.08) 45deg,
+      rgba(255, 255, 255, 0) 90deg,
+      rgba(255, 255, 255, 0) 180deg,
+      rgba(255, 255, 255, 0.08) 225deg,
+      rgba(255, 255, 255, 0) 270deg,
+      rgba(255, 255, 255, 0) 360deg
+    ),
+    radial-gradient(
+      circle,
+      #181818 0%,
+      #0c0c0c 10%,
+      #050505 15%,
+      #161616 15.5%,
+      #050505 16%,
+      #050505 30%,
+      #1a1a1a 30.5%,
+      #050505 31%,
+      #050505 50%,
+      #1a1a1a 50.5%,
+      #050505 51%,
+      #050505 70%,
+      #222222 70.5%,
+      #050505 71%,
+      #050505 85%,
+      #2a2a2a 85.5%,
+      #050505 86%,
+      #000000 100%
+    );
+  border: 1px solid rgba(234, 229, 217, 0.18);
+  box-shadow: 
+    inset 0 0 24px rgba(0, 0, 0, 0.9), 
+    0 12px 36px rgba(0, 0, 0, 0.65),
+    0 0 25px rgba(234, 229, 217, 0.12); /* Soft cream outer glow */
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+/* Center paper label of the vinyl record */
+.vinyl-label {
+  width: 32%;
+  height: 32%;
+  border-radius: 50%;
+  background-color: var(--accent);
+  background-size: cover;
+  background-position: center;
+  border: 3px solid #000;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.8);
+  position: relative;
+}
+
+/* Center spindle hole */
+.vinyl-label::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14%;
+  height: 14%;
+  background-color: #0c0c0c;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* State: Playing - vinyl slides out and spins */
+/* On landscape mode (deitado), we slide it to the left. On portrait, we slide it to the top */
+@media (orientation: landscape) {
+  .screen {
+    /* Sized so the grid gap sits over the black vinyl grooves, allowing status-label to overlap */
+    grid-template-columns: calc(clamp(240px, 64vh, 450px) * 1.28) 1fr;
+    gap: 20px;
+    padding: clamp(16px, 5vh, 48px) clamp(24px, 6vw, 72px) clamp(16px, 5vh, 48px) 16px;
+  }
+  .cover-panel {
+    width: calc(100% / 1.28);
+    justify-self: start;
+  }
+  .vinyl-wrapper.playing .vinyl-disc {
+    /* Slide out 48% to expose exactly half of the vinyl label */
+    transform: translateX(48%);
+  }
+  .now-playing {
+    position: relative;
+    z-index: 10;
+    padding-left: 24px; /* Other text elements start exactly where the vinyl disc ends */
+  }
+  .status-label {
+    margin-left: -24px; /* Pulls status label to overlap the black vinyl grooves */
+  }
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  h1 {
+    font-size: 2.5rem;
+  }
+  .artist-name {
+    font-size: 1.65rem;
+    margin: 12px 0 0;
+  }
+  .album-line {
+    font-size: 1.3rem;
+    margin: 8px 0 0;
+  }
+  .status-label {
+    margin: 0 0 10px;
+    font-size: 0.95rem;
+  }
+  .progress-container {
+    margin-top: 14px;
+  }
+  .next-track-container {
+    margin-top: 10px;
+  }
+  .next-track-title {
+    font-size: 1.2rem;
+  }
+  .btn-media-nav {
+    width: 32px;
+    height: 32px;
+    min-height: 32px;
+  }
+  .top-controls {
+    top: 16px;
+    right: 16px;
+  }
+  .btn-top-control {
+    width: 32px;
+    height: 32px;
+    min-height: 32px;
+  }
+}
+
+@media (orientation: portrait) {
+  .vinyl-wrapper.playing .vinyl-disc {
+    transform: translateY(-33%);
+  }
+}
+
+.vinyl-wrapper.playing .vinyl-disc-inner {
+  -webkit-animation: spin 15s linear infinite;
+  animation: spin 15s linear infinite;
+}
+
+@-webkit-keyframes spin {
+  from {
+    -webkit-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  to {
+    -webkit-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .now-playing {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
 }
 
 .status-label {
-  margin: 0 0 18px;
+  margin: 0 0 14px;
   color: var(--accent);
-  font-size: 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
   text-transform: uppercase;
+  letter-spacing: 0.15em;
+  text-shadow: 0 0 10px var(--glow);
 }
 
 h1 {
   margin: 0;
-  max-width: min(12ch, 100%);
-  font-size: 4.75rem;
-  line-height: 0.95;
-  font-weight: 760;
+  max-width: 100%;
+  font-size: 3.2rem;
+  line-height: 1.05;
+  font-weight: 750;
   letter-spacing: 0;
   overflow-wrap: break-word;
+  color: var(--text);
+  text-shadow: 0 0 1px rgba(234, 229, 217, 0.1);
 }
 
 .artist-name {
-  margin: 22px 0 0;
+  margin: 18px 0 0;
   color: var(--text);
-  font-size: 2rem;
+  font-size: 1.8rem;
+  font-weight: 400;
+  opacity: 0.9;
 }
 
-.album-line,
-.next-track {
-  margin: 14px 0 0;
+.album-line {
+  margin: 12px 0 0;
   color: var(--muted);
-  font-size: 1.15rem;
+  font-size: 1.35rem;
+  font-weight: 300;
 }
 
-.progress-track {
-  width: min(520px, 100%);
-  height: 3px;
-  margin-top: 30px;
-  background: rgba(244, 241, 234, 0.14);
-  overflow: hidden;
+.mic-debug {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, SF Pro Mono, Menlo, Monaco, Consolas, monospace;
+  opacity: 0.75;
 }
 
-.progress-fill {
-  width: 0%;
-  height: 100%;
-  background: var(--accent);
-  transition: width 600ms ease;
+.next-track {
+  margin: 0;
+  display: block;
 }
 
-.controls {
-  position: fixed;
-  right: 18px;
-  bottom: 18px;
+.next-track-label {
+  display: block;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.next-track-title {
+  display: block;
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: var(--text);
+  margin: 0;
+}
+
+.progress-container {
+  width: 100%;
+  margin-top: 24px;
   display: flex;
-  gap: 10px;
-  opacity: 0.18;
-  transition: opacity 160ms ease;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.controls:focus-within,
-.controls:hover {
+.progress-bar-track {
+  width: 100%;
+  height: 3px;
+  background: rgba(234, 229, 217, 0.08);
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.5px;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--accent);
+  border-radius: 1.5px;
+  transition: width 0.25s linear;
+}
+
+.progress-time-info {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, SF Pro Mono, Menlo, Monaco, Consolas, monospace;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  line-height: 1;
+}
+
+.is-playing .progress-time-info {
+  opacity: 0.8;
+}
+
+/* Container at the bottom of now-playing info */
+.next-track-container {
+  margin-top: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.media-nav-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-media-nav {
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid rgba(234, 229, 217, 0.12);
+  background: rgba(234, 229, 217, 0.06);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.btn-media-nav:hover:not(:disabled) {
+  background: rgba(234, 229, 217, 0.12);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 10px var(--glow);
+}
+
+.btn-media-nav:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+  border-color: rgba(234, 229, 217, 0.05);
+}
+
+.btn-media-nav.recording,
+.btn-top-control.recording {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgba(230, 92, 0, 0.15);
+  box-shadow: 0 0 12px var(--glow);
+  animation: pulse-recording 1.5s infinite;
+}
+
+@keyframes pulse-recording {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(230, 92, 0, 0.5);
+  }
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 0 0 8px rgba(230, 92, 0, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(230, 92, 0, 0);
+  }
+}
+
+/* Top-right discrete controls */
+.top-controls {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  display: flex;
+  gap: 8px;
+  z-index: 50;
+}
+
+.btn-top-control {
+  width: 38px;
+  height: 38px;
+  min-height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid rgba(234, 229, 217, 0.12);
+  background: rgba(234, 229, 217, 0.05);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  opacity: 0.6;
+}
+
+.btn-top-control:hover {
   opacity: 1;
+  background: rgba(234, 229, 217, 0.12);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 10px var(--glow);
 }
 
+/* Portrait orientation settings */
 @media (orientation: portrait) {
   .screen {
     grid-template-columns: 1fr;
-    grid-template-rows: minmax(240px, 56vh) 1fr;
+    grid-template-rows: minmax(280px, 50vh) 1fr;
+    gap: 32px;
+    padding: 32px 24px;
   }
 
   .cover-panel {
-    max-height: 56vh;
+    max-height: 50vh;
     justify-self: center;
   }
 
-  h1 {
-    max-width: 14ch;
-    font-size: 3.5rem;
-  }
-}
-
-@media (max-width: 900px) {
-  .cover-placeholder {
-    font-size: 3rem;
-  }
-
-  .status-label {
-    font-size: 0.85rem;
+  .vinyl-wrapper {
+    width: 86%;
+    height: 86%;
   }
 
   h1 {
-    font-size: 3rem;
+    font-size: 2.6rem;
   }
 
   .artist-name {
-    font-size: 1.35rem;
+    font-size: 1.5rem;
+    margin: 12px 0 0;
   }
 
-  .album-line,
-  .next-track {
-    font-size: 0.95rem;
+  .album-line {
+    font-size: 1.15rem;
   }
+
 }
+
+/* Small screen adjustments */
+@media (max-width: 480px) {
+  .screen {
+    padding: 20px 16px;
+    gap: 24px;
+  }
+
+  h1 {
+    font-size: 2.2rem;
+  }
+
+  .artist-name {
+    font-size: 1.3rem;
+  }
+
+  .album-line {
+    font-size: 1rem;
+  }
+
+}
+
+/* Error Popup Dialog */
+.error-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: grid;
+  place-items: center;
+  z-index: 100;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.error-popup.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.error-popup-content {
+  background: #181818;
+  border: 1px solid rgba(230, 92, 0, 0.25);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(230, 92, 0, 0.08);
+  border-radius: 12px;
+  width: min(400px, 90%);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transform: scale(1);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.error-popup.hidden .error-popup-content {
+  transform: scale(0.9);
+}
+
+.error-popup-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--accent);
+}
+
+.error-popup-header h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+#error-popup-message {
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+
+.btn-popup-close {
+  align-self: flex-end;
+  min-height: 38px;
+  height: 38px;
+  background: rgba(234, 229, 217, 0.08);
+  border: 1px solid rgba(234, 229, 217, 0.14);
+  border-radius: 6px;
+  color: var(--text);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0 20px;
+}
+
+.btn-popup-close:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 0 10px var(--glow);
+}
+
