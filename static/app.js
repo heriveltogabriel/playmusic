@@ -83,10 +83,10 @@ function setCover(release) {
     const image = document.createElement("img");
     image.className = "cover-image";
     image.alt = "LOGO LP DA SEMANA";
-    image.src = "/static/logo_lp_da_semana.jpg";
+    image.src = "/static/logo_lp_da_semana.png";
     elements.albumCover.appendChild(image);
     if (elements.vinylLabel) {
-      elements.vinylLabel.style.backgroundImage = "url(/static/logo_lp_da_semana.jpg)";
+      elements.vinylLabel.style.backgroundImage = "url(/static/logo_lp_da_semana.png)";
     }
     return;
   }
