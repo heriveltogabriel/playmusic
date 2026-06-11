@@ -2667,6 +2667,26 @@ function renderPlaysRankingPage() {
 }
 
 // ==================== SETTINGS SCREEN LOGIC ====================
+function updateSyncStatusUI(config) {
+  const container = document.getElementById('last-sync-status-container');
+  if (!container) return;
+  
+  if (config.last_sync_at) {
+    container.style.display = 'block';
+    const dt = new Date(parseFloat(config.last_sync_at) * 1000);
+    const dateFormatted = dt.toLocaleDateString('pt-BR');
+    const timeFormatted = dt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    
+    document.getElementById('last-sync-time').textContent = `${dateFormatted} às ${timeFormatted}`;
+    document.getElementById('last-sync-total').textContent = config.last_sync_count || '0';
+    document.getElementById('last-sync-added').textContent = config.last_sync_added || '0';
+    document.getElementById('last-sync-updated').textContent = config.last_sync_updated || '0';
+    document.getElementById('last-sync-deleted').textContent = config.last_sync_deleted || '0';
+  } else {
+    container.style.display = 'none';
+  }
+}
+
 async function loadSettingsFromServer() {
   try {
     const response = await fetch('/api/config');
@@ -2682,6 +2702,7 @@ async function loadSettingsFromServer() {
     document.getElementById('setting-shazam-key').value = config.rapidapi_shazam_key || '';
     document.getElementById('setting-shazam-host').value = config.rapidapi_shazam_host || '';
     
+    updateSyncStatusUI(config);
   } catch (error) {
     console.error('Error loading settings:', error);
     showToast(error.message, 'error');
@@ -2715,6 +2736,15 @@ function initializeSettingsForm() {
           summary += `• <b>Atualizados:</b> ${data.updated} existentes<br>`;
           summary += `• <b>Removidos:</b> ${data.deleted} removidos`;
           showToast(summary, 'success');
+          
+          updateSyncStatusUI({
+            last_sync_at: (Date.now() / 1000).toString(),
+            last_sync_count: data.count,
+            last_sync_added: data.added,
+            last_sync_updated: data.updated,
+            last_sync_deleted: data.deleted
+          });
+          
           await loadDatabase();
           applyFiltersAndRender();
         } else {

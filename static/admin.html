@@ -407,17 +407,41 @@
         <div class="settings-container">
           
           <!-- Standalone Sync Collection Bar -->
-          <div class="settings-card sync-collection-bar" style="display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 16px 20px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 12px; margin-bottom: 24px;">
-            <div style="flex: 1;">
-              <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">Sincronizar Coleção</h3>
-              <p style="margin: 4px 0 0; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">Importe e atualize os seus LPs a partir do Discogs.</p>
+          <div class="settings-card sync-collection-bar" style="display: flex; flex-direction: column; gap: 15px; padding: 20px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 12px; margin-bottom: 24px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 15px; width: 100%;">
+              <div style="flex: 1;">
+                <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">Sincronizar Coleção</h3>
+                <p style="margin: 4px 0 0; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">Importe e atualize os seus LPs a partir do Discogs.</p>
+              </div>
+              <button type="button" id="admin-sync-btn" class="btn btn-primary" style="height: 38px; padding: 0 16px; display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; border-radius: 8px;">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" class="sync-icon-svg" style="transition: transform 0.3s ease;">
+                  <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                </svg>
+                <span>Sincronizar Agora</span>
+              </button>
             </div>
-            <button type="button" id="admin-sync-btn" class="btn btn-primary" style="height: 38px; padding: 0 16px; display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; border-radius: 8px;">
-              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" class="sync-icon-svg" style="transition: transform 0.3s ease;">
-                <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-              </svg>
-              <span>Sincronizar Agora</span>
-            </button>
+            
+            <!-- Last Sync Status Info -->
+            <div id="last-sync-status-container" style="display: none; padding-top: 12px; border-top: 1px dashed rgba(255,255,255,0.08); font-size: 0.82rem; color: var(--text-secondary); width: 100%;">
+              <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;">
+                <div>
+                  <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 4px; color: var(--accent);">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  <span>Última sincronização: </span><b id="last-sync-time" style="color: var(--text-primary);">--/--/---- --:--:--</b>
+                </div>
+                <div style="display: flex; gap: 12px; background: rgba(255,255,255,0.02); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.04);">
+                  <span>Total: <b id="last-sync-total" style="color: var(--text-primary);">0</b></span>
+                  <span style="color: rgba(255,255,255,0.15);">|</span>
+                  <span style="color: var(--success-dim, #2ec4b6);">Add: <b id="last-sync-added" style="color: var(--success, #2ec4b6);">0</b></span>
+                  <span style="color: rgba(255,255,255,0.15);">|</span>
+                  <span style="color: var(--accent);">Act: <b id="last-sync-updated" style="color: var(--text-primary);">0</b></span>
+                  <span style="color: rgba(255,255,255,0.15);">|</span>
+                  <span style="color: var(--danger, #e71d36);">Del: <b id="last-sync-deleted" style="color: var(--danger, #e71d36);">0</b></span>
+                </div>
+              </div>
+            </div>
           </div>
 
           <form id="settings-form" class="settings-form">

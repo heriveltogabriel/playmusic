@@ -43,6 +43,11 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                 "discogs_token": self.app.config.discogs_token if self.app.config else "",
                 "rapidapi_shazam_key": self.app.config.rapidapi_shazam_key if self.app.config else "",
                 "rapidapi_shazam_host": self.app.config.rapidapi_shazam_host if self.app.config else "",
+                "last_sync_at": self.app.store.get_metadata("discogs_last_sync_at"),
+                "last_sync_count": self.app.store.get_metadata("discogs_last_sync_count"),
+                "last_sync_added": self.app.store.get_metadata("discogs_last_sync_added"),
+                "last_sync_updated": self.app.store.get_metadata("discogs_last_sync_updated"),
+                "last_sync_deleted": self.app.store.get_metadata("discogs_last_sync_deleted"),
             }
             self._json(config_data)
             return

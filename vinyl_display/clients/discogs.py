@@ -265,6 +265,9 @@ class DiscogsClient:
         total_count = len(synced_ids)
         store.set_metadata("discogs_last_sync_count", str(total_count))
         store.set_metadata("discogs_last_sync_at", str(time.time()))
+        store.set_metadata("discogs_last_sync_added", str(added_count))
+        store.set_metadata("discogs_last_sync_updated", str(updated_count))
+        store.set_metadata("discogs_last_sync_deleted", str(deleted_count))
         
         return {
             "count": total_count,
