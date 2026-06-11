@@ -235,10 +235,13 @@ class DiscogsClient:
             existing = store.get_release(release_id)
             if existing is None:
                 added_count += 1
+                release = self.release_details(release_id)
+                need_sleep = True
             else:
                 updated_count += 1
+                release = existing
+                need_sleep = False
                 
-            release = self.release_details(release_id)
             synced_at = 0.0
             if date_added_str:
                 try:
@@ -250,7 +253,8 @@ class DiscogsClient:
             if synced_at > 0.0:
                 release = dataclasses.replace(release, synced_at=synced_at)
             store.upsert_release(release)
-            self.sleep_func(self.page_delay_seconds)
+            if need_sleep:
+                self.sleep_func(self.page_delay_seconds)
             
         # Delete local Discogs releases that are no longer in the live collection
         to_delete = local_ids - synced_ids
