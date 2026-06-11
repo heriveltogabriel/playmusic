@@ -117,7 +117,7 @@ function saveDatabase() {
 
 // ==================== SIDEBAR & VIEW NAVIGATION ====================
 function initializeViews() {
-  const navButtons = document.querySelectorAll('.nav-btn');
+  const navButtons = document.querySelectorAll('.nav-btn, .nav-btn-icon');
   const views = document.querySelectorAll('.content-view');
   const viewTitle = document.getElementById('view-title');
   

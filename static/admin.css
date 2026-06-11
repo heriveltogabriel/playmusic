@@ -163,18 +163,18 @@ body {
   margin-bottom: 4px;
 }
 
-.sidebar-nav-bottom {
-  padding: 16px 12px;
-  margin-top: auto;
-  border-top: 1px solid var(--border-color);
+.nav-btn-icon.active {
+  color: var(--primary) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: var(--primary) !important;
 }
 
-.sidebar-nav-bottom ul {
-  list-style: none;
+.nav-btn-icon svg {
+  transition: transform var(--transition-fast);
 }
 
-.sidebar-nav-bottom li {
-  margin-bottom: 4px;
+.nav-btn-icon:hover svg {
+  transform: rotate(45deg);
 }
 
 .nav-btn {

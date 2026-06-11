@@ -22,14 +22,20 @@
           <img src="/static/logo_lp_da_semana.png" alt="Logo" class="logo-icon">
           <span class="logo-text">LP da Semana</span>
         </div>
-        <div class="back-player-wrapper">
-          <a href="/" class="btn btn-secondary" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 500; font-size: 0.85rem; height: 36px; text-decoration: none; border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-secondary); background: rgba(255, 255, 255, 0.05); transition: var(--transition-fast);">
+        <div class="back-player-wrapper" style="display: flex; gap: 8px; width: 100%;">
+          <a href="/" class="btn btn-secondary" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 500; font-size: 0.85rem; height: 36px; text-decoration: none; border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-secondary); background: rgba(255, 255, 255, 0.05); transition: var(--transition-fast);">
             <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
               <line x1="19" y1="12" x2="5" y2="12"></line>
               <polyline points="12 19 5 12 12 5"></polyline>
             </svg>
             Voltar ao Player
           </a>
+          <button class="nav-btn-icon btn btn-secondary" data-view="settings" title="Configurações" style="width: 36px; height: 36px; min-width: 36px; display: flex; align-items: center; justify-content: center; padding: 0; border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-secondary); background: rgba(255, 255, 255, 0.05); transition: var(--transition-fast); cursor: pointer;">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -89,20 +95,7 @@
         </ul>
       </nav>
 
-      <!-- Bottom Navigation (Isolated Settings) -->
-      <div class="sidebar-nav-bottom">
-        <ul>
-          <li>
-            <button class="nav-btn" data-view="settings">
-              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"></circle>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-              </svg>
-              Configurações
-            </button>
-          </li>
-        </ul>
-      </div>
+
 
       <!-- Quick status indicator -->
       <div class="sidebar-footer">
