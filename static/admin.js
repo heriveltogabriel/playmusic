@@ -39,6 +39,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initializeDialogs();
   initializeTimelineEvents();
   initializeSettingsForm();
+  loadAppVersion();
   
   // Set current selected agenda index to today's weekday
   state.selectedAgendaIndex = getTodayAgendaIndex();
@@ -2795,3 +2796,21 @@ function initializeSettingsForm() {
     }
   });
 }
+
+async function loadAppVersion() {
+  try {
+    const response = await fetch('/api/config');
+    if (response.ok) {
+      const config = await response.json();
+      if (config.version) {
+        const display = document.getElementById('app-version-display');
+        if (display) {
+          display.textContent = `v${config.version}`;
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error loading version:', error);
+  }
+}
+

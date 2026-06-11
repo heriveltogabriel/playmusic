@@ -37,7 +37,15 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             self._json(self.app.state())
             return
         if path == "/api/config":
+            version_str = "1.0.0"
+            try:
+                version_path = Path(__file__).parent.parent / "version.txt"
+                if version_path.exists():
+                    version_str = version_path.read_text(encoding="utf-8").strip()
+            except Exception:
+                pass
             config_data = {
+                "version": version_str,
                 "discogs_user": self.app.config.discogs_user if self.app.config else "",
                 "discogs_user_agent": self.app.config.discogs_user_agent if self.app.config else "",
                 "discogs_token": self.app.config.discogs_token if self.app.config else "",

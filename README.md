@@ -99,3 +99,26 @@ POST /api/recognize
 ```bash
 python3 -m unittest discover -v
 ```
+
+## Controle de Versão Automático (Multi-Computadores)
+
+Para evitar conflitos e garantir que você saiba exatamente qual versão está rodando em cada máquina (e no servidor de produção), configuramos um sistema de versionamento automático integrado ao Git.
+
+Sempre que você criar um commit, o arquivo `version.txt` será incrementado e incluído no commit automaticamente. A versão atualizada é exibida no rodapé do painel administrativo.
+
+Para ativar essa automatização em outro computador de desenvolvimento:
+
+1. Baixe as últimas atualizações:
+   ```bash
+   git pull origin main
+   ```
+2. Ative os hooks customizados do repositório:
+   ```bash
+   git config core.hooksPath .githooks
+   ```
+3. Dê permissão de execução ao hook:
+   ```bash
+   chmod +x .githooks/pre-commit
+   ```
+
+Pronto! Agora, qualquer novo commit incrementará automaticamente a versão (ex: `v1.0.43` -> `v1.0.44`). Caso você esqueça de dar `git pull` antes de alterar o código e tentar commitar, o Git detectará conflito no arquivo `version.txt`, impedindo a sobrescrita acidental e mantendo as máquinas em sincronia.

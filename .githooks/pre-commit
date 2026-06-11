@@ -1,0 +1,3 @@
+#!/bin/sh
+# Run the python script to increment version and stage version.txt
+python3 scripts/increment_version.py
