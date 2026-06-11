@@ -57,17 +57,17 @@ class PlaybackController:
         self.message = ""
 
     def handle_not_found(self, title: str, artist: str, now: float | None = None) -> None:
-        self.active = None
-        self.status = "not_found"
-        self.message = (
-            "Disco não encontrado na sua coleção. "
-            "Cadastre no Discogs e sincronize novamente."
-        )
         self.last_recognition = {
             "title": title,
             "artist": artist,
             "at": now or time.time(),
         }
+        if self.active is None:
+            self.status = "not_found"
+            self.message = (
+                "Disco não encontrado na sua coleção. "
+                "Cadastre no Discogs e sincronize novamente."
+            )
 
     def set_identifying(self) -> None:
         self.status = "identifying"
@@ -214,22 +214,8 @@ class PlaybackController:
         )
         next_track = self._next_track(release, current_track)
         if next_track is not None:
-            curr_side = get_track_side(current_track.position)
-            next_side = get_track_side(next_track.position)
-            if curr_side and next_side and curr_side != next_side:
-                self.active.match = replace(self.active.match, track=next_track)
-                self.active.started_at = now
-            else:
-                try:
-                    start_index = release.tracks.index(self.active.match.track)
-                    next_index = release.tracks.index(next_track)
-                    elapsed_needed = 0
-                    for track in release.tracks[start_index:next_index]:
-                        elapsed_needed += track.duration_seconds or 180
-                    self.active.started_at = now - elapsed_needed
-                except ValueError:
-                    self.active.match = replace(self.active.match, track=next_track)
-                    self.active.started_at = now
+            self.active.match = replace(self.active.match, track=next_track)
+            self.active.started_at = now
 
     def skip_prev(self, now: float | None = None) -> None:
         if self.active is None:
@@ -244,15 +230,7 @@ class PlaybackController:
         )
 
         if progress > 3:
-            try:
-                start_index = release.tracks.index(self.active.match.track)
-                curr_index = release.tracks.index(current_track)
-                elapsed_needed = 0
-                for track in release.tracks[start_index:curr_index]:
-                    elapsed_needed += track.duration_seconds or 180
-                self.active.started_at = now - elapsed_needed
-            except ValueError:
-                self.active.started_at = now
+            self.active.started_at = now
             return
 
         try:
@@ -262,19 +240,5 @@ class PlaybackController:
 
         if index > 0:
             prev_track = release.tracks[index - 1]
-            curr_side = get_track_side(current_track.position)
-            prev_side = get_track_side(prev_track.position)
-            if curr_side and prev_side and curr_side != prev_side:
-                self.active.match = replace(self.active.match, track=prev_track)
-                self.active.started_at = now
-            else:
-                try:
-                    start_index = release.tracks.index(self.active.match.track)
-                    prev_index = index - 1
-                    elapsed_needed = 0
-                    for track in release.tracks[start_index:prev_index]:
-                        elapsed_needed += track.duration_seconds or 180
-                    self.active.started_at = now - elapsed_needed
-                except ValueError:
-                    self.active.match = replace(self.active.match, track=prev_track)
-                    self.active.started_at = now
+            self.active.match = replace(self.active.match, track=prev_track)
+            self.active.started_at = now

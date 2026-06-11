@@ -83,7 +83,7 @@
                 <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
                 <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
               </svg>
-              Sugestão da Semana
+              Escuta da Semana
             </button>
           </li>
           <li>
@@ -131,51 +131,49 @@
       <!-- VIEW 1: SUGGESTIONS & HISTÓRICO -->
       <section id="view-player" class="content-view">
         <div class="suggestions-layout">
-          <!-- Left Column: Weekly Agenda and Selected Suggestion -->
-          <div class="suggestions-main-column">
-            <div class="section-card agenda-section">
-              <div class="card-header-row">
-                <div>
-                  <h2 class="card-title">Agenda da Semana 📅</h2>
-                  <p class="card-subtitle">Um LP sugerido para cada dia, priorizando os menos ouvidos.</p>
-                </div>
-                <button id="shuffle-agenda-btn" class="btn btn-secondary btn-icon" title="Sortear nova agenda para a semana">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="23 4 23 10 17 10"></polyline>
-                    <polyline points="1 20 1 14 7 14"></polyline>
-                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                  </svg>
-                  Nova Agenda
-                </button>
+          <div class="weekly-agenda-panel">
+            <div class="weekly-agenda-header">
+              <div>
+                <h2 class="card-title">Agenda da Semana</h2>
+                <p class="card-subtitle">Um LP para cada dia, priorizando discos menos ouvidos.</p>
               </div>
-              
-              <!-- Horizontal Scrollable Agenda Container -->
-              <div id="agenda-scroll-container" class="agenda-scroll-container">
-                <!-- Dynamically populated 7 daily cards -->
+              <button id="shuffle-agenda-btn" class="btn btn-secondary btn-icon" title="Sortear nova agenda para a semana">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <polyline points="1 20 1 14 7 14"></polyline>
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+                Nova Agenda
+              </button>
+            </div>
+
+            <div id="agenda-scroll-container" class="agenda-scroll-container">
+              <!-- Dynamically populated 7 daily cards -->
+            </div>
+          </div>
+
+          <div class="featured-suggestion-panel">
+            <div class="featured-suggestion-header">
+              <div>
+                <span class="featured-eyebrow">Disco selecionado</span>
+                <h3 class="card-title-sm" id="featured-day-label">Sugestão de Hoje</h3>
               </div>
             </div>
 
-            <!-- Featured Album Card for the selected day -->
-            <div class="section-card featured-suggestion-card">
-              <div class="card-header-row">
-                <div>
-                  <h3 class="card-title-sm" id="featured-day-label">Sugestão de Hoje</h3>
+            <div class="suggestion-hero-card">
+              <div class="suggestion-hero-cover">
+                <img id="suggested-cover-img" src="" alt="Capa da Sugestão" onerror="this.src='https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=300&auto=format&fit=crop'">
+                <div class="plays-badge" title="Quantidade de vezes ouvido">
+                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
+                    <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                    <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+                  </svg>
+                  <span id="suggested-plays-count">0</span> audições
                 </div>
               </div>
               
-              <div class="suggestion-hero-card">
-                <div class="suggestion-hero-cover">
-                  <img id="suggested-cover-img" src="" alt="Capa da Sugestão" onerror="this.src='https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=300&auto=format&fit=crop'">
-                  <div class="plays-badge" title="Quantidade de vezes ouvido">
-                    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
-                      <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
-                      <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
-                    </svg>
-                    <span id="suggested-plays-count">0</span> audições
-                  </div>
-                </div>
-                
-                <div class="suggestion-hero-info">
+              <div class="suggestion-hero-info">
+                <div class="suggestion-hero-main">
                   <h3 id="suggested-title" class="hero-title">Título</h3>
                   <h4 id="suggested-artist" class="hero-artist">Artista</h4>
                   
@@ -187,16 +185,21 @@
                   <div class="hero-tags">
                     <div id="suggested-genres" class="tags-container"></div>
                   </div>
+
+                  <div class="suggestion-reason-card">
+                    <div class="suggestion-reason-label">Por que ouvir agora?</div>
+                    <div id="suggested-reason" class="suggestion-reason-text">Pouco ouvido na coleção.</div>
+                  </div>
                   
                   <div class="hero-actions">
                     <button id="mark-listened-btn" class="btn btn-primary btn-icon btn-pulse">
                       <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="20 6 9 17 4 12"></polyline>
                       </svg>
-                      Ouvi este Disco! 🎧
+                      Ouvi
                     </button>
                     <button id="suggested-details-btn" class="btn btn-secondary">
-                      Ver Ficha
+                      Ver ficha
                     </button>
                     <button id="suggested-favorite-btn" class="btn btn-secondary btn-icon" title="Favoritar">
                       <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" class="star-icon">
@@ -204,21 +207,22 @@
                       </svg>
                     </button>
                   </div>
-
-                  <!-- Listen history dates -->
-                  <div class="hero-scrobble-history">
-                    <label class="scrobble-history-label">Histórico de Escuta:</label>
-                    <div id="suggested-history-dates" class="scrobble-history-list">
-                      <!-- Dynamically populated dates -->
-                    </div>
-                  </div>
-
-                  <!-- Mini notes shortcut -->
-                  <div class="hero-mini-notes">
-                    <textarea id="suggested-notes" placeholder="Anote observações sobre a audição deste álbum... (salva automaticamente)"></textarea>
-                    <div class="mini-notes-status" id="suggested-notes-status">Salvo automaticamente</div>
-                  </div>
                 </div>
+              </div>
+            </div>
+
+            <div class="suggestion-support-grid">
+              <div class="hero-scrobble-history">
+                <label class="scrobble-history-label">Histórico</label>
+                <div id="suggested-history-dates" class="scrobble-history-list">
+                  <!-- Dynamically populated dates -->
+                </div>
+              </div>
+
+              <div class="hero-mini-notes">
+                <label class="scrobble-history-label" for="suggested-notes">Notas da audição</label>
+                <textarea id="suggested-notes" placeholder="Anote observações sobre esta audição..."></textarea>
+                <div class="mini-notes-status" id="suggested-notes-status">Salvo automaticamente</div>
               </div>
             </div>
           </div>
@@ -235,9 +239,9 @@
 
           <!-- Rest of the Ranking (positions 4+) -->
           <div class="ranking-list-section" id="ranking-list-section">
-            <h3 class="ranking-section-title">Outros Discos Ouvidos</h3>
-            <div id="ranking-grid" class="ranking-grid">
-              <!-- Dynamically populated list of elements -->
+            <h3 class="ranking-section-title">LPs por Audição</h3>
+            <div id="plays-chart-container" class="ranking-grid custom-chart-list">
+              <!-- Dynamically generated bars -->
             </div>
           </div>
 
@@ -262,24 +266,14 @@
           <div class="search-input-group" style="flex: 1; max-width: 400px;">
             <input type="text" id="timeline-search-input" placeholder="Filtrar linha do tempo (artista, álbum, gênero)...">
           </div>
-          <div class="timeline-sort-selector" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <label for="timeline-sort-select">Ordem:</label>
-              <select id="timeline-sort-select">
-                <option value="added_desc">Mais Recentes Primeiro</option>
-                <option value="added_asc">Mais Antigos Primeiro</option>
-                <option value="release_desc">Ano de Lançamento (Decrescente)</option>
-                <option value="release_asc">Ano de Lançamento (Crescente)</option>
-              </select>
-            </div>
-            <button id="timeline-stats-btn" class="btn btn-secondary" style="height: 36px; padding: 0 12px; gap: 6px; font-size: 0.85rem;">
-              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="20" x2="18" y2="10"></line>
-                <line x1="12" y1="20" x2="12" y2="4"></line>
-                <line x1="6" y1="20" x2="6" y2="14"></line>
-              </svg>
-              Estatísticas
-            </button>
+          <div class="timeline-sort-selector" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <label for="timeline-sort-select">Ordem:</label>
+            <select id="timeline-sort-select">
+              <option value="added_desc">Mais Recentes Primeiro</option>
+              <option value="added_asc">Mais Antigos Primeiro</option>
+              <option value="release_desc">Ano de Lançamento (Decrescente)</option>
+              <option value="release_asc">Ano de Lançamento (Crescente)</option>
+            </select>
           </div>
         </div>
         <div id="timeline-container" class="timeline-container">
@@ -350,23 +344,12 @@
               <div id="stat-total-artists" class="mini-card-value">0</div>
             </div>
             <div class="stat-mini-card">
-              <div class="mini-card-label">Favoritados</div>
-              <div id="stat-total-starred" class="mini-card-value">0</div>
+              <div class="mini-card-label">Coleção Ouvida</div>
+              <div id="stat-listened-percent" class="mini-card-value">0%</div>
             </div>
             <div class="stat-mini-card">
-              <div class="mini-card-label">Média de Avaliação</div>
-              <div id="stat-avg-rating" class="mini-card-value">0.0</div>
-            </div>
-          </div>
-
-          <!-- Charts and Lists -->
-          <div class="stats-row">
-            <!-- Plays breakdown -->
-            <div class="stats-section-card span-full">
-              <h3>LPs por Audição</h3>
-              <div id="plays-chart-container" class="custom-chart-list">
-                <!-- Dynamically generated bars -->
-              </div>
+              <div class="mini-card-label">Total de Audições</div>
+              <div id="stat-total-plays" class="mini-card-value">0</div>
             </div>
           </div>
 
@@ -384,6 +367,35 @@
               <h3>Últimos Adicionados</h3>
               <div id="recent-additions-container" class="custom-ranking-list">
                 <!-- Dynamically generated list -->
+              </div>
+            </div>
+          </div>
+
+          <div class="stats-row">
+            <div id="timeline-stats-section" class="stats-section-card span-full timeline-stats-section">
+              <h3>Crescimento da Coleção</h3>
+
+              <div class="timeline-stats-summary-grid">
+                <div class="stat-card">
+                  <div class="stat-label">Total adicionado (12 meses)</div>
+                  <div class="stat-value" id="timeline-stat-total">0</div>
+                  <div class="stat-desc">LPs adicionados</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-label">Mês mais ativo</div>
+                  <div class="stat-value" id="timeline-stat-most-active">-</div>
+                  <div class="stat-desc" id="timeline-stat-most-active-count">0 discos</div>
+                </div>
+                <div class="stat-card">
+                  <div class="stat-label">Média mensal</div>
+                  <div class="stat-value" id="timeline-stat-average">0,0</div>
+                  <div class="stat-desc">Discos por mês</div>
+                </div>
+              </div>
+
+              <h4 class="timeline-chart-title">Adições Mensais</h4>
+              <div id="timeline-monthly-chart" class="custom-chart-list">
+                <!-- Dynamically populated -->
               </div>
             </div>
           </div>
@@ -476,8 +488,22 @@
       
       <div class="details-dialog-layout">
         <!-- Left: Large Cover Artwork -->
-        <div class="details-cover-container">
-          <img id="details-cover" src="" alt="Album Cover Large">
+        <div class="details-cover-column">
+          <div class="details-cover-container">
+            <img id="details-cover" src="" alt="Album Cover Large">
+          </div>
+          <div class="details-audition-stepper" aria-label="Ajustar audições">
+            <button id="details-unlisten-btn" class="btn btn-secondary btn-icon audition-stepper-btn" type="button" title="Remover audição" aria-label="Remover audição">
+              <span class="audition-stepper-symbol" aria-hidden="true">-</span>
+            </button>
+            <div class="details-audition-count">
+              <span id="details-plays-count">0</span>
+              <span>Audições</span>
+            </div>
+            <button id="details-mark-listened" class="btn btn-primary btn-icon audition-stepper-btn" type="button" title="Adicionar audição" aria-label="Adicionar audição">
+              <span class="audition-stepper-symbol" aria-hidden="true">+</span>
+            </button>
+          </div>
         </div>
 
         <!-- Right: Info Sheets -->
@@ -531,15 +557,29 @@
 
           <!-- Actions Footer -->
           <div class="dialog-actions-footer">
-            <button id="details-mark-listened" class="btn btn-primary btn-icon btn-pulse">
-              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
-                <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+            <button id="details-favorite-btn" class="btn btn-secondary btn-icon" type="button">
+              <svg class="star-icon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
               </svg>
-              Ouvi este Disco! (<span id="details-plays-count">0</span>)
+              <span id="details-favorite-label">Favoritar</span>
             </button>
-            <button id="details-edit-btn" class="btn btn-secondary">Editar Informações</button>
-            <button id="details-delete-btn" class="btn btn-danger-text">Excluir do Catálogo</button>
+            <button id="details-edit-btn" class="btn btn-secondary btn-icon" type="button">
+              <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20h9"></path>
+                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+              </svg>
+              Editar
+            </button>
+            <button id="details-delete-btn" class="btn btn-danger-text btn-icon" type="button">
+              <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h18"></path>
+                <path d="M8 6V4h8v2"></path>
+                <path d="M19 6l-1 14H6L5 6"></path>
+                <path d="M10 11v6"></path>
+                <path d="M14 11v6"></path>
+              </svg>
+              Excluir
+            </button>
           </div>
         </div>
       </div>
@@ -557,31 +597,15 @@
         <div class="search-input-group">
           <input type="text" id="discogs-search-input" placeholder="Buscar no Discogs (ex: Artista, Álbum, Gravadora)...">
           <button type="button" id="discogs-search-btn" class="btn btn-primary">Buscar</button>
-          <button type="button" id="discogs-config-btn" class="btn btn-secondary btn-icon" title="Configurar Token do Discogs">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="3"></circle>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-            </svg>
-          </button>
         </div>
-        
-        <!-- Discogs Token Configuration Panel (collapsible) -->
-        <div id="discogs-token-config" class="discogs-token-config" style="display: none;">
-          <label for="discogs-token-input">Discogs Developer Personal Token:</label>
-          <div class="search-input-group" style="margin-bottom: 4px;">
-            <input type="password" id="discogs-token-input" placeholder="Insira seu token pessoal do Discogs...">
-            <button type="button" id="save-discogs-token-btn" class="btn btn-secondary">Salvar</button>
-          </div>
-          <span class="text-muted" style="font-size: 0.65rem;">Gere seu token em Discogs > Settings > Developers.</span>
-        </div>
-        
+
         <!-- Search Results list -->
         <div id="discogs-search-results" class="discogs-search-results" style="display: none;">
           <!-- Populated dynamically -->
         </div>
       </div>
       
-      <div class="form-divider" id="form-divider-text">ou preencha os dados manualmente</div>
+      <div class="form-divider" id="form-divider-text">selecione um resultado para preencher e editar os dados</div>
       
       <form id="lp-entry-form" method="dialog">
         <input type="hidden" id="form-lp-id">
@@ -652,45 +676,12 @@
     </div>
   </dialog>
   
-  <!-- Dialog 3: Timeline Stats Dashboard -->
-  <dialog id="timeline-stats-dialog" class="dialog-glass">
-    <div class="dialog-content timeline-stats-dialog-content">
-      <button class="dialog-close-btn" id="timeline-stats-close">&times;</button>
-      <h2>Estatísticas da Linha do Tempo</h2>
-      
-      <!-- Indicator cards -->
-      <div class="timeline-stats-summary-grid">
-        <div class="stat-card">
-          <div class="stat-label">Total adicionado (12 meses)</div>
-          <div class="stat-value" id="timeline-stat-total">0</div>
-          <div class="stat-desc">LPs adicionados</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Mês mais ativo</div>
-          <div class="stat-value" id="timeline-stat-most-active">-</div>
-          <div class="stat-desc" id="timeline-stat-most-active-count">0 discos</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Média mensal</div>
-          <div class="stat-value" id="timeline-stat-average">0,0</div>
-          <div class="stat-desc">Discos por mês</div>
-        </div>
-      </div>
-      
-      <!-- Chart -->
-      <h3 style="margin-top: 24px; margin-bottom: 16px; font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">Gráfico de Adições Mensais</h3>
-      <div id="timeline-monthly-chart" class="custom-chart-list">
-        <!-- Dynamically populated -->
-      </div>
-    </div>
-  </dialog>
-
-  <!-- Dialog 4: Artist Albums List -->
+  <!-- Dialog 3: Artist Albums List -->
   <dialog id="artist-albums-dialog" class="dialog-glass">
-    <div class="dialog-content artist-albums-dialog-content" style="max-width: 500px; width: 90%; margin: auto;">
+    <div class="dialog-content artist-albums-dialog-content">
       <button class="dialog-close-btn" id="artist-albums-close" data-dialog-close>&times;</button>
-      <h2 id="artist-albums-title" style="margin-bottom: 24px; font-weight: 700; font-size: 1.3rem; color: var(--text-primary);">Álbuns de Artista</h2>
-      <div id="artist-albums-list" class="custom-ranking-list" style="max-height: 400px; overflow-y: auto; gap: 12px; padding-right: 4px;">
+      <h2 id="artist-albums-title">Álbuns de Artista</h2>
+      <div id="artist-albums-list" class="custom-ranking-list">
         <!-- Dynamically populated list of albums -->
       </div>
     </div>

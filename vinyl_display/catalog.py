@@ -203,6 +203,53 @@ class CatalogStore:
             
         return auditions
 
+    def decrement_auditions(self, release_id: int) -> int:
+        with self._connect() as connection:
+            connection.execute(
+                """
+                INSERT INTO release_stats (release_id, auditions)
+                VALUES (?, 0)
+                ON CONFLICT(release_id) DO NOTHING
+                """,
+                (release_id,),
+            )
+            connection.execute(
+                """
+                UPDATE release_stats
+                SET auditions = CASE
+                    WHEN auditions > 0 THEN auditions - 1
+                    ELSE 0
+                END
+                WHERE release_id = ?
+                """,
+                (release_id,),
+            )
+            row = connection.execute(
+                "SELECT auditions FROM release_stats WHERE release_id = ?",
+                (release_id,),
+            ).fetchone()
+            auditions = int(row["auditions"]) if row else 0
+
+        release = self.get_release(release_id)
+        if release:
+            import dataclasses
+            listen_dates = list(release.listen_dates) if release.listen_dates is not None else []
+            if listen_dates:
+                listen_dates.pop()
+            updated_release = dataclasses.replace(
+                release,
+                auditions=auditions,
+                listen_dates=listen_dates,
+            )
+            payload_json = json.dumps(updated_release.to_dict(), ensure_ascii=False, sort_keys=True)
+            with self._connect() as connection:
+                connection.execute(
+                    "UPDATE releases SET payload_json = ? WHERE release_id = ?",
+                    (payload_json, release_id),
+                )
+
+        return auditions
+
     def update_rating(self, release_id: int, rating: int) -> None:
         with self._connect() as connection:
             connection.execute(

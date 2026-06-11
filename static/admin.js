@@ -145,7 +145,7 @@ function initializeViews() {
       }
       
       if (targetView === 'player') {
-        viewTitle.textContent = 'Sugestão da Semana';
+        viewTitle.textContent = 'Escuta da Semana';
       } else if (targetView === 'catalog') {
         viewTitle.textContent = 'Minha Coleção';
       } else if (targetView === 'stats') {
@@ -303,6 +303,38 @@ function updateSuggestedFavoriteBtn() {
       icon.setAttribute('fill', 'none');
       icon.style.stroke = 'currentColor';
     }
+  }
+}
+
+function updateDetailsFavoriteBtn(lp) {
+  const btn = document.getElementById('details-favorite-btn');
+  const label = document.getElementById('details-favorite-label');
+  if (!btn || !label || !lp) return;
+
+  const icon = btn.querySelector('.star-icon');
+  btn.classList.toggle('active', lp.favorite);
+  btn.setAttribute('aria-pressed', lp.favorite ? 'true' : 'false');
+  btn.title = lp.favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos';
+  label.textContent = lp.favorite ? 'Favorito' : 'Favoritar';
+
+  if (icon) {
+    icon.setAttribute('fill', lp.favorite ? 'var(--star-gold)' : 'none');
+    icon.style.stroke = lp.favorite ? 'var(--star-gold)' : 'currentColor';
+  }
+}
+
+function updateDetailsAuditionControls(lp) {
+  const countEl = document.getElementById('details-plays-count');
+  const decrementBtn = document.getElementById('details-unlisten-btn');
+  if (!lp) return;
+
+  const plays = Math.max(0, Number(lp.plays) || 0);
+  if (countEl) {
+    countEl.textContent = plays;
+  }
+  if (decrementBtn) {
+    decrementBtn.disabled = plays <= 0;
+    decrementBtn.title = plays <= 0 ? 'Nenhuma audição para remover' : 'Remover audição';
   }
 }
 
@@ -485,6 +517,7 @@ function changeSingleDayAgendaLp(dayIndex) {
 function renderSelectedAgendaLp() {
   const lp = state.agenda[state.selectedAgendaIndex];
   const dayLabel = document.getElementById('featured-day-label');
+  const reasonEl = document.getElementById('suggested-reason');
   
   if (dayLabel) {
     const todayIdx = getTodayAgendaIndex();
@@ -507,6 +540,7 @@ function renderSelectedAgendaLp() {
     document.getElementById('suggested-genres').innerHTML = '';
     document.getElementById('suggested-plays-count').textContent = '0';
     document.getElementById('suggested-cover-img').src = 'https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=300&auto=format&fit=crop';
+    if (reasonEl) reasonEl.textContent = 'Sem sugestão disponível para este dia.';
     
     const textarea = document.getElementById('suggested-notes');
     if (textarea) textarea.value = '';
@@ -521,6 +555,7 @@ function renderSelectedAgendaLp() {
   document.getElementById('suggested-year').textContent = lp.year > 0 ? lp.year : 'N/A';
   document.getElementById('suggested-label').textContent = lp.labels.join(', ') || 'N/A';
   document.getElementById('suggested-plays-count').textContent = lp.plays || 0;
+  if (reasonEl) reasonEl.textContent = getSuggestionReason(lp);
   
   const defaultCover = 'https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=300&auto=format&fit=crop';
   const coverImg = document.getElementById('suggested-cover-img');
@@ -561,6 +596,21 @@ function renderSelectedAgendaLp() {
   updateAmbientGlow(lp.cover_image || lp.thumbnail);
 }
 
+function getSuggestionReason(lp) {
+  const plays = Number(lp.plays) || 0;
+  const addedDate = lp.date_added ? new Date(lp.date_added) : null;
+  const addedYear = addedDate && !Number.isNaN(addedDate.getTime()) ? addedDate.getFullYear() : null;
+  const genre = (lp.genres && lp.genres[0]) || (lp.styles && lp.styles[0]) || '';
+
+  if (plays === 0) {
+    return `Ainda sem audições${addedYear ? ` · na coleção desde ${addedYear}` : ''}${genre ? ` · ${genre}` : ''}.`;
+  }
+  if (plays === 1) {
+    return `Ouvido uma vez · bom candidato para revisitar${genre ? ` · ${genre}` : ''}.`;
+  }
+  return `Pouco ouvido · ${plays} audições${genre ? ` · ${genre}` : ''}.`;
+}
+
 async function markAsListened(id) {
   const lp = state.lps.find(item => item.id == id);
   if (lp) {
@@ -593,6 +643,7 @@ async function markAsListened(id) {
       if (detailsPlaysCount) {
         detailsPlaysCount.textContent = lp.plays;
       }
+      updateDetailsAuditionControls(lp);
       
       // Rerender history ranking and plays ranking page
       renderHistoryRanking();
@@ -613,6 +664,57 @@ async function markAsListened(id) {
       console.error(e);
       showToast('Erro ao registrar audição no servidor.', 'error');
     }
+  }
+}
+
+async function unmarkAsListened(id) {
+  const lp = state.lps.find(item => item.id == id);
+  if (!lp) return;
+
+  if ((lp.plays || 0) <= 0) {
+    showToast('Este LP ainda não tem audições para remover.', 'error');
+    updateDetailsAuditionControls(lp);
+    return;
+  }
+
+  try {
+    const response = await fetch(`/api/admin/releases/${id}/unlisten`, { method: 'POST' });
+    if (!response.ok) throw new Error('Erro no servidor');
+    const data = await response.json();
+
+    if (!lp.listen_dates) {
+      lp.listen_dates = [];
+    }
+    if (lp.listen_dates.length > 0) {
+      lp.listen_dates.pop();
+    }
+    lp.plays = data.auditions;
+
+    state.agenda.forEach(item => {
+      if (item.id == id) {
+        item.listen_dates = lp.listen_dates;
+        item.plays = lp.plays;
+      }
+    });
+
+    renderWeeklyAgenda();
+    renderSelectedAgendaLp();
+    updateDetailsAuditionControls(lp);
+    renderHistoryRanking();
+    renderPlaysRankingPage();
+
+    if (state.currentView === 'catalog') {
+      renderGrid();
+    } else if (state.currentView === 'stats') {
+      renderStats();
+    } else if (state.currentView === 'timeline') {
+      renderTimeline();
+    }
+
+    showToast(`Audição removida de "${lp.title}". Total: ${lp.plays}`, 'success');
+  } catch (e) {
+    console.error(e);
+    showToast('Erro ao remover audição no servidor.', 'error');
   }
 }
 
@@ -724,6 +826,7 @@ async function toggleFavoriteState(id) {
       renderWeeklyAgenda();
       renderSelectedAgendaLp();
       updateStarredCounter();
+      updateDetailsFavoriteBtn(lp);
       
       if (state.currentView === 'catalog') {
         renderGrid();
@@ -842,7 +945,7 @@ function initializeSidebarFilters() {
   // Real-time search (Sidebar)
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
-      handleSearchUpdate(e.target.value.trim());
+      handleSearchUpdate(e.target.value);
     });
   }
   
@@ -855,7 +958,7 @@ function initializeSidebarFilters() {
   // Real-time search (Catalog Toolbar)
   if (catalogSearchInput) {
     catalogSearchInput.addEventListener('input', (e) => {
-      handleSearchUpdate(e.target.value.trim());
+      handleSearchUpdate(e.target.value);
     });
   }
   
@@ -939,8 +1042,9 @@ function applyFiltersAndRender() {
   let filtered = [...state.lps];
   
   // 1. Filter by Search Query
-  if (state.filters.search) {
-    const q = state.filters.search.toLowerCase();
+  const normalizedSearch = state.filters.search.trim().toLowerCase();
+  if (normalizedSearch) {
+    const q = normalizedSearch;
     filtered = filtered.filter(lp => {
       return lp.title.toLowerCase().includes(q) || 
              lp.artist.toLowerCase().includes(q) ||
@@ -1320,32 +1424,14 @@ function renderTimeline() {
             <span class="timeline-badge">🎧 ${lp.plays || 0} audições</span>
           </div>
         </div>
-        <div class="timeline-actions">
-          <button class="timeline-scrobble-btn" title="Registrar audição agora" data-id="${lp.id}">
-            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-          </button>
-        </div>
       </div>
     `;
     
-    // Bind open details modal on card click (excluding scrobble btn)
+    // Bind open details modal on card click
     const cardEl = itemDiv.querySelector('.timeline-card');
     cardEl.addEventListener('click', (e) => {
-      if (e.target.closest('.timeline-scrobble-btn')) return;
       openDetailsDialog(lp.id);
     });
-    
-    // Bind scrobble button
-    const scrobbleBtn = itemDiv.querySelector('.timeline-scrobble-btn');
-    if (scrobbleBtn) {
-      scrobbleBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        markAsListened(lp.id);
-      });
-    }
     
     container.appendChild(itemDiv);
   });
@@ -1399,11 +1485,6 @@ function renderGrid() {
 
         <div class="lp-card-footer">
           <span class="lp-card-year">${lp.year > 0 ? lp.year : 'N/A'}</span>
-          <button class="lp-card-favorite-btn ${lp.favorite ? 'active' : ''}" title="${lp.favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}" data-id="${lp.id}">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="${lp.favorite ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-            </svg>
-          </button>
         </div>
       </div>
     `;
@@ -1418,15 +1499,6 @@ function renderGrid() {
       scrobbleBtn.addEventListener('click', (e) => {
         e.stopPropagation(); // prevent opening details dialog
         markAsListened(lp.id);
-      });
-    }
-    
-    // Bind click event to favorite button
-    const favoriteBtn = card.querySelector('.lp-card-favorite-btn');
-    if (favoriteBtn) {
-      favoriteBtn.addEventListener('click', (e) => {
-        e.stopPropagation(); // prevent opening details dialog
-        toggleFavoriteState(lp.id);
       });
     }
     
@@ -1448,6 +1520,65 @@ function renderStarsString(rating) {
 }
 
 // ==================== STATS COMPILER ====================
+function playsToProgressPercent(plays) {
+  const count = Number(plays) || 0;
+  if (!Number.isFinite(count) || count <= 0) {
+    return 0;
+  }
+  return Math.min(Math.round(count), 100);
+}
+
+function renderPlaysChart() {
+  const playsCont = document.getElementById('plays-chart-container');
+  if (!playsCont) return;
+
+  const sortedLpsByPlays = [...state.lps]
+    .filter(lp => lp.plays > 0)
+    .sort((a, b) => {
+      if (b.plays !== a.plays) {
+        return b.plays - a.plays;
+      }
+      return a.title.localeCompare(b.title);
+    });
+
+  playsCont.innerHTML = '';
+
+  if (sortedLpsByPlays.length === 0) {
+    playsCont.innerHTML = '<div class="text-muted italic" style="font-size: 0.8rem; padding: 8px 0;">Nenhum disco ouvido ainda.</div>';
+    return;
+  }
+
+  sortedLpsByPlays.forEach((lp, idx) => {
+    const pct = playsToProgressPercent(lp.plays);
+    const barRow = document.createElement('div');
+    barRow.classList.add('chart-bar-row');
+
+    const labelName = `#${idx + 1} - ${lp.title} - ${lp.artist}`;
+    const labelVal = `${lp.plays} ${lp.plays === 1 ? 'audição' : 'audições'}`;
+
+    barRow.innerHTML = `
+      <div class="chart-bar-labels">
+        <span class="chart-label-name" title="${labelName}">${labelName}</span>
+        <span class="chart-label-val">${labelVal}</span>
+      </div>
+      <div class="chart-bar-track">
+        <div class="chart-bar-fill" style="width: 0%"></div>
+      </div>
+    `;
+
+    barRow.addEventListener('click', () => {
+      openDetailsDialog(lp.id);
+    });
+
+    playsCont.appendChild(barRow);
+
+    setTimeout(() => {
+      const fillElement = barRow.querySelector('.chart-bar-fill');
+      if (fillElement) fillElement.style.width = `${pct}%`;
+    }, 100);
+  });
+}
+
 function renderStats() {
   const totalLps = state.lps.length;
   
@@ -1506,19 +1637,15 @@ function renderStats() {
     }
   });
   
-  const starred = state.lps.filter(lp => lp.favorite).length;
-  
-  // Calculate average rating
-  const ratedLps = state.lps.filter(lp => lp.rating > 0);
-  const avgRating = ratedLps.length > 0 
-    ? (ratedLps.reduce((acc, curr) => acc + curr.rating, 0) / ratedLps.length).toFixed(1) 
-    : '0.0';
+  const listenedLps = state.lps.filter(lp => (Number(lp.plays) || 0) > 0).length;
+  const listenedPercent = totalLps > 0 ? Math.round((listenedLps / totalLps) * 100) : 0;
+  const totalPlays = state.lps.reduce((acc, lp) => acc + (Number(lp.plays) || 0), 0);
     
   // Inject values
   document.getElementById('stat-total-lps').textContent = totalLps;
   document.getElementById('stat-total-artists').textContent = distinctArtistsSet.size;
-  document.getElementById('stat-total-starred').textContent = starred;
-  document.getElementById('stat-avg-rating').textContent = avgRating;
+  document.getElementById('stat-listened-percent').textContent = `${listenedPercent}%`;
+  document.getElementById('stat-total-plays').textContent = totalPlays;
   
   // 1. Genres Stats Bar Chart
   const genresCont = document.getElementById('genres-chart-container');
@@ -1563,48 +1690,7 @@ function renderStats() {
     });
   }
   
-  // 2. Plays Stats Bar Chart (LPs por Audição)
-  const sortedLpsByPlays = [...state.lps]
-    .filter(lp => lp.plays > 0)
-    .sort((a, b) => b.plays - a.plays)
-    .slice(0, 5);
-  
-  const playsCont = document.getElementById('plays-chart-container');
-  
-  if (playsCont) {
-    playsCont.innerHTML = '';
-    
-    if (sortedLpsByPlays.length === 0) {
-      playsCont.innerHTML = '<div class="text-muted italic" style="font-size: 0.8rem; padding: 8px 0;">Nenhum disco ouvido ainda.</div>';
-    } else {
-      sortedLpsByPlays.forEach(lp => {
-        const pct = Math.min(Math.max(lp.plays, 0), 100);
-        const barRow = document.createElement('div');
-        barRow.classList.add('chart-bar-row');
-        
-        const labelName = `${lp.title} - ${lp.artist}`;
-        const labelVal = `${lp.plays} ${lp.plays === 1 ? 'audição' : 'audições'}`;
-        
-        barRow.innerHTML = `
-          <div class="chart-bar-labels">
-            <span class="chart-label-name" title="${labelName}">${labelName}</span>
-            <span class="chart-label-val">${labelVal}</span>
-          </div>
-          <div class="chart-bar-track">
-            <div class="chart-bar-fill" style="width: 0%"></div>
-          </div>
-        `;
-        playsCont.appendChild(barRow);
-        
-        setTimeout(() => {
-          const fillElement = barRow.querySelector('.chart-bar-fill');
-          if (fillElement) fillElement.style.width = `${pct}%`;
-        }, 100);
-      });
-    }
-  }
-  
-  // 3. Top Artists ranking (splitting collaborative artists except specific band names)
+  // 2. Top Artists ranking (splitting collaborative artists except specific band names)
   const artistCounts = {};
   state.lps.forEach(lp => {
     if (bandsToNotSplit.includes(lp.artist)) {
@@ -1696,6 +1782,8 @@ function renderStats() {
     `;
     additionsCont.appendChild(div);
   });
+
+  renderTimelineStats();
 }
 
 function openArtistAlbumsDialog(artistName, lps) {
@@ -1746,11 +1834,8 @@ function openArtistAlbumsDialog(artistName, lps) {
   dialog.showModal();
 }
 
-// ==================== TIMELINE STATISTICS DIALOG ====================
-function openTimelineStatsDialog() {
-  const dialog = document.getElementById('timeline-stats-dialog');
-  if (!dialog) return;
-
+// ==================== TIMELINE STATISTICS ====================
+function renderTimelineStats() {
   const MONTHS_PT = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
@@ -1801,10 +1886,15 @@ function openTimelineStatsDialog() {
   });
 
   // 4. Update indicators
-  document.getElementById('timeline-stat-total').textContent = totalAdded;
-  
+  const totalEl = document.getElementById('timeline-stat-total');
+  const averageEl = document.getElementById('timeline-stat-average');
+  const chartContainer = document.getElementById('timeline-monthly-chart');
   const mostActiveValEl = document.getElementById('timeline-stat-most-active');
   const mostActiveDescEl = document.getElementById('timeline-stat-most-active-count');
+  if (!totalEl || !averageEl || !chartContainer || !mostActiveValEl || !mostActiveDescEl) return;
+
+  totalEl.textContent = totalAdded;
+  
   if (mostActiveMonth && maxCount > 0) {
     mostActiveValEl.textContent = mostActiveMonth.label;
     mostActiveDescEl.textContent = `${maxCount} ${maxCount === 1 ? 'disco' : 'discos'}`;
@@ -1814,10 +1904,9 @@ function openTimelineStatsDialog() {
   }
 
   const average = (totalAdded / 12).toFixed(1);
-  document.getElementById('timeline-stat-average').textContent = average.replace('.', ',');
+  averageEl.textContent = average.replace('.', ',');
 
   // 5. Render Monthly Chart
-  const chartContainer = document.getElementById('timeline-monthly-chart');
   chartContainer.innerHTML = '';
 
   const maxVal = Math.max(...last12.map(m => m.count), 1);
@@ -1848,48 +1937,60 @@ function openTimelineStatsDialog() {
       }, 50);
     });
   });
-
-  dialog.showModal();
 }
 
 // ==================== DIALOGS & FORM MANAGEMENT ====================
+const LP_FORM_EDITABLE_FIELD_IDS = [
+  'form-cover-url',
+  'form-title',
+  'form-year',
+  'form-artist',
+  'form-label',
+  'form-catno',
+  'form-notes'
+];
+
+function setLpFormFieldsLocked(locked) {
+  LP_FORM_EDITABLE_FIELD_IDS.forEach(id => {
+    const field = document.getElementById(id);
+    if (field) {
+      field.readOnly = locked;
+      field.classList.toggle('readonly-field', locked);
+    }
+  });
+
+  const stars = document.getElementById('form-rating-stars');
+  if (stars) {
+    stars.dataset.readonly = locked ? 'true' : 'false';
+    stars.classList.toggle('readonly-stars', locked);
+  }
+
+  const submitBtn = document.getElementById('form-submit-btn');
+  if (submitBtn) {
+    submitBtn.disabled = locked;
+  }
+}
+
 function initializeDialogs() {
   const detailDialog = document.getElementById('lp-details-dialog');
   const formDialog = document.getElementById('lp-form-dialog');
-  const statsDialog = document.getElementById('timeline-stats-dialog');
   const artistAlbumsDialog = document.getElementById('artist-albums-dialog');
   const lpForm = document.getElementById('lp-entry-form');
   const addBtn = document.getElementById('add-lp-btn');
-  const statsBtn = document.getElementById('timeline-stats-btn');
-  const statsCloseBtn = document.getElementById('timeline-stats-close');
   
   // Bind close buttons in dialogs
   document.querySelectorAll('[data-dialog-close]').forEach(btn => {
     btn.addEventListener('click', () => {
       detailDialog.close();
       formDialog.close();
-      if (statsDialog) statsDialog.close();
       if (artistAlbumsDialog) artistAlbumsDialog.close();
     });
   });
-  
-  if (statsCloseBtn && statsDialog) {
-    statsCloseBtn.addEventListener('click', () => {
-      statsDialog.close();
-    });
-  }
-  
-  if (statsBtn) {
-    statsBtn.addEventListener('click', () => {
-      openTimelineStatsDialog();
-    });
-  }
   
   // Global backdrop click to close
   window.addEventListener('click', (e) => {
     if (e.target === detailDialog) detailDialog.close();
     if (e.target === formDialog) formDialog.close();
-    if (e.target === statsDialog) statsDialog.close();
     if (e.target === artistAlbumsDialog) artistAlbumsDialog.close();
   });
   
@@ -1921,47 +2022,12 @@ function initializeDialogs() {
   const discogsSearchInput = document.getElementById('discogs-search-input');
   const discogsSearchBtn = document.getElementById('discogs-search-btn');
   const discogsSearchResults = document.getElementById('discogs-search-results');
-  const discogsConfigBtn = document.getElementById('discogs-config-btn');
-  const discogsTokenConfig = document.getElementById('discogs-token-config');
-  const discogsTokenInput = document.getElementById('discogs-token-input');
-  const saveDiscogsTokenBtn = document.getElementById('save-discogs-token-btn');
-
-  // Load existing token if any
-  if (discogsTokenInput) {
-    discogsTokenInput.value = localStorage.getItem('lpweek_discogs_token') || '';
-  }
-
-  // Toggle token configuration panel
-  if (discogsConfigBtn && discogsTokenConfig) {
-    discogsConfigBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      discogsTokenConfig.style.display = discogsTokenConfig.style.display === 'none' ? 'block' : 'none';
-    });
-  }
-
-  // Save token button click
-  if (saveDiscogsTokenBtn && discogsTokenInput) {
-    saveDiscogsTokenBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      const token = discogsTokenInput.value.trim();
-      localStorage.setItem('lpweek_discogs_token', token);
-      showToast('Token do Discogs salvo!', 'success');
-      discogsTokenConfig.style.display = 'none';
-    });
-  }
 
   // Search button click
   if (discogsSearchBtn && discogsSearchInput && discogsSearchResults) {
     discogsSearchBtn.addEventListener('click', async (e) => {
       e.preventDefault();
       const query = discogsSearchInput.value.trim();
-      const token = localStorage.getItem('lpweek_discogs_token') || (discogsTokenInput ? discogsTokenInput.value.trim() : '');
-
-      if (!token) {
-        showToast('Configure seu token do Discogs primeiro!', 'error');
-        if (discogsTokenConfig) discogsTokenConfig.style.display = 'block';
-        return;
-      }
 
       if (!query) {
         showToast('Digite um termo de busca!', 'error');
@@ -1974,7 +2040,7 @@ function initializeDialogs() {
       discogsSearchResults.style.display = 'block';
 
       try {
-        const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&token=${encodeURIComponent(token)}`);
+        const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
         const data = await response.json();
 
         if (!response.ok) {
@@ -2046,6 +2112,7 @@ function initializeDialogs() {
 
             // Collapse search results
             discogsSearchResults.style.display = 'none';
+            setLpFormFieldsLocked(false);
             showToast('Dados do LP preenchidos!', 'success');
           });
 
@@ -2106,6 +2173,8 @@ function openDetailsDialog(id) {
   
   // Details Action Buttons
   const markListenedBtn = document.getElementById('details-mark-listened');
+  const unlistenBtn = document.getElementById('details-unlisten-btn');
+  const favoriteBtn = document.getElementById('details-favorite-btn');
   const editBtn = document.getElementById('details-edit-btn');
   const deleteBtn = document.getElementById('details-delete-btn');
   
@@ -2119,6 +2188,19 @@ function openDetailsDialog(id) {
   if (markListenedBtn) {
     markListenedBtn.onclick = () => {
       markAsListened(lp.id);
+    };
+  }
+  if (unlistenBtn) {
+    unlistenBtn.onclick = () => {
+      unmarkAsListened(lp.id);
+    };
+  }
+  updateDetailsAuditionControls(lp);
+
+  updateDetailsFavoriteBtn(lp);
+  if (favoriteBtn) {
+    favoriteBtn.onclick = () => {
+      toggleFavoriteState(lp.id);
     };
   }
   
@@ -2191,7 +2273,6 @@ function openFormDialog(editId = null) {
       const resultsCont = document.getElementById('discogs-search-results');
       resultsCont.innerHTML = '';
       resultsCont.style.display = 'none';
-      document.getElementById('discogs-token-config').style.display = 'none';
     }
   }
   
@@ -2230,6 +2311,7 @@ function openFormDialog(editId = null) {
   
   // Interactive stars in form
   renderFormStars(ratingVal);
+  setLpFormFieldsLocked(!editId);
   
   dialog.showModal();
 }
@@ -2256,6 +2338,7 @@ function renderFormStars(rating) {
     starSvg.appendChild(poly);
     
     starSvg.addEventListener('click', () => {
+      if (container.dataset.readonly === 'true') return;
       container.dataset.rating = i;
       // Re-fill stars locally
       const allStars = container.querySelectorAll('.star');
@@ -2269,6 +2352,11 @@ function renderFormStars(rating) {
 
 async function saveFormEntry() {
   const idInput = document.getElementById('form-lp-id').value;
+  if (!idInput && document.getElementById('form-submit-btn').disabled) {
+    showToast('Busque um disco no Discogs e selecione um resultado antes de salvar.', 'error');
+    return;
+  }
+
   const title = document.getElementById('form-title').value.trim();
   const artist = document.getElementById('form-artist').value.trim();
   const yearVal = document.getElementById('form-year').value;
@@ -2481,9 +2569,9 @@ function renderPlaysRankingPage() {
   const podiumContainer = document.getElementById('ranking-podium');
   const emptyState = document.getElementById('ranking-empty-state');
   const listSection = document.getElementById('ranking-list-section');
-  const gridContainer = document.getElementById('ranking-grid');
+  const playsChartContainer = document.getElementById('plays-chart-container');
   
-  if (!podiumContainer || !emptyState || !listSection || !gridContainer) return;
+  if (!podiumContainer || !emptyState || !listSection || !playsChartContainer) return;
   
   // Sort LPs by play count descending, and title A-Z if plays are equal
   const sorted = state.lps
@@ -2573,49 +2661,9 @@ function renderPlaysRankingPage() {
     });
   });
   
-  // 2. Render rest of the ranking (4+)
-  const restLps = sorted.slice(3);
-  if (restLps.length > 0) {
-    listSection.style.display = 'block';
-    gridContainer.innerHTML = '';
-    
-    // Scale progress fills relative to the overall ranking leader (sorted[0])
-    const maxPlaysLeader = sorted[0].plays;
-    
-    restLps.forEach((lp, idx) => {
-      const rankNum = idx + 4;
-      const pct = Math.round((lp.plays / maxPlaysLeader) * 100);
-      
-      const barRow = document.createElement('div');
-      barRow.classList.add('chart-bar-row');
-      
-      const labelName = `#${rankNum} - ${lp.title} - ${lp.artist}`;
-      const labelVal = `${lp.plays} ${lp.plays === 1 ? 'audição' : 'audições'}`;
-      
-      barRow.innerHTML = `
-        <div class="chart-bar-labels">
-          <span class="chart-label-name" title="${labelName}">${labelName}</span>
-          <span class="chart-label-val">${labelVal}</span>
-        </div>
-        <div class="chart-bar-track">
-          <div class="chart-bar-fill" style="width: 0%"></div>
-        </div>
-      `;
-      
-      barRow.addEventListener('click', () => {
-        openDetailsDialog(lp.id);
-      });
-      
-      gridContainer.appendChild(barRow);
-      
-      setTimeout(() => {
-        const fillElement = barRow.querySelector('.chart-bar-fill');
-        if (fillElement) fillElement.style.width = `${pct}%`;
-      }, 100);
-    });
-  } else {
-    listSection.style.display = 'none';
-  }
+  // 2. Render full plays chart below the podium
+  listSection.style.display = 'block';
+  renderPlaysChart();
 }
 
 // ==================== SETTINGS SCREEN LOGIC ====================
@@ -2629,18 +2677,7 @@ async function loadSettingsFromServer() {
     document.getElementById('setting-discogs-user').value = config.discogs_user || '';
     document.getElementById('setting-discogs-user-agent').value = config.discogs_user_agent || '';
     
-    // Check if there is a Discogs token in backend config, otherwise fallback to localStorage
-    const backendToken = config.discogs_token || '';
-    const localToken = localStorage.getItem('lpweek_discogs_token') || '';
-    const tokenToUse = backendToken || localToken;
-    document.getElementById('setting-discogs-token').value = tokenToUse;
-    
-    // Update localToken if backend has it and local doesn't
-    if (backendToken && backendToken !== localToken) {
-      localStorage.setItem('lpweek_discogs_token', backendToken);
-      const discogsTokenInput = document.getElementById('discogs-token-input');
-      if (discogsTokenInput) discogsTokenInput.value = backendToken;
-    }
+    document.getElementById('setting-discogs-token').value = config.discogs_token || '';
     
     document.getElementById('setting-shazam-key').value = config.rapidapi_shazam_key || '';
     document.getElementById('setting-shazam-host').value = config.rapidapi_shazam_host || '';
@@ -2715,13 +2752,6 @@ function initializeSettingsForm() {
       });
       
       if (!response.ok) throw new Error('Falha ao salvar as configurações.');
-      
-      // Also save discogs token locally to sync with search fallback
-      localStorage.setItem('lpweek_discogs_token', discogs_token);
-      
-      // Update form inputs in index & admin search if any
-      const discogsTokenInput = document.getElementById('discogs-token-input');
-      if (discogsTokenInput) discogsTokenInput.value = discogs_token;
       
       showToast('Configurações salvas com sucesso!', 'success');
     } catch (error) {

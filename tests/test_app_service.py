@@ -119,6 +119,20 @@ class AppServiceTests(unittest.TestCase):
             self.assertEqual(state["status"], "listening")
             self.assertIn("RAPIDAPI_SHAZAM_KEY", response["message"])
 
+    def test_increment_and_decrement_release_auditions(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = CatalogStore(Path(tmp) / "catalog.sqlite3")
+            app = VinylDisplayApp(store, FakeDiscogsClient(), FakeShazamClient())
+            app.sync_collection()
+
+            incremented = app.increment_release_auditions(14192689)
+            decremented = app.decrement_release_auditions(14192689)
+            decremented_again = app.decrement_release_auditions(14192689)
+
+            self.assertEqual(incremented, {"status": "ok", "auditions": 1})
+            self.assertEqual(decremented, {"status": "ok", "auditions": 0})
+            self.assertEqual(decremented_again, {"status": "ok", "auditions": 0})
+
 
 if __name__ == "__main__":
     unittest.main()

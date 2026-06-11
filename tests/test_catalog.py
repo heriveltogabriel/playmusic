@@ -119,6 +119,21 @@ class CatalogStoreTests(unittest.TestCase):
             releases = store.list_releases_with_stats()
             self.assertEqual(len(releases[0].listen_dates), 3)
             self.assertTrue(releases[0].listen_dates[-1].endswith("Z"))
+
+            # Test decrement auditions removes the latest listen date and never goes below zero
+            new_auditions = store.decrement_auditions(manual.release_id)
+            self.assertEqual(new_auditions, 2)
+            releases = store.list_releases_with_stats()
+            self.assertEqual(releases[0].auditions, 2)
+            self.assertEqual(len(releases[0].listen_dates), 2)
+
+            store.decrement_auditions(manual.release_id)
+            store.decrement_auditions(manual.release_id)
+            new_auditions = store.decrement_auditions(manual.release_id)
+            self.assertEqual(new_auditions, 0)
+            releases = store.list_releases_with_stats()
+            self.assertEqual(releases[0].auditions, 0)
+            self.assertEqual(releases[0].listen_dates, [])
             
             # Test delete release
             store.delete_release(manual.release_id)

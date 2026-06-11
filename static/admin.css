@@ -502,7 +502,8 @@ body {
 .suggestions-layout {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
+  padding-bottom: 32px;
 }
 
 /* ==================== VIEW 4: RANKING DE AUDIÇÕES ==================== */
@@ -771,31 +772,58 @@ body {
   margin-top: 2px;
 }
 
-/* Suggestion Hero Card */
-.suggestion-hero-card {
-  display: flex;
-  gap: 28px;
-  align-items: start;
+.weekly-agenda-panel,
+.featured-suggestion-panel {
+  background: var(--card-bg);
+  border: var(--glass-border);
+  border-radius: 12px;
+  padding: 22px 24px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-md);
 }
 
-@media (max-width: 640px) {
-  .suggestion-hero-card {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
+.weekly-agenda-header,
+.featured-suggestion-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.featured-eyebrow {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.weekly-agenda-header .card-title,
+.featured-suggestion-header .card-title-sm {
+  margin-bottom: 0;
+}
+
+/* Suggestion Hero Card */
+.suggestion-hero-card {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: 32px;
+  align-items: stretch;
 }
 
 .suggestion-hero-cover {
-  width: 200px;
-  height: 200px;
-  border-radius: 12px;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 10px;
   overflow: hidden;
   position: relative;
   box-shadow: var(--shadow-md);
-  flex-shrink: 0;
   background: linear-gradient(135deg, #111 0%, #2a2a35 100%);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .suggestion-hero-cover img {
@@ -835,21 +863,27 @@ body {
 }
 
 .suggestion-hero-info {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  justify-content: center;
+  min-width: 0;
+}
+
+.suggestion-hero-main {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .hero-title {
-  font-size: 1.6rem;
+  font-size: 2.15rem;
   font-weight: 800;
-  line-height: 1.25;
+  line-height: 1.1;
   letter-spacing: -0.5px;
 }
 
 .hero-artist {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   color: var(--text-secondary);
   font-weight: 500;
 }
@@ -878,23 +912,47 @@ body {
   margin-top: 4px;
 }
 
+.suggestion-reason-card {
+  max-width: 720px;
+  margin-top: 4px;
+  padding: 12px 14px;
+  background: rgba(230, 92, 0, 0.06);
+  border: 1px solid rgba(230, 92, 0, 0.18);
+  border-radius: 8px;
+}
+
+.suggestion-reason-label {
+  margin-bottom: 4px;
+  color: var(--primary);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+}
+
+.suggestion-reason-text {
+  color: var(--text-secondary);
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
+
 .hero-actions {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 8px;
+  margin-top: 2px;
   flex-wrap: wrap;
 }
 
-@media (max-width: 640px) {
-  .hero-actions {
-    justify-content: center;
-  }
+.suggestion-support-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.9fr) minmax(0, 1.4fr);
+  gap: 16px;
+  margin-top: 22px;
 }
 
 .hero-mini-notes {
-  margin-top: 14px;
-  background: rgba(0, 0, 0, 0.15);
+  background: rgba(0, 0, 0, 0.16);
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 10px;
@@ -921,12 +979,35 @@ body {
   font-style: italic;
 }
 
+@media (max-width: 900px) {
+  .suggestion-hero-card,
+  .suggestion-support-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .suggestion-hero-cover {
+    max-width: 320px;
+  }
+}
+
+@media (max-width: 640px) {
+  .weekly-agenda-header,
+  .featured-suggestion-header {
+    flex-direction: column;
+  }
+
+  .hero-title {
+    font-size: 1.75rem;
+  }
+}
+
 /* Agenda de Discos da Semana Container */
 .agenda-scroll-container {
-  display: flex;
-  gap: 14px;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(112px, 1fr));
+  gap: 12px;
   overflow-x: auto;
-  padding: 8px 4px 16px 4px;
+  padding: 2px 2px 8px 2px;
   scroll-snap-type: x mandatory;
   scrollbar-width: thin;
   scrollbar-color: rgba(230, 92, 0, 0.3) rgba(255, 255, 255, 0.02);
@@ -952,11 +1033,10 @@ body {
 
 /* Agenda Day Card */
 .agenda-day-card {
-  flex: 0 0 130px;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--border-color);
-  border-radius: 14px;
-  padding: 12px;
+  border-radius: 8px;
+  padding: 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -970,7 +1050,7 @@ body {
 
 .agenda-day-card:hover {
   background: rgba(255, 255, 255, 0.05);
-  transform: translateY(-4px);
+  transform: translateY(-2px);
   border-color: rgba(255, 255, 255, 0.15);
 }
 
@@ -1001,10 +1081,10 @@ body {
 }
 
 .agenda-day-name {
-  font-size: 0.8rem;
+  font-size: 0.74rem;
   font-weight: 700;
   color: var(--text-secondary);
-  margin-bottom: 8px;
+  margin-bottom: 7px;
 }
 
 .agenda-day-card.today .agenda-day-name {
@@ -1012,11 +1092,11 @@ body {
 }
 
 .agenda-day-cover {
-  width: 64px;
-  height: 64px;
-  border-radius: 8px;
+  width: 52px;
+  height: 52px;
+  border-radius: 7px;
   object-fit: cover;
-  margin-bottom: 8px;
+  margin-bottom: 7px;
   box-shadow: var(--shadow-sm);
   background: #111;
   transition: var(--transition-normal);
@@ -1027,7 +1107,7 @@ body {
 }
 
 .agenda-day-title {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -1037,7 +1117,7 @@ body {
 }
 
 .agenda-day-artist {
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -1065,10 +1145,10 @@ body {
 
 .agenda-day-change-btn {
   position: absolute;
-  top: 8px;
-  left: 8px;
-  width: 24px;
-  height: 24px;
+  top: 6px;
+  left: 6px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.45);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -1083,6 +1163,16 @@ body {
   z-index: 10;
   padding: 0;
   backdrop-filter: blur(4px);
+}
+
+@media (max-width: 1120px) {
+  .agenda-scroll-container {
+    display: flex;
+  }
+
+  .agenda-day-card {
+    flex: 0 0 122px;
+  }
 }
 
 .agenda-day-change-btn:hover {
@@ -1113,12 +1203,12 @@ body {
 
 /* Scrobble History Panel */
 .hero-scrobble-history {
-  margin-top: 10px;
-  background: rgba(0, 0, 0, 0.12);
+  background: rgba(0, 0, 0, 0.16);
   border: 1px solid var(--border-color);
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 12px;
-  max-height: 130px;
+  min-height: 92px;
+  max-height: 150px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -1557,7 +1647,7 @@ body {
 
 .lp-card-footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   border-top: 1px solid var(--border-color);
   padding-top: 8px;
@@ -1568,27 +1658,7 @@ body {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.75rem;
   color: var(--text-muted);
-}
-
-.lp-card-favorite-btn {
-  background: none;
-  border: none;
-  padding: 4px;
-  color: var(--text-muted);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.2s ease, color 0.2s ease;
-}
-
-.lp-card-favorite-btn:hover {
-  color: var(--danger);
-  transform: scale(1.2);
-}
-
-.lp-card-favorite-btn.active {
-  color: var(--danger);
+  text-align: right;
 }
 
 /* Empty search state styling */
@@ -1636,6 +1706,12 @@ body {
   gap: 20px;
 }
 
+@media (max-width: 1100px) {
+  .stats-card-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
   .stats-card-row {
     grid-template-columns: repeat(2, 1fr);
@@ -1663,7 +1739,8 @@ body {
 .mini-card-value {
   font-size: 2rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: var(--primary);
+  text-shadow: 0 0 10px rgba(230, 92, 0, 0.3);
 }
 
 .stats-row {
@@ -1901,6 +1978,30 @@ dialog::backdrop {
   position: relative;
 }
 
+#artist-albums-dialog {
+  max-width: 560px;
+  width: min(92vw, 560px);
+}
+
+.artist-albums-dialog-content {
+  padding: 36px 28px;
+}
+
+#artist-albums-title {
+  margin-bottom: 24px;
+  padding-right: 44px;
+  font-weight: 700;
+  font-size: 1.3rem;
+  color: var(--text-primary);
+}
+
+#artist-albums-list {
+  max-height: 400px;
+  overflow-y: auto;
+  gap: 12px;
+  padding-right: 4px;
+}
+
 .dialog-close-btn {
   position: absolute;
   top: 20px;
@@ -1935,6 +2036,12 @@ dialog::backdrop {
   .details-dialog-layout {
     grid-template-columns: 1fr;
   }
+}
+
+.details-cover-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .details-cover-container {
@@ -2056,17 +2163,97 @@ dialog::backdrop {
 .dialog-actions-footer {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
   margin-top: auto;
   flex-wrap: wrap;
 }
 
-.dialog-actions-footer button {
-  padding: 10px 18px;
+.dialog-actions-footer > button {
+  min-height: 40px;
+  padding: 9px 10px;
+  white-space: nowrap;
+}
+
+#details-favorite-btn,
+#details-edit-btn,
+#details-delete-btn {
+  flex: 1 1 0;
+  justify-content: center;
+  min-width: 0;
+}
+
+.details-audition-stepper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 54px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+.audition-stepper-btn {
+  flex: 0 0 38px;
+  width: 38px;
+  min-width: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: 8px;
+}
+
+.audition-stepper-btn:disabled {
+  opacity: 0.35;
+}
+
+.audition-stepper-symbol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1em;
+  height: 1em;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.details-audition-count {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  min-width: 0;
+  color: var(--text-primary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.details-audition-count span:first-child {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--primary);
+}
+
+.details-audition-count span:last-child {
+  color: var(--text-muted);
 }
 
 #details-delete-btn {
-  margin-left: auto;
+  border: 1px solid rgba(255, 69, 58, 0.22);
+}
+
+#details-favorite-btn.active {
+  color: var(--star-gold);
+  border-color: rgba(255, 214, 102, 0.35);
+  background: rgba(255, 214, 102, 0.08);
 }
 
 /* 2. Add / Edit LP Dialog styles */
@@ -2102,39 +2289,6 @@ dialog::backdrop {
 }
 
 #discogs-search-input:focus {
-  border-color: var(--primary);
-  outline: none;
-}
-
-.discogs-token-config {
-  background: rgba(0, 0, 0, 0.15);
-  border-radius: 8px;
-  padding: 12px;
-  margin-top: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  border: 1px dashed rgba(255, 255, 255, 0.05);
-}
-
-.discogs-token-config label {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  font-weight: 600;
-}
-
-#discogs-token-input {
-  flex: 1;
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 6px 10px;
-  color: #fff;
-  font-size: 0.85rem;
-  font-family: inherit;
-}
-
-#discogs-token-input:focus {
   border-color: var(--primary);
   outline: none;
 }
@@ -2362,9 +2516,26 @@ dialog::backdrop {
   background: rgba(234, 229, 217, 0.08);
 }
 
+.form-group input.readonly-field,
+.form-group textarea.readonly-field {
+  background: rgba(255, 255, 255, 0.025);
+  border-color: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
 .form-stars .star {
   width: 22px;
   height: 22px;
+}
+
+.readonly-stars .star {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.readonly-stars .star:hover {
+  transform: none;
 }
 
 .form-submit-footer {
@@ -2389,6 +2560,12 @@ dialog::backdrop {
   cursor: pointer;
   transition: var(--transition-fast);
   text-decoration: none;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
 }
 
 .btn-primary {
@@ -2733,38 +2910,6 @@ dialog::backdrop {
   color: var(--text-secondary);
 }
 
-.timeline-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.timeline-scrobble-btn {
-  background: rgba(230, 92, 0, 0.1);
-  color: var(--primary);
-  border: 1px solid rgba(230, 92, 0, 0.2);
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  padding: 0;
-}
-
-.timeline-scrobble-btn:hover {
-  background: var(--primary);
-  color: #fff;
-  border-color: var(--primary);
-  transform: scale(1.1);
-}
-
-.timeline-scrobble-btn:active {
-  transform: scale(0.95);
-}
-
 /* ==================== RESPONSIVE OVERRIDES ==================== */
 @media (max-width: 768px) {
   .timeline-header-actions {
@@ -2811,14 +2956,10 @@ dialog::backdrop {
   }
 }
 
-/* Timeline Stats Dialog & Cards */
-.timeline-stats-dialog-content h2 {
-  font-size: 1.4rem;
-  font-weight: 800;
-  margin-bottom: 24px;
-  background: linear-gradient(135deg, #ffffff 0%, rgba(255, 255, 255, 0.7) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+/* Timeline Stats Cards */
+.timeline-stats-section {
+  display: flex;
+  flex-direction: column;
 }
 
 .timeline-stats-summary-grid {
@@ -2826,6 +2967,14 @@ dialog::backdrop {
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
   margin-bottom: 28px;
+}
+
+.timeline-chart-title {
+  margin-bottom: 16px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
 }
 
 .timeline-stats-summary-grid .stat-card {
@@ -2936,4 +3085,3 @@ dialog::backdrop {
 .sync-icon-svg.spinning {
   animation: spin 1s linear infinite;
 }
-

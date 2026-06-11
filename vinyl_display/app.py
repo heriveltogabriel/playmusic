@@ -47,6 +47,17 @@ class VinylDisplayApp:
 
     def state(self) -> dict[str, Any]:
         state = self.playback.current_state()
+        if state.get("release"):
+            release_id = state["release"]["release_id"]
+            latest_release = self.store.get_release(release_id)
+            if latest_release:
+                state["release"] = latest_release.to_dict()
+                if self.playback.active and self.playback.active.match.release.release_id == release_id:
+                    import dataclasses
+                    self.playback.active.match = dataclasses.replace(
+                        self.playback.active.match,
+                        release=latest_release
+                    )
         state["collection_count"] = self.store.collection_count()
         state["last_sync_at"] = self.store.get_metadata("discogs_last_sync_at")
         return state
@@ -169,6 +180,10 @@ class VinylDisplayApp:
         count = self.store.increment_auditions(release_id)
         return {"status": "ok", "auditions": count}
 
+    def decrement_release_auditions(self, release_id: int) -> dict[str, Any]:
+        count = self.store.decrement_auditions(release_id)
+        return {"status": "ok", "auditions": count}
+
     def update_release_details(
         self,
         release_id: int,
@@ -205,5 +220,4 @@ class VinylDisplayApp:
     def toggle_favorite(self, release_id: int) -> dict[str, Any]:
         favorite = self.store.toggle_favorite(release_id)
         return {"status": "ok", "favorite": favorite}
-
 

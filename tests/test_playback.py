@@ -216,6 +216,50 @@ class PlaybackControllerTests(unittest.TestCase):
         state = controller.current_state(now=1280)
         self.assertEqual(scrobbled_releases, [14192689])
 
+    def test_scrobble_only_once_per_album_session_after_second_track(self):
+        scrobbled_releases = []
+        def on_scrobble(release_id):
+            scrobbled_releases.append(release_id)
+
+        release = Release(
+            release_id=4242,
+            title="Four Track Album",
+            artist="Session Artist",
+            year=2024,
+            cover_url="https://example.test/four.jpg",
+            country="BR",
+            labels=["Label"],
+            catalog_numbers=["FT-1"],
+            formats=["Vinyl"],
+            tracks=[
+                Track("A1", "Track 1", 60),
+                Track("A2", "Track 2", 60),
+                Track("A3", "Track 3", 60),
+                Track("A4", "Track 4", 60),
+            ],
+            discogs_url="https://www.discogs.com/release/4242",
+        )
+        match = TrackMatch(release=release, track=release.tracks[0], score=100, reason="test")
+
+        controller = PlaybackController(on_scrobble=on_scrobble)
+        controller.handle_match(match, now=1000)
+
+        controller.current_state(now=1000)  # A1: no audition yet.
+        self.assertEqual(scrobbled_releases, [])
+
+        controller.current_state(now=1065)  # A2: first and only automatic audition.
+        self.assertEqual(scrobbled_releases, [4242])
+
+        controller.current_state(now=1125)  # A3: do not count again.
+        controller.current_state(now=1185)  # A4: do not count again.
+        controller.current_state(now=1240)  # End of album: still only one audition.
+        self.assertEqual(scrobbled_releases, [4242])
+
+        match_a4 = TrackMatch(release=release, track=release.tracks[3], score=100, reason="test")
+        controller.handle_match(match_a4, now=1250)
+        controller.current_state(now=1250)
+        self.assertEqual(scrobbled_releases, [4242])
+
     def test_scrobble_on_skip_next(self):
         scrobbled_releases = []
         def on_scrobble(release_id):
@@ -323,6 +367,39 @@ class PlaybackControllerTests(unittest.TestCase):
         state = controller.current_state(now=1190)
         self.assertEqual(state["track"]["position"], "A2")
         self.assertEqual(scrobbled_releases, [77777])
+
+    def test_not_found_does_not_wipe_active_playback(self):
+        controller = PlaybackController()
+        controller.handle_match(match_at_a1(), now=1000)
+        
+        # Unrecognized match occurs
+        controller.handle_not_found(title="Unknown", artist="Unknown", now=1010)
+        
+        # State should still be playing A1
+        state = controller.current_state(now=1010)
+        self.assertEqual(state["status"], "playing")
+        self.assertEqual(state["track"]["position"], "A1")
+
+    def test_skip_prev_before_initial_track(self):
+        controller = PlaybackController()
+        match = match_at_a1()
+        
+        # Start matched at A2 (Something)
+        controller.handle_match(TrackMatch(
+            release=match.release,
+            track=match.release.tracks[1],  # A2 (Something)
+            score=100,
+            reason="test"
+        ), now=1000)
+        
+        # Verify we are on A2
+        state = controller.current_state(now=1000)
+        self.assertEqual(state["track"]["position"], "A2")
+        
+        # Skip prev (progress is 0 <= 3) -> should go backward to A1 (Come Together)
+        controller.skip_prev(now=1001)
+        state = controller.current_state(now=1001)
+        self.assertEqual(state["track"]["position"], "A1")
 
 
 if __name__ == "__main__":
