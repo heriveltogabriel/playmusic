@@ -3,6 +3,16 @@
  * Core Application Logic
  */
 
+// Intercept all fetch responses to handle 401 Unauthorized
+const originalFetch = window.fetch;
+window.fetch = async function(...args) {
+  const response = await originalFetch(...args);
+  if (response.status === 401) {
+    window.location.reload();
+  }
+  return response;
+};
+
 // ==================== STATE MANAGEMENT ====================
 const state = {
   lps: [],
@@ -39,6 +49,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initializeDialogs();
   initializeTimelineEvents();
   initializeSettingsForm();
+  initializeSecurity();
   loadAppVersion();
   
   // Set current selected agenda index to today's weekday
@@ -2813,4 +2824,115 @@ async function loadAppVersion() {
     console.error('Error loading version:', error);
   }
 }
+
+function initializeSecurity() {
+  const logoutBtn = document.getElementById('logoutBtn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+      if (confirm('Deseja realmente sair do painel administrativo?')) {
+        try {
+          const res = await fetch('/api/auth/logout', { method: 'POST' });
+          if (res.ok) {
+            window.location.reload();
+          } else {
+            showToast('Erro ao efetuar logout.', 'error');
+          }
+        } catch (err) {
+          console.error(err);
+          showToast('Erro de rede ao efetuar logout.', 'error');
+        }
+      }
+    });
+  }
+
+  const changePwdForm = document.getElementById('change-password-form');
+  if (changePwdForm) {
+    changePwdForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const currentPwd = document.getElementById('change-pwd-current').value;
+      const newPwd = document.getElementById('change-pwd-new').value;
+      const confirmPwd = document.getElementById('change-pwd-confirm').value;
+
+      if (newPwd.length < 6) {
+        showToast('A nova senha deve ter pelo menos 6 caracteres.', 'error');
+        return;
+      }
+
+      if (newPwd !== confirmPwd) {
+        showToast('As senhas novas não coincidem.', 'error');
+        return;
+      }
+
+      const submitBtn = document.getElementById('change-password-btn');
+      const origText = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Alterando...';
+
+      try {
+        const res = await fetch('/api/auth/change_password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ current_password: currentPwd, new_password: newPwd })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          showToast('Senha alterada com sucesso!', 'success');
+          changePwdForm.reset();
+          
+          // Display the new recovery key in the dialog modal
+          const newKeyValSpan = document.getElementById('security-new-key-val');
+          if (newKeyValSpan) {
+            newKeyValSpan.textContent = data.recovery_key;
+          }
+          
+          const keyDialog = document.getElementById('security-key-dialog');
+          if (keyDialog) {
+            keyDialog.showModal();
+          }
+        } else {
+          showToast(data.error || 'Erro ao alterar a senha.', 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        showToast('Erro de conexão com o servidor.', 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = origText;
+      }
+    });
+  }
+}
+
+// Global functions for the recovery key modal in admin settings
+window.copySecurityKey = function() {
+  const span = document.getElementById('security-new-key-val');
+  if (span) {
+    navigator.clipboard.writeText(span.textContent).then(() => {
+      showToast('Chave de recuperação copiada para a área de transferência!', 'success');
+    }).catch(() => {
+      showToast('Falha ao copiar. Por favor, selecione e copie manualmente.', 'error');
+    });
+  }
+};
+
+window.downloadSecurityKey = function() {
+  const span = document.getElementById('security-new-key-val');
+  if (span) {
+    const text = span.textContent;
+    const content = `NOVA CHAVE DE RECUPERAÇÃO DO VINYL DISPLAY\n=========================================\n\nChave: ${text}\n\nGuarde esta chave em local seguro. Ela permite redefinir a senha do painel de administração em caso de perda.\nGerado em: ${new Date().toLocaleString('pt-BR')}\n`;
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `vinyl_display_recovery_key.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Download do arquivo de chave iniciado!', 'success');
+  }
+};
 

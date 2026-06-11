@@ -5,6 +5,7 @@ import mimetypes
 import ssl
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from http.cookies import SimpleCookie
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -13,6 +14,7 @@ from vinyl_display.catalog import CatalogStore
 from vinyl_display.clients.shazam import ShazamClient
 from vinyl_display.clients.discogs import DiscogsClient
 from vinyl_display.config import Config, load_config
+from vinyl_display.auth import AuthManager
 
 
 def build_app(config: Config) -> VinylDisplayApp:
@@ -27,9 +29,44 @@ def build_app(config: Config) -> VinylDisplayApp:
 class VinylRequestHandler(SimpleHTTPRequestHandler):
     app: VinylDisplayApp
     static_dir: Path
+    auth: AuthManager
+
+    def _get_session_token(self) -> str | None:
+        cookie_header = self.headers.get("Cookie")
+        if not cookie_header:
+            return None
+        cookie = SimpleCookie()
+        try:
+            cookie.load(cookie_header)
+        except Exception:
+            return None
+        if "session_token" in cookie:
+            return cookie["session_token"].value
+        return None
+
+    def _is_authenticated(self) -> bool:
+        token = self._get_session_token()
+        if not token:
+            return False
+        return self.auth.validate_session(token)
+
+    def _send_unauthorized(self) -> None:
+        body = json.dumps({"error": "Não autorizado. Faça login novamente."}, ensure_ascii=False).encode("utf-8")
+        self.send_response(HTTPStatus.UNAUTHORIZED)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
     def do_GET(self) -> None:
         path = urlparse(self.path).path
+        
+        # Check authentication for protected GET routes
+        if path.startswith("/api/admin/") or path == "/api/config":
+            if not self._is_authenticated():
+                self._send_unauthorized()
+                return
+
         if path == "/api/health":
             self._json({"status": "ok"})
             return
@@ -63,7 +100,10 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             self._send_static("index.html")
             return
         if path == "/admin" or path == "/admin/":
-            self._send_static("admin.html")
+            if not self._is_authenticated():
+                self._send_static("login.html")
+            else:
+                self._send_static("admin.html")
             return
         if path == "/api/admin/releases":
             self._json(self.app.list_admin_releases())
@@ -214,6 +254,167 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
 
     def do_POST(self) -> None:
         path = urlparse(self.path).path
+        
+        # Check authentication for protected POST routes
+        if path.startswith("/api/admin/") or path == "/api/sync" or path == "/api/config" or path == "/api/auth/change_password":
+            if not self._is_authenticated():
+                self._send_unauthorized()
+                return
+
+        # Public authentication routes
+        if path == "/api/auth/login":
+            length = int(self.headers.get("Content-Length", "0"))
+            body_bytes = self.rfile.read(length)
+            try:
+                payload = json.loads(body_bytes.decode("utf-8"))
+            except Exception:
+                payload = {}
+            password = payload.get("password", "")
+            
+            if self.auth.verify_password(password):
+                first_access = self.auth.is_first_access()
+                if first_access:
+                    self._json({"success": True, "first_access": True})
+                else:
+                    token = self.auth.create_session()
+                    body = json.dumps({"success": True, "first_access": False}, ensure_ascii=False).encode("utf-8")
+                    self.send_response(HTTPStatus.OK)
+                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.send_header("Content-Length", str(len(body)))
+                    self.send_header("Set-Cookie", f"session_token={token}; Path=/; HttpOnly; SameSite=Strict")
+                    self.end_headers()
+                    self.wfile.write(body)
+            else:
+                body = json.dumps({"success": False, "error": "Senha incorreta."}, ensure_ascii=False).encode("utf-8")
+                self.send_response(HTTPStatus.UNAUTHORIZED)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+            return
+
+        if path == "/api/auth/setup":
+            if not self.auth.is_first_access():
+                body = json.dumps({"success": False, "error": "Acesso de configuração inicial já foi concluído."}, ensure_ascii=False).encode("utf-8")
+                self.send_response(HTTPStatus.FORBIDDEN)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
+                
+            length = int(self.headers.get("Content-Length", "0"))
+            body_bytes = self.rfile.read(length)
+            try:
+                payload = json.loads(body_bytes.decode("utf-8"))
+            except Exception:
+                payload = {}
+            new_password = payload.get("new_password", "")
+            
+            if not new_password or len(new_password) < 6:
+                body = json.dumps({"success": False, "error": "A senha deve ter pelo menos 6 caracteres."}, ensure_ascii=False).encode("utf-8")
+                self.send_response(HTTPStatus.BAD_REQUEST)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
+                
+            recovery_key = self.auth.setup_new_password(new_password)
+            token = self.auth.create_session()
+            
+            body = json.dumps({"success": True, "recovery_key": recovery_key}, ensure_ascii=False).encode("utf-8")
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Set-Cookie", f"session_token={token}; Path=/; HttpOnly; SameSite=Strict")
+            self.end_headers()
+            self.wfile.write(body)
+            return
+
+        if path == "/api/auth/recover":
+            length = int(self.headers.get("Content-Length", "0"))
+            body_bytes = self.rfile.read(length)
+            try:
+                payload = json.loads(body_bytes.decode("utf-8"))
+            except Exception:
+                payload = {}
+            recovery_key = payload.get("recovery_key", "")
+            new_password = payload.get("new_password", "")
+            
+            if not recovery_key or not new_password or len(new_password) < 6:
+                body = json.dumps({"success": False, "error": "Chave de recuperação ou nova senha inválida."}, ensure_ascii=False).encode("utf-8")
+                self.send_response(HTTPStatus.BAD_REQUEST)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
+                
+            new_recovery_key = self.auth.recover_password(recovery_key, new_password)
+            if new_recovery_key:
+                token = self.auth.create_session()
+                body = json.dumps({"success": True, "new_recovery_key": new_recovery_key}, ensure_ascii=False).encode("utf-8")
+                self.send_response(HTTPStatus.OK)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.send_header("Set-Cookie", f"session_token={token}; Path=/; HttpOnly; SameSite=Strict")
+                self.end_headers()
+                self.wfile.write(body)
+            else:
+                body = json.dumps({"success": False, "error": "Chave de recuperação incorreta."}, ensure_ascii=False).encode("utf-8")
+                self.send_response(HTTPStatus.UNAUTHORIZED)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+            return
+
+        if path == "/api/auth/logout":
+            token = self._get_session_token()
+            if token:
+                self.auth.destroy_session(token)
+            
+            body = json.dumps({"success": True}, ensure_ascii=False).encode("utf-8")
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Set-Cookie", "session_token=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0")
+            self.end_headers()
+            self.wfile.write(body)
+            return
+
+        if path == "/api/auth/change_password":
+            length = int(self.headers.get("Content-Length", "0"))
+            body_bytes = self.rfile.read(length)
+            try:
+                payload = json.loads(body_bytes.decode("utf-8"))
+            except Exception:
+                payload = {}
+            current_password = payload.get("current_password", "")
+            new_password = payload.get("new_password", "")
+            
+            if not current_password or not new_password or len(new_password) < 6:
+                body = json.dumps({"success": False, "error": "Senha atual ou nova senha inválida."}, ensure_ascii=False).encode("utf-8")
+                self.send_response(HTTPStatus.BAD_REQUEST)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
+                
+            if self.auth.verify_password(current_password):
+                recovery_key = self.auth.setup_new_password(new_password)
+                self._json({"success": True, "recovery_key": recovery_key})
+            else:
+                body = json.dumps({"success": False, "error": "Senha atual incorreta."}, ensure_ascii=False).encode("utf-8")
+                self.send_response(HTTPStatus.BAD_REQUEST)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+            return
+
         if path == "/api/sync":
             self._json(self.app.sync_collection())
             return
@@ -392,11 +593,14 @@ def serve(config: Config | None = None) -> None:
     config = config or load_config()
     app = build_app(config)
 
+    auth = AuthManager(config.data_dir)
+
     class Handler(VinylRequestHandler):
         pass
 
     Handler.app = app
     Handler.static_dir = config.static_dir
+    Handler.auth = auth
 
     server = ThreadingHTTPServer((config.host, config.port), Handler)
     if config.cert_file and config.key_file:

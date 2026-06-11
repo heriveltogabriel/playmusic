@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acesso Administrativo - Vinyl Display</title>
+  
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* Design Tokens matching the main application theme */
+    :root {
+      --bg-base: #080808;
+      --bg-gradient: radial-gradient(circle at center, #141414 0%, #080808 100%);
+      --primary: #e65c00;
+      --primary-hover: #ff751a;
+      --primary-light: rgba(230, 92, 0, 0.15);
+      --primary-glow: rgba(230, 92, 0, 0.35);
+      --text-primary: #eae5d9;
+      --text-secondary: #a09a8e;
+      --text-muted: #5e584f;
+      --border-color: rgba(234, 229, 217, 0.08);
+      --border-color-active: rgba(230, 92, 0, 0.4);
+      --glass-bg: rgba(22, 22, 22, 0.45);
+      --glass-border: 1px solid rgba(234, 229, 217, 0.06);
+      --danger: #ff453a;
+      --success: #30d158;
+      --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.7);
+      --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-slow: 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body {
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-base);
+      background-image: var(--bg-gradient);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Ambient Background Glow */
+    .ambient-glow {
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle at center, rgba(230, 92, 0, 0.05) 0%, rgba(0, 0, 0, 0) 50%);
+      z-index: 0;
+      pointer-events: none;
+      animation: drift 20s linear infinite;
+    }
+
+    @keyframes drift {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Login Card Container with Glassmorphism */
+    .login-container {
+      width: 100%;
+      max-width: 440px;
+      padding: 2.5rem;
+      border-radius: 24px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: var(--glass-border);
+      box-shadow: var(--shadow-lg);
+      z-index: 10;
+      position: relative;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeIn 0.8s var(--transition-slow) forwards;
+    }
+
+    @keyframes fadeIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Spinning Vinyl Logo */
+    .logo-container {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .vinyl-record {
+      width: 88px;
+      height: 88px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #2a2a2a 12%, #0a0a0a 65%, #000000 100%);
+      border: 3px solid #333;
+      box-shadow: 0 0 25px rgba(0, 0, 0, 0.9), 0 0 15px rgba(230, 92, 0, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.25rem auto;
+      position: relative;
+      animation: spin 10s linear infinite;
+    }
+
+    .vinyl-record::before {
+      content: '';
+      position: absolute;
+      top: 5px; left: 5px; right: 5px; bottom: 5px;
+      border: 1px dashed rgba(255, 255, 255, 0.05);
+      border-radius: 50%;
+    }
+
+    .vinyl-record::after {
+      content: '';
+      position: absolute;
+      top: 15px; left: 15px; right: 15px; bottom: 15px;
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      border-radius: 50%;
+    }
+
+    .vinyl-label {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background-color: var(--primary);
+      box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+    }
+
+    .vinyl-label::after {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: #080808;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .logo-title {
+      font-size: 1.65rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--text-primary);
+      margin-bottom: 0.35rem;
+    }
+
+    .logo-subtitle {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+
+    /* Forms */
+    .auth-form {
+      display: none;
+    }
+
+    .auth-form.active {
+      display: block;
+      animation: slideIn 0.4s var(--transition-normal);
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 0.9rem 1rem;
+      font-family: inherit;
+      font-size: 0.95rem;
+      color: var(--text-primary);
+      background-color: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      outline: none;
+      transition: var(--transition-normal);
+    }
+
+    .form-input:focus {
+      border-color: var(--border-color-active);
+      box-shadow: 0 0 12px var(--primary-glow);
+      background-color: rgba(0, 0, 0, 0.45);
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-family: inherit;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: var(--transition-normal);
+    }
+
+    .toggle-password:hover {
+      color: var(--text-primary);
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    /* Action Buttons */
+    .btn-submit {
+      width: 100%;
+      padding: 0.9rem;
+      background-color: var(--primary);
+      color: #fff;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: var(--transition-normal);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 15px rgba(230, 92, 0, 0.2);
+    }
+
+    .btn-submit:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(230, 92, 0, 0.35);
+    }
+
+    .btn-submit:active {
+      transform: translateY(1px);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
+    /* Spinner */
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: none;
+    }
+
+    /* Messages & Statuses */
+    .alert-message {
+      padding: 0.8rem 1rem;
+      border-radius: 10px;
+      font-size: 0.875rem;
+      margin-bottom: 1.25rem;
+      display: none;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .alert-danger {
+      background-color: rgba(255, 69, 58, 0.1);
+      border: 1px solid rgba(255, 69, 58, 0.2);
+      color: var(--danger);
+    }
+
+    .alert-success {
+      background-color: rgba(48, 209, 88, 0.1);
+      border: 1px solid rgba(48, 209, 88, 0.2);
+      color: var(--success);
+    }
+
+    .alert-info {
+      background-color: rgba(230, 92, 0, 0.08);
+      border: 1px solid rgba(230, 92, 0, 0.18);
+      color: var(--primary);
+    }
+
+    /* Footer Links */
+    .form-footer {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.875rem;
+    }
+
+    .footer-link {
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: var(--transition-normal);
+      cursor: pointer;
+    }
+
+    .footer-link:hover {
+      color: var(--primary);
+      text-underline-offset: 4px;
+      text-decoration: underline;
+    }
+
+    /* Key Display Box */
+    .key-display-box {
+      background-color: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1rem;
+      margin: 1.25rem 0;
+      text-align: center;
+      position: relative;
+    }
+
+    .recovery-key-text {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--primary);
+      letter-spacing: 1px;
+      user-select: all;
+    }
+
+    .key-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 1rem;
+    }
+
+    .btn-secondary {
+      padding: 0.75rem;
+      background-color: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition-normal);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background-color: rgba(255, 255, 255, 0.1);
+      border-color: var(--text-secondary);
+    }
+
+    /* Simple warning box */
+    .warning-box {
+      font-size: 0.825rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      display: flex;
+      gap: 8px;
+      margin-top: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="ambient-glow"></div>
+
+  <div class="login-container" id="loginCard">
+    <div class="logo-container">
+      <div class="vinyl-record">
+        <div class="vinyl-label"></div>
+      </div>
+      <h1 class="logo-title" id="cardTitle">Painel de Controle</h1>
+      <p class="logo-subtitle" id="cardSubtitle">Acesso administrativo do Vinyl Display</p>
+    </div>
+
+    <!-- Alert Box -->
+    <div class="alert-message" id="alertBox"></div>
+
+    <!-- FORM 1: LOGIN -->
+    <form id="loginForm" class="auth-form active" novalidate>
+      <div class="form-group">
+        <label for="loginPassword" class="form-label">Senha Administrativa</label>
+        <div class="input-wrapper">
+          <input type="password" id="loginPassword" class="form-input" placeholder="Digite a senha..." required autocomplete="current-password">
+          <button type="button" class="toggle-password" onclick="togglePasswordVisibility('loginPassword')">Mostrar</button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-submit" id="loginSubmitBtn">
+        <span class="spinner" id="loginSpinner"></span>
+        <span>Entrar</span>
+      </button>
+
+      <div class="form-footer">
+        <a class="footer-link" onclick="showForm('recoverForm')">Esqueceu a senha?</a>
+      </div>
+    </form>
+
+    <!-- FORM 2: SETUP (FIRST ACCESS) -->
+    <form id="setupForm" class="auth-form" novalidate>
+      <div class="alert-message alert-info" style="display: block; margin-bottom: 1.5rem;">
+        <strong>Primeiro Acesso Detectado</strong><br>
+        A senha padrão <code>admin123</code> foi usada. Por segurança, altere sua senha para continuar.
+      </div>
+
+      <div class="form-group">
+        <label for="setupPassword" class="form-label">Nova Senha</label>
+        <div class="input-wrapper">
+          <input type="password" id="setupPassword" class="form-input" placeholder="Mínimo 6 caracteres..." required minlength="6" autocomplete="new-password">
+          <button type="button" class="toggle-password" onclick="togglePasswordVisibility('setupPassword')">Mostrar</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="setupPasswordConfirm" class="form-label">Confirmar Nova Senha</label>
+        <div class="input-wrapper">
+          <input type="password" id="setupPasswordConfirm" class="form-input" placeholder="Confirme a senha..." required minlength="6" autocomplete="new-password">
+          <button type="button" class="toggle-password" onclick="togglePasswordVisibility('setupPasswordConfirm')">Mostrar</button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-submit" id="setupSubmitBtn">
+        <span class="spinner" id="setupSpinner"></span>
+        <span>Salvar e Prosseguir</span>
+      </button>
+    </form>
+
+    <!-- FORM 3: RECOVERY KEY DISPLAY (POST-SETUP) -->
+    <div id="keyDisplayView" class="auth-form">
+      <p class="logo-subtitle" style="text-align: center; margin-bottom: 1rem;">
+        Esta chave de recuperação é exibida apenas uma vez. Anote-a e salve-a para não perder o acesso ao servidor administrativo.
+      </p>
+
+      <div class="key-display-box">
+        <div class="recovery-key-text" id="recoveryKeyVal">VINYL-RESTORE-XXXX-XXXX</div>
+      </div>
+
+      <div class="key-actions">
+        <button type="button" class="btn-secondary" onclick="copyRecoveryKey()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          Copiar Chave
+        </button>
+        <button type="button" class="btn-secondary" onclick="downloadRecoveryKey()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Baixar .txt
+        </button>
+      </div>
+
+      <div class="warning-box">
+        <span>⚠️</span>
+        <span>A chave também foi salva localmente no servidor em <code>data/recovery_key.txt</code> para recuperação via SSH.</span>
+      </div>
+
+      <button type="button" class="btn-submit" style="margin-top: 1.5rem;" onclick="proceedToDashboard()">
+        <span>Entrar no Painel</span>
+      </button>
+    </div>
+
+    <!-- FORM 4: RECOVER (FORGOT PASSWORD) -->
+    <form id="recoverForm" class="auth-form" novalidate>
+      <div class="form-group">
+        <label for="recoverKeyInput" class="form-label">Chave de Recuperação</label>
+        <input type="text" id="recoverKeyInput" class="form-input" placeholder="VINYL-RESTORE-XXXX-XXXX" required>
+      </div>
+
+      <div class="form-group">
+        <label for="recoverNewPassword" class="form-label">Nova Senha</label>
+        <div class="input-wrapper">
+          <input type="password" id="recoverNewPassword" class="form-input" placeholder="Mínimo 6 caracteres..." required minlength="6" autocomplete="new-password">
+          <button type="button" class="toggle-password" onclick="togglePasswordVisibility('recoverNewPassword')">Mostrar</button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-submit" id="recoverSubmitBtn">
+        <span class="spinner" id="recoverSpinner"></span>
+        <span>Redefinir e Entrar</span>
+      </button>
+
+      <div class="form-footer">
+        <a class="footer-link" onclick="showForm('loginForm')">Voltar para o Login</a>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    let generatedRecoveryKey = "";
+
+    function togglePasswordVisibility(inputId) {
+      const input = document.getElementById(inputId);
+      const btn = input.nextElementSibling;
+      if (input.type === "password") {
+        input.type = "text";
+        btn.textContent = "Ocultar";
+      } else {
+        input.type = "password";
+        btn.textContent = "Mostrar";
+      }
+    }
+
+    function showAlert(message, type = "danger") {
+      const box = document.getElementById("alertBox");
+      box.style.display = "block";
+      box.className = `alert-message alert-${type}`;
+      box.textContent = message;
+    }
+
+    function hideAlert() {
+      document.getElementById("alertBox").style.display = "none";
+    }
+
+    function showForm(formId) {
+      hideAlert();
+      document.querySelectorAll(".auth-form").forEach(f => f.classList.remove("active"));
+      document.getElementById(formId).classList.add("active");
+
+      const title = document.getElementById("cardTitle");
+      const subtitle = document.getElementById("cardSubtitle");
+
+      if (formId === 'setupForm') {
+        title.textContent = "Configurar Painel";
+        subtitle.textContent = "Defina sua nova senha administrativa";
+      } else if (formId === 'keyDisplayView') {
+        title.textContent = "Acesso Configurado";
+        subtitle.textContent = "Guarde sua Chave de Recuperação";
+      } else if (formId === 'recoverForm') {
+        title.textContent = "Recuperar Acesso";
+        subtitle.textContent = "Redefina a senha usando sua chave";
+      } else {
+        title.textContent = "Painel de Controle";
+        subtitle.textContent = "Acesso administrativo do Vinyl Display";
+      }
+    }
+
+    // FORM 1: LOGIN SUBMIT
+    document.getElementById("loginForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      hideAlert();
+
+      const passwordInput = document.getElementById("loginPassword");
+      const password = passwordInput.value.trim();
+      if (!password) {
+        showAlert("Por favor, digite a senha.");
+        return;
+      }
+
+      const submitBtn = document.getElementById("loginSubmitBtn");
+      const spinner = document.getElementById("loginSpinner");
+
+      submitBtn.disabled = true;
+      spinner.style.display = "inline-block";
+
+      try {
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password })
+        });
+
+        const data = await res.json();
+        
+        if (res.ok && data.success) {
+          if (data.first_access) {
+            showForm("setupForm");
+          } else {
+            proceedToDashboard();
+          }
+        } else {
+          showAlert(data.error || "Senha incorreta ou erro no servidor.");
+        }
+      } catch (err) {
+        showAlert("Erro de conexão com o servidor. Tente novamente.");
+        console.error(err);
+      } finally {
+        submitBtn.disabled = false;
+        spinner.style.display = "none";
+      }
+    });
+
+    // FORM 2: SETUP SUBMIT
+    document.getElementById("setupForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      hideAlert();
+
+      const pass = document.getElementById("setupPassword").value;
+      const confirm = document.getElementById("setupPasswordConfirm").value;
+
+      if (!pass || pass.length < 6) {
+        showAlert("A nova senha deve ter pelo menos 6 caracteres.");
+        return;
+      }
+
+      if (pass !== confirm) {
+        showAlert("As senhas digitadas não coincidem.");
+        return;
+      }
+
+      const submitBtn = document.getElementById("setupSubmitBtn");
+      const spinner = document.getElementById("setupSpinner");
+
+      submitBtn.disabled = true;
+      spinner.style.display = "inline-block";
+
+      try {
+        const res = await fetch("/api/auth/setup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ new_password: pass })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          generatedRecoveryKey = data.recovery_key;
+          document.getElementById("recoveryKeyVal").textContent = generatedRecoveryKey;
+          showForm("keyDisplayView");
+        } else {
+          showAlert(data.error || "Falha ao definir nova senha.");
+        }
+      } catch (err) {
+        showAlert("Erro ao conectar com o servidor.");
+        console.error(err);
+      } finally {
+        submitBtn.disabled = false;
+        spinner.style.display = "none";
+      }
+    });
+
+    // FORM 4: RECOVER SUBMIT
+    document.getElementById("recoverForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      hideAlert();
+
+      const key = document.getElementById("recoverKeyInput").value.trim().toUpperCase();
+      const pass = document.getElementById("recoverNewPassword").value;
+
+      if (!key) {
+        showAlert("Por favor, informe a chave de recuperação.");
+        return;
+      }
+
+      if (!pass || pass.length < 6) {
+        showAlert("A nova senha deve ter pelo menos 6 caracteres.");
+        return;
+      }
+
+      const submitBtn = document.getElementById("recoverSubmitBtn");
+      const spinner = document.getElementById("recoverSpinner");
+
+      submitBtn.disabled = true;
+      spinner.style.display = "inline-block";
+
+      try {
+        const res = await fetch("/api/auth/recover", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ recovery_key: key, new_password: pass })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          generatedRecoveryKey = data.new_recovery_key;
+          document.getElementById("recoveryKeyVal").textContent = generatedRecoveryKey;
+          showForm("keyDisplayView");
+          showAlert("Senha redefinida com sucesso! Nova chave gerada abaixo.", "success");
+        } else {
+          showAlert(data.error || "Chave de recuperação incorreta.");
+        }
+      } catch (err) {
+        showAlert("Erro de conexão com o servidor.");
+        console.error(err);
+      } finally {
+        submitBtn.disabled = false;
+        spinner.style.display = "none";
+      }
+    });
+
+    // Actions for Key View
+    function copyRecoveryKey() {
+      const text = document.getElementById("recoveryKeyVal").textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.querySelector(".key-actions button");
+        const origText = btn.innerHTML;
+        btn.innerHTML = "Copidado! ✓";
+        setTimeout(() => { btn.innerHTML = origText; }, 2000);
+      }).catch(err => {
+        showAlert("Falha ao copiar a chave. Selecione o texto manualmente.");
+      });
+    }
+
+    function downloadRecoveryKey() {
+      const text = document.getElementById("recoveryKeyVal").textContent;
+      const content = `CHAVE DE RECUPERAÇÃO DO VINYL DISPLAY\n====================================\n\nChave: ${text}\n\nGuarde esta chave em local seguro. Ela permite redefinir a senha do painel de administração em caso de perda.\nGerado em: ${new Date().toLocaleString('pt-BR')}\n`;
+      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `vinyl_display_recovery_key.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function proceedToDashboard() {
+      window.location.href = "/admin";
+    }
+  </script>
+</body>
+</html>
