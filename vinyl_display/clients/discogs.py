@@ -215,11 +215,29 @@ class DiscogsClient:
                 
         return release
 
-    def sync_collection(self, store: CatalogStore) -> int:
-        count = 0
+    def sync_collection(self, store: CatalogStore) -> dict[str, int]:
+        added_count = 0
+        updated_count = 0
+        deleted_count = 0
+        
+        # Get existing local Discogs release IDs (positive IDs only)
+        local_ids = set()
+        for r in store.list_releases():
+            if r.release_id > 0:
+                local_ids.add(r.release_id)
+                
+        synced_ids = set()
         import datetime
         import dataclasses
+        
         for release_id, date_added_str in self.collection_releases_meta():
+            synced_ids.add(release_id)
+            existing = store.get_release(release_id)
+            if existing is None:
+                added_count += 1
+            else:
+                updated_count += 1
+                
             release = self.release_details(release_id)
             synced_at = 0.0
             if date_added_str:
@@ -232,8 +250,21 @@ class DiscogsClient:
             if synced_at > 0.0:
                 release = dataclasses.replace(release, synced_at=synced_at)
             store.upsert_release(release)
-            count += 1
             self.sleep_func(self.page_delay_seconds)
-        store.set_metadata("discogs_last_sync_count", str(count))
+            
+        # Delete local Discogs releases that are no longer in the live collection
+        to_delete = local_ids - synced_ids
+        for release_id in to_delete:
+            store.delete_release(release_id)
+            deleted_count += 1
+            
+        total_count = len(synced_ids)
+        store.set_metadata("discogs_last_sync_count", str(total_count))
         store.set_metadata("discogs_last_sync_at", str(time.time()))
-        return count
+        
+        return {
+            "count": total_count,
+            "added": added_count,
+            "updated": updated_count,
+            "deleted": deleted_count,
+        }

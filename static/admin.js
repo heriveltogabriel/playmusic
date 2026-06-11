@@ -2709,7 +2709,12 @@ function initializeSettingsForm() {
         const data = await response.json();
         
         if (data.status === 'ok') {
-          showToast(`Sincronização concluída! ${data.count} discos importados.`, 'success');
+          let summary = `Sincronização concluída com sucesso!<br>`;
+          summary += `• <b>Total no Discogs:</b> ${data.count} LPs<br>`;
+          summary += `• <b>Adicionados:</b> ${data.added} novos<br>`;
+          summary += `• <b>Atualizados:</b> ${data.updated} existentes<br>`;
+          summary += `• <b>Removidos:</b> ${data.deleted} removidos`;
+          showToast(summary, 'success');
           await loadDatabase();
           applyFiltersAndRender();
         } else {

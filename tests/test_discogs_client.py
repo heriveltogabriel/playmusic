@@ -88,10 +88,10 @@ class DiscogsClientTests(unittest.TestCase):
                 request_json=FakeJsonTransport(),
             )
 
-            count = client.sync_collection(store)
+            count_info = client.sync_collection(store)
             release = store.get_release(14192689)
 
-            self.assertEqual(count, 1)
+            self.assertEqual(count_info["count"], 1)
             self.assertIsNotNone(release)
             self.assertEqual(release.title, "Abbey Road")
             self.assertEqual(release.artist, "The Beatles")
@@ -118,9 +118,9 @@ class DiscogsClientTests(unittest.TestCase):
                 sleep_func=sleeps.append,
             )
 
-            count = client.sync_collection(store)
+            count_info = client.sync_collection(store)
 
-            self.assertEqual(count, 1)
+            self.assertEqual(count_info["count"], 1)
             self.assertEqual(transport.release_attempts, 2)
             self.assertIn(0.0, sleeps)
             self.assertIsNotNone(store.get_release(14192689))

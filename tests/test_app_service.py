@@ -24,7 +24,12 @@ class FakeDiscogsClient:
                 discogs_url="https://www.discogs.com/release/14192689-The-Beatles-Abbey-Road",
             )
         )
-        return 1
+        return {
+            "count": 1,
+            "added": 1,
+            "updated": 0,
+            "deleted": 0,
+        }
 
 
 class FailingDiscogsClient:
