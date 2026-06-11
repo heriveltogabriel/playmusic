@@ -166,6 +166,7 @@ body {
 .sidebar-nav-bottom {
   padding: 16px 12px;
   margin-top: auto;
+  border-top: 1px solid var(--border-color);
 }
 
 .sidebar-nav-bottom ul {
