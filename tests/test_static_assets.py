@@ -9,11 +9,12 @@ ROOT = Path(__file__).resolve().parents[1]
 class StaticAssetTests(unittest.TestCase):
     def test_index_contains_required_mount_points(self):
         html = (ROOT / "static" / "index.html").read_text()
+        admin_html = (ROOT / "static" / "admin.html").read_text()
 
         self.assertIn('id="album-cover"', html)
         self.assertIn('id="track-title"', html)
         self.assertIn('id="artist-name"', html)
-        self.assertIn('id="sync-button"', html)
+        self.assertIn('id="admin-sync-btn"', admin_html)
 
     def test_app_uses_microphone_and_media_recorder(self):
         js = (ROOT / "static" / "app.js").read_text()

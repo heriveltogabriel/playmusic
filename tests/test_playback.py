@@ -185,6 +185,145 @@ class PlaybackControllerTests(unittest.TestCase):
         self.assertEqual(state["progress_seconds"], 100)
         self.assertIn("Fim do disco!", state["message"])
 
+    def test_no_scrobble_on_single_track(self):
+        scrobbled_releases = []
+        def on_scrobble(release_id):
+            scrobbled_releases.append(release_id)
+
+        controller = PlaybackController(on_scrobble=on_scrobble)
+        controller.handle_match(match_at_a1(), now=1000)
+
+        # Retrieve state immediately
+        state = controller.current_state(now=1010)
+        self.assertEqual(state["track"]["position"], "A1")
+        self.assertEqual(len(controller.active.played_tracks), 1)
+        self.assertEqual(scrobbled_releases, [])
+
+    def test_scrobble_on_track_progression(self):
+        scrobbled_releases = []
+        def on_scrobble(release_id):
+            scrobbled_releases.append(release_id)
+
+        controller = PlaybackController(on_scrobble=on_scrobble)
+        controller.handle_match(match_at_a1(), now=1000)
+
+        # A1 duration is 261s. At 1000 + 270, we are on A2.
+        state = controller.current_state(now=1270)
+        self.assertEqual(state["track"]["position"], "A2")
+        self.assertEqual(scrobbled_releases, [14192689])
+
+        # Query state again at 1280. It should not scrobble a second time.
+        state = controller.current_state(now=1280)
+        self.assertEqual(scrobbled_releases, [14192689])
+
+    def test_scrobble_on_skip_next(self):
+        scrobbled_releases = []
+        def on_scrobble(release_id):
+            scrobbled_releases.append(release_id)
+
+        controller = PlaybackController(on_scrobble=on_scrobble)
+        controller.handle_match(match_at_a1(), now=1000)
+
+        # Query to register first track
+        controller.current_state(now=1000)
+
+        # Skip to next track
+        controller.skip_next(now=1010)
+        state = controller.current_state(now=1010)
+        self.assertEqual(state["track"]["position"], "A2")
+        self.assertEqual(scrobbled_releases, [14192689])
+
+    def test_scrobble_on_same_release_match(self):
+        scrobbled_releases = []
+        def on_scrobble(release_id):
+            scrobbled_releases.append(release_id)
+
+        controller = PlaybackController(on_scrobble=on_scrobble)
+        match = match_at_a1()
+        controller.handle_match(match, now=1000)
+        controller.current_state(now=1000) # register A1
+
+        # Match A2 of the same release
+        match_a2 = TrackMatch(release=match.release, track=match.release.tracks[1], score=100, reason="test")
+        controller.handle_match(match_a2, now=1010)
+        state = controller.current_state(now=1010)
+        self.assertEqual(state["track"]["position"], "A2")
+        self.assertEqual(scrobbled_releases, [14192689])
+
+    def test_scrobble_reset_on_new_release(self):
+        scrobbled_releases = []
+        def on_scrobble(release_id):
+            scrobbled_releases.append(release_id)
+
+        controller = PlaybackController(on_scrobble=on_scrobble)
+        
+        # Play first release
+        controller.handle_match(match_at_a1(), now=1000)
+        controller.current_state(now=1000) # register first track
+        
+        # Play different release
+        other_release = Release(
+            release_id=99999,
+            title="Other Album",
+            artist="Other Artist",
+            year=2021,
+            cover_url="https://example.test/other.jpg",
+            country="US",
+            labels=["Label"],
+            catalog_numbers=["123"],
+            formats=["Vinyl"],
+            tracks=[
+                Track("A1", "Track 1", 100),
+                Track("A2", "Track 2", 100),
+            ],
+            discogs_url="https://www.discogs.com/release/99999",
+        )
+        match_other = TrackMatch(release=other_release, track=other_release.tracks[0], score=100, reason="test")
+        controller.handle_match(match_other, now=1020)
+        
+        controller.current_state(now=1020) # register track 1 of new release
+        self.assertEqual(scrobbled_releases, []) # still only 1 track of new release played
+        
+        # Advance new release to track 2
+        controller.current_state(now=1130) # time now 1020 + 110. Track 1 is 100s, so we are on track 2.
+        self.assertEqual(scrobbled_releases, [99999])
+
+    def test_scrobble_on_track_without_duration(self):
+        scrobbled_releases = []
+        def on_scrobble(release_id):
+            scrobbled_releases.append(release_id)
+
+        controller = PlaybackController(on_scrobble=on_scrobble)
+        
+        # Album has tracks with no duration (None)
+        no_dur_release = Release(
+            release_id=77777,
+            title="No Duration Album",
+            artist="No Duration Artist",
+            year=2022,
+            cover_url="https://example.test/nodur.jpg",
+            country="US",
+            labels=["Label"],
+            catalog_numbers=["123"],
+            formats=["Vinyl"],
+            tracks=[
+                Track("A1", "Track 1", None),
+                Track("A2", "Track 2", None),
+            ],
+            discogs_url="https://www.discogs.com/release/77777",
+        )
+        match = TrackMatch(release=no_dur_release, track=no_dur_release.tracks[0], score=100, reason="test")
+        controller.handle_match(match, now=1000)
+        
+        # Register track 1
+        controller.current_state(now=1000)
+        self.assertEqual(scrobbled_releases, [])
+        
+        # Time progresses 190 seconds (exceeding the 180s fallback duration)
+        state = controller.current_state(now=1190)
+        self.assertEqual(state["track"]["position"], "A2")
+        self.assertEqual(scrobbled_releases, [77777])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -10,7 +10,6 @@ from urllib.parse import urlparse
 
 from vinyl_display.app import VinylDisplayApp
 from vinyl_display.catalog import CatalogStore
-from vinyl_display.clients.audd import AudDClient
 from vinyl_display.clients.shazam import ShazamClient
 from vinyl_display.clients.discogs import DiscogsClient
 from vinyl_display.config import Config, load_config
@@ -19,13 +18,9 @@ from vinyl_display.config import Config, load_config
 def build_app(config: Config) -> VinylDisplayApp:
     store = CatalogStore(config.database_path)
     discogs = DiscogsClient(config.discogs_user, config.discogs_user_agent)
-    if config.rapidapi_shazam_key:
-        recognizer = ShazamClient(config.rapidapi_shazam_key, config.rapidapi_shazam_host)
-        print("[SERVER] Using Shazam (via RapidAPI) for music recognition.")
-    else:
-        recognizer = AudDClient(config.audd_api_token)
-        print("[SERVER] Using AudD for music recognition.")
-    return VinylDisplayApp(store, discogs, recognizer)
+    recognizer = ShazamClient(config.rapidapi_shazam_key, config.rapidapi_shazam_host)
+    print("[SERVER] Using Shazam (via RapidAPI) for music recognition.")
+    return VinylDisplayApp(store, discogs, recognizer, config)
 
 
 
@@ -40,6 +35,16 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             return
         if path == "/api/state":
             self._json(self.app.state())
+            return
+        if path == "/api/config":
+            config_data = {
+                "discogs_user": self.app.config.discogs_user if self.app.config else "",
+                "discogs_user_agent": self.app.config.discogs_user_agent if self.app.config else "",
+                "discogs_token": self.app.config.discogs_token if self.app.config else "",
+                "rapidapi_shazam_key": self.app.config.rapidapi_shazam_key if self.app.config else "",
+                "rapidapi_shazam_host": self.app.config.rapidapi_shazam_host if self.app.config else "",
+            }
+            self._json(config_data)
             return
         if path == "/":
             self._send_static("index.html")
@@ -193,6 +198,30 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
         path = urlparse(self.path).path
         if path == "/api/sync":
             self._json(self.app.sync_collection())
+            return
+        if path == "/api/config":
+            length = int(self.headers.get("Content-Length", "0"))
+            body_bytes = self.rfile.read(length)
+            payload = json.loads(body_bytes.decode("utf-8"))
+            
+            updates = {
+                "DISCOGS_USER": payload.get("discogs_user", "").strip(),
+                "DISCOGS_USER_AGENT": payload.get("discogs_user_agent", "").strip(),
+                "DISCOGS_TOKEN": payload.get("discogs_token", "").strip(),
+                "RAPIDAPI_SHAZAM_KEY": payload.get("rapidapi_shazam_key", "").strip(),
+                "RAPIDAPI_SHAZAM_HOST": payload.get("rapidapi_shazam_host", "").strip(),
+            }
+            
+            try:
+                self.app.update_config(updates)
+                self._json({"status": "ok"})
+            except Exception as e:
+                body = json.dumps({"error": str(e)}).encode("utf-8")
+                self.send_response(HTTPStatus.INTERNAL_SERVER_ERROR)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
             return
         if path == "/api/recognize":
             length = int(self.headers.get("Content-Length", "0"))

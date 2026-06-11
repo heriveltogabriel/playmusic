@@ -4,12 +4,12 @@
 set -e
 
 echo "============================================="
-echo "  Vinyl Display - Raspberry Pi Setup Script  "
+echo "  Vinyl Display - Remote Linux Server Setup  "
 echo "============================================="
 
-# 1. Check if running on Linux (Raspberry Pi OS)
+# 1. Check if running on Linux
 if [[ "$OSTYPE" != "linux-gnu"* ]]; then
-    echo "⚠️ Warning: This script is designed for Linux (Raspberry Pi OS / Debian). Continuing anyway..."
+    echo "⚠️ Warning: This script is designed for Linux (Debian/Ubuntu/CentOS). Continuing anyway..."
 fi
 
 # 2. Check for python3 and openssl
@@ -43,7 +43,7 @@ KEY_FILE="$PROJECT_DIR/certs/key.pem"
 if [ ! -f "$CERT_FILE" ] || [ ! -f "$KEY_FILE" ]; then
     echo "Generating self-signed SSL certificates for HTTPS (needed for browser microphone access)..."
     openssl req -x509 -newkey rsa:4096 -keyout "$KEY_FILE" -out "$CERT_FILE" -sha256 -days 365 -nodes \
-        -subj "/C=BR/ST=State/L=City/O=VinylDisplay/OU=App/CN=raspberrypi.local"
+        -subj "/C=BR/ST=State/L=City/O=VinylDisplay/OU=App/CN=localhost"
     echo "✅ Certificates generated in $PROJECT_DIR/certs/"
 else
     echo "✅ Self-signed SSL certificates already exist."
@@ -72,7 +72,7 @@ if [ ! -f "$ENV_FILE" ]; then
     echo "------------------------------------------------------------"
     echo "⚠️  Important: Please fill in your API tokens in the .env file."
     echo "File location: $ENV_FILE"
-    echo "You can use either AudD or Shazam (via RapidAPI)."
+    echo "You must configure Shazam (via RapidAPI) for music recognition."
     echo "------------------------------------------------------------"
 else
     echo "✅ .env configuration file already exists."

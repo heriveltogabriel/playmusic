@@ -9,7 +9,7 @@ class DocumentationTests(unittest.TestCase):
     def test_env_example_documents_required_values(self):
         env = (ROOT / ".env.example").read_text()
 
-        self.assertIn("AUDD_API_TOKEN=", env)
+        self.assertIn("RAPIDAPI_SHAZAM_KEY=", env)
         self.assertIn("DISCOGS_USER=heriveltogabriel", env)
         self.assertIn("VINYL_CERT_FILE=", env)
         self.assertIn("VINYL_KEY_FILE=", env)

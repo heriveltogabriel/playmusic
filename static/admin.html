@@ -86,6 +86,15 @@
               Sugestão da Semana
             </button>
           </li>
+          <li>
+            <button class="nav-btn" data-view="settings">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+              Configurações
+            </button>
+          </li>
         </ul>
       </nav>
 
@@ -380,6 +389,81 @@
           </div>
         </div>
       </section>
+
+      <!-- VIEW 6: SETTINGS (Configurações) -->
+      <section id="view-settings" class="content-view">
+        <div class="settings-container">
+          
+          <!-- Standalone Sync Collection Bar -->
+          <div class="settings-card sync-collection-bar" style="display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 16px 20px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 12px; margin-bottom: 24px;">
+            <div style="flex: 1;">
+              <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">Sincronizar Coleção</h3>
+              <p style="margin: 4px 0 0; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">Importe e atualize os seus LPs a partir do Discogs.</p>
+            </div>
+            <button type="button" id="admin-sync-btn" class="btn btn-primary" style="height: 38px; padding: 0 16px; display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; border-radius: 8px;">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" class="sync-icon-svg" style="transition: transform 0.3s ease;">
+                <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+              </svg>
+              <span>Sincronizar Agora</span>
+            </button>
+          </div>
+
+          <form id="settings-form" class="settings-form">
+            
+            <!-- Discogs Settings Card -->
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                  <path d="M2 12h20"></path>
+                </svg>
+                <h3>Integração com o Discogs</h3>
+              </div>
+              <p class="settings-card-desc">Configuração do catálogo, busca de lançamentos e importação de coleções.</p>
+              <div class="form-group">
+                <label for="setting-discogs-user">Nome de Usuário</label>
+                <input type="text" id="setting-discogs-user" placeholder="Ex: heriveltogabriel">
+              </div>
+              <div class="form-group">
+                <label for="setting-discogs-user-agent">User Agent</label>
+                <input type="text" id="setting-discogs-user-agent" placeholder="Ex: VinylDisplayMVP/0.1">
+              </div>
+              <div class="form-group">
+                <label for="setting-discogs-token">Developer Token</label>
+                <input type="password" id="setting-discogs-token" placeholder="Insira seu token pessoal do Discogs...">
+              </div>
+            </div>
+
+            <!-- RapidAPI Shazam Settings Card -->
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
+                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+                <h3>Reconhecimento Shazam (RapidAPI)</h3>
+              </div>
+              <p class="settings-card-desc">Opção alternativa / de backup para reconhecimento de áudio usando a API do Shazam via RapidAPI.</p>
+              <div class="form-group">
+                <label for="setting-shazam-key">Chave da RapidAPI (Key)</label>
+                <input type="password" id="setting-shazam-key" placeholder="Insira sua chave do RapidAPI Shazam...">
+              </div>
+              <div class="form-group">
+                <label for="setting-shazam-host">Host da RapidAPI (Host)</label>
+                <input type="text" id="setting-shazam-host" placeholder="Ex: shazam-core.p.rapidapi.com">
+              </div>
+            </div>
+
+            <!-- Action Footer -->
+            <div class="settings-submit-footer">
+              <button type="submit" id="save-settings-btn" class="btn btn-primary btn-pulse">
+                Salvar Configurações
+              </button>
+            </div>
+            
+          </form>
+        </div>
+      </section>
     </main>
   </div>
 
@@ -544,15 +628,7 @@
               </div>
             </div>
 
-            <div class="form-group">
-              <label for="form-genres">Gêneros (separados por vírgula)</label>
-              <input type="text" id="form-genres" placeholder="Electronic, Rock, Latin">
-            </div>
 
-            <div class="form-group">
-              <label for="form-styles">Estilos (separados por vírgula)</label>
-              <input type="text" id="form-styles" placeholder="Pop Rock, New Wave, Synth-pop">
-            </div>
 
             <div class="form-group">
               <label for="form-notes">Notas do Colecionador</label>
@@ -605,6 +681,17 @@
       <h3 style="margin-top: 24px; margin-bottom: 16px; font-size: 1.1rem; font-weight: 700; color: var(--text-primary);">Gráfico de Adições Mensais</h3>
       <div id="timeline-monthly-chart" class="custom-chart-list">
         <!-- Dynamically populated -->
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Dialog 4: Artist Albums List -->
+  <dialog id="artist-albums-dialog" class="dialog-glass">
+    <div class="dialog-content artist-albums-dialog-content" style="max-width: 500px; width: 90%; margin: auto;">
+      <button class="dialog-close-btn" id="artist-albums-close" data-dialog-close>&times;</button>
+      <h2 id="artist-albums-title" style="margin-bottom: 24px; font-weight: 700; font-size: 1.3rem; color: var(--text-primary);">Álbuns de Artista</h2>
+      <div id="artist-albums-list" class="custom-ranking-list" style="max-height: 400px; overflow-y: auto; gap: 12px; padding-right: 4px;">
+        <!-- Dynamically populated list of albums -->
       </div>
     </div>
   </dialog>

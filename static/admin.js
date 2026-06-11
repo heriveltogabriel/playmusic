@@ -38,6 +38,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initializeSuggestionsControls();
   initializeDialogs();
   initializeTimelineEvents();
+  initializeSettingsForm();
   
   // Set current selected agenda index to today's weekday
   state.selectedAgendaIndex = getTodayAgendaIndex();
@@ -156,6 +157,9 @@ function initializeViews() {
       } else if (targetView === 'timeline') {
         viewTitle.textContent = 'Linha do Tempo';
         renderTimeline();
+      } else if (targetView === 'settings') {
+        viewTitle.textContent = 'Configurações';
+        loadSettingsFromServer();
       }
       
       // Trigger special animations or renders
@@ -1395,9 +1399,11 @@ function renderGrid() {
 
         <div class="lp-card-footer">
           <span class="lp-card-year">${lp.year > 0 ? lp.year : 'N/A'}</span>
-          <div class="rating-stars">
-            ${renderStarsString(lp.rating)}
-          </div>
+          <button class="lp-card-favorite-btn ${lp.favorite ? 'active' : ''}" title="${lp.favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}" data-id="${lp.id}">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="${lp.favorite ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+          </button>
         </div>
       </div>
     `;
@@ -1412,6 +1418,15 @@ function renderGrid() {
       scrobbleBtn.addEventListener('click', (e) => {
         e.stopPropagation(); // prevent opening details dialog
         markAsListened(lp.id);
+      });
+    }
+    
+    // Bind click event to favorite button
+    const favoriteBtn = card.querySelector('.lp-card-favorite-btn');
+    if (favoriteBtn) {
+      favoriteBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // prevent opening details dialog
+        toggleFavoriteState(lp.id);
       });
     }
     
@@ -1436,21 +1451,57 @@ function renderStarsString(rating) {
 function renderStats() {
   const totalLps = state.lps.length;
   
-  // Calculate distinct individual artists (excluding specific group splits)
-  const distinctArtistsSet = new Set();
   const bandsToNotSplit = [
     "Echo & The Bunnymen", 
     "Secos & Molhados", 
     "Crosby, Stills, Nash & Young"
   ];
+
+  const backingBands = [
+    'crazy horse', 'crazy horses', 'tutti frutti', 'os presidentes', 'os ronaldos',
+    'os abóboras selvagens', 'a outra banda da terra', 'the bluenotes', 'falange moulin rouge'
+  ];
+
+  const consolidationRules = [
+    { pattern: /neil young/i, canonical: 'Neil Young' },
+    { pattern: /rita lee/i, canonical: 'Rita Lee' },
+    { pattern: /lobão/i, canonical: 'Lobão' },
+    { pattern: /caetano veloso/i, canonical: 'Caetano Veloso' },
+    { pattern: /paul mccartney/i, canonical: 'Paul McCartney' },
+    { pattern: /kid abelha/i, canonical: 'Kid Abelha' },
+    { pattern: /chico science/i, canonical: 'Chico Science & Nação Zumbi' },
+    { pattern: /maria bethania|maria bethânia/i, canonical: 'Maria Bethânia' },
+    { pattern: /^marina$|^marina lima$/i, canonical: 'Marina Lima' }
+  ];
+
+  function getCanonicalArtist(artistName) {
+    let cleaned = artistName.replace(/\s\(\d+\)/g, '').trim();
+    for (const rule of consolidationRules) {
+      if (rule.pattern.test(cleaned)) {
+        return rule.canonical;
+      }
+    }
+    return cleaned;
+  }
+  
+  // Calculate distinct individual artists (excluding specific group splits)
+  const distinctArtistsSet = new Set();
   state.lps.forEach(lp => {
     if (bandsToNotSplit.includes(lp.artist)) {
-      distinctArtistsSet.add(lp.artist);
+      const canonical = getCanonicalArtist(lp.artist);
+      distinctArtistsSet.add(canonical);
     } else {
-      const individualArtists = lp.artist.split(/\s*(?:&|and)\s*/i);
+      const individualArtists = lp.artist.split(/\s*(?:&|,|\/|\b(?:and|e|with|com)\b)\s*/i);
       individualArtists.forEach(art => {
-        const name = art.trim();
-        if (name) distinctArtistsSet.add(name);
+        const cleanedName = art.replace(/\s\(\d+\)/g, '').trim();
+        if (cleanedName) {
+          const lowerName = cleanedName.toLowerCase();
+          if (backingBands.includes(lowerName)) {
+            return;
+          }
+          const canonical = getCanonicalArtist(cleanedName);
+          distinctArtistsSet.add(canonical);
+        }
       });
     }
   });
@@ -1526,10 +1577,8 @@ function renderStats() {
     if (sortedLpsByPlays.length === 0) {
       playsCont.innerHTML = '<div class="text-muted italic" style="font-size: 0.8rem; padding: 8px 0;">Nenhum disco ouvido ainda.</div>';
     } else {
-      const maxPlays = Math.max(...sortedLpsByPlays.map(lp => lp.plays), 1);
-      
       sortedLpsByPlays.forEach(lp => {
-        const pct = Math.round((lp.plays / maxPlays) * 100);
+        const pct = Math.min(Math.max(lp.plays, 0), 100);
         const barRow = document.createElement('div');
         barRow.classList.add('chart-bar-row');
         
@@ -1559,14 +1608,19 @@ function renderStats() {
   const artistCounts = {};
   state.lps.forEach(lp => {
     if (bandsToNotSplit.includes(lp.artist)) {
-      artistCounts[lp.artist] = (artistCounts[lp.artist] || 0) + 1;
+      const canonical = getCanonicalArtist(lp.artist);
+      artistCounts[canonical] = (artistCounts[canonical] || 0) + 1;
     } else {
-      // Split by " & " or " and "
-      const individualArtists = lp.artist.split(/\s*(?:&|and)\s*/i);
+      const individualArtists = lp.artist.split(/\s*(?:&|,|\/|\b(?:and|e|with|com)\b)\s*/i);
       individualArtists.forEach(art => {
-        const name = art.trim();
-        if (name) {
-          artistCounts[name] = (artistCounts[name] || 0) + 1;
+        const cleanedName = art.replace(/\s\(\d+\)/g, '').trim();
+        if (cleanedName) {
+          const lowerName = cleanedName.toLowerCase();
+          if (backingBands.includes(lowerName)) {
+            return;
+          }
+          const canonical = getCanonicalArtist(cleanedName);
+          artistCounts[canonical] = (artistCounts[canonical] || 0) + 1;
         }
       });
     }
@@ -1586,6 +1640,28 @@ function renderStats() {
       </div>
       <span class="ranking-count">${count} LPs</span>
     `;
+    
+    rankRow.addEventListener('click', () => {
+      const artistLps = state.lps.filter(lp => {
+        if (bandsToNotSplit.includes(lp.artist)) {
+          return getCanonicalArtist(lp.artist) === name;
+        }
+        const individualArtists = lp.artist.split(/\s*(?:&|,|\/|\b(?:and|e|with|com)\b)\s*/i);
+        return individualArtists.some(art => {
+          const cleanedName = art.replace(/\s\(\d+\)/g, '').trim();
+          if (cleanedName) {
+            const lowerName = cleanedName.toLowerCase();
+            if (backingBands.includes(lowerName)) {
+              return false;
+            }
+            return getCanonicalArtist(cleanedName) === name;
+          }
+          return false;
+        });
+      });
+      openArtistAlbumsDialog(name, artistLps);
+    });
+    
     artistsCont.appendChild(rankRow);
   });
   
@@ -1620,6 +1696,54 @@ function renderStats() {
     `;
     additionsCont.appendChild(div);
   });
+}
+
+function openArtistAlbumsDialog(artistName, lps) {
+  const dialog = document.getElementById('artist-albums-dialog');
+  const title = document.getElementById('artist-albums-title');
+  const listCont = document.getElementById('artist-albums-list');
+  
+  if (!dialog || !title || !listCont) return;
+  
+  title.textContent = `Álbuns de ${artistName}`;
+  listCont.innerHTML = '';
+  
+  const sortedLps = [...lps].sort((a, b) => {
+    const yearA = a.year || 0;
+    const yearB = b.year || 0;
+    return yearB - yearA;
+  });
+  
+  const defaultCover = 'https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=200&auto=format&fit=crop';
+  
+  sortedLps.forEach(lp => {
+    const item = document.createElement('div');
+    item.classList.add('history-ranking-item');
+    item.style.cursor = 'pointer';
+    
+    item.innerHTML = `
+      <div class="history-item-left">
+        <img class="history-item-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.src='${defaultCover}'">
+        <div class="history-item-details">
+          <div class="history-item-title" title="${lp.title}">${lp.title}</div>
+          <div class="history-item-artist" title="${lp.artist}">${lp.artist}</div>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0;">
+        <span class="history-plays-badge">${lp.plays} ${lp.plays === 1 ? 'audição' : 'audições'}</span>
+        ${lp.year ? `<span style="font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-muted);">${lp.year}</span>` : ''}
+      </div>
+    `;
+    
+    item.addEventListener('click', () => {
+      dialog.close();
+      openDetailsDialog(lp.id);
+    });
+    
+    listCont.appendChild(item);
+  });
+  
+  dialog.showModal();
 }
 
 // ==================== TIMELINE STATISTICS DIALOG ====================
@@ -1733,6 +1857,7 @@ function initializeDialogs() {
   const detailDialog = document.getElementById('lp-details-dialog');
   const formDialog = document.getElementById('lp-form-dialog');
   const statsDialog = document.getElementById('timeline-stats-dialog');
+  const artistAlbumsDialog = document.getElementById('artist-albums-dialog');
   const lpForm = document.getElementById('lp-entry-form');
   const addBtn = document.getElementById('add-lp-btn');
   const statsBtn = document.getElementById('timeline-stats-btn');
@@ -1744,6 +1869,7 @@ function initializeDialogs() {
       detailDialog.close();
       formDialog.close();
       if (statsDialog) statsDialog.close();
+      if (artistAlbumsDialog) artistAlbumsDialog.close();
     });
   });
   
@@ -1764,6 +1890,7 @@ function initializeDialogs() {
     if (e.target === detailDialog) detailDialog.close();
     if (e.target === formDialog) formDialog.close();
     if (e.target === statsDialog) statsDialog.close();
+    if (e.target === artistAlbumsDialog) artistAlbumsDialog.close();
   });
   
   // Add LP button click
@@ -1900,11 +2027,10 @@ function initializeDialogs() {
             document.getElementById('form-catno').value = catno;
             
             // Map genres and styles
-            if (item.genre) {
-              document.getElementById('form-genres').value = item.genre.join(', ');
-            }
-            if (item.style) {
-              document.getElementById('form-styles').value = item.style.join(', ');
+            const formEl = document.getElementById('lp-entry-form');
+            if (formEl) {
+              formEl.dataset.genres = item.genre ? item.genre.join(', ') : '';
+              formEl.dataset.styles = item.style ? item.style.join(', ') : '';
             }
 
             // Fill cover url and preview
@@ -2044,6 +2170,8 @@ function openFormDialog(editId = null) {
   const lpForm = document.getElementById('lp-entry-form');
   
   lpForm.reset();
+  lpForm.dataset.genres = '';
+  lpForm.dataset.styles = '';
   document.getElementById('form-lp-id').value = '';
   document.getElementById('form-cover-preview').removeAttribute('src');
   
@@ -2083,8 +2211,8 @@ function openFormDialog(editId = null) {
     document.getElementById('form-year').value = lp.year > 0 ? lp.year : '';
     document.getElementById('form-label').value = lp.labels.join(', ');
     document.getElementById('form-catno').value = lp.catalog_number;
-    document.getElementById('form-genres').value = lp.genres.join(', ');
-    document.getElementById('form-styles').value = lp.styles.join(', ');
+    lpForm.dataset.genres = lp.genres ? lp.genres.join(', ') : '';
+    lpForm.dataset.styles = lp.styles ? lp.styles.join(', ') : '';
     document.getElementById('form-cover-url').value = lp.cover_image;
     document.getElementById('form-notes').value = lp.notes;
     
@@ -2151,10 +2279,11 @@ async function saveFormEntry() {
   
   const catno = document.getElementById('form-catno').value.trim();
   
-  const genresStr = document.getElementById('form-genres').value;
+  const lpForm = document.getElementById('lp-entry-form');
+  const genresStr = lpForm ? (lpForm.dataset.genres || '') : '';
   const genres = genresStr ? genresStr.split(',').map(s => s.trim()).filter(Boolean) : [];
   
-  const stylesStr = document.getElementById('form-styles').value;
+  const stylesStr = lpForm ? (lpForm.dataset.styles || '') : '';
   const styles = stylesStr ? stylesStr.split(',').map(s => s.trim()).filter(Boolean) : [];
   
   const coverImage = document.getElementById('form-cover-url').value.trim();
@@ -2487,4 +2616,117 @@ function renderPlaysRankingPage() {
   } else {
     listSection.style.display = 'none';
   }
+}
+
+// ==================== SETTINGS SCREEN LOGIC ====================
+async function loadSettingsFromServer() {
+  try {
+    const response = await fetch('/api/config');
+    if (!response.ok) throw new Error('Não foi possível carregar as configurações do servidor.');
+    
+    const config = await response.json();
+    
+    document.getElementById('setting-discogs-user').value = config.discogs_user || '';
+    document.getElementById('setting-discogs-user-agent').value = config.discogs_user_agent || '';
+    
+    // Check if there is a Discogs token in backend config, otherwise fallback to localStorage
+    const backendToken = config.discogs_token || '';
+    const localToken = localStorage.getItem('lpweek_discogs_token') || '';
+    const tokenToUse = backendToken || localToken;
+    document.getElementById('setting-discogs-token').value = tokenToUse;
+    
+    // Update localToken if backend has it and local doesn't
+    if (backendToken && backendToken !== localToken) {
+      localStorage.setItem('lpweek_discogs_token', backendToken);
+      const discogsTokenInput = document.getElementById('discogs-token-input');
+      if (discogsTokenInput) discogsTokenInput.value = backendToken;
+    }
+    
+    document.getElementById('setting-shazam-key').value = config.rapidapi_shazam_key || '';
+    document.getElementById('setting-shazam-host').value = config.rapidapi_shazam_host || '';
+    
+  } catch (error) {
+    console.error('Error loading settings:', error);
+    showToast(error.message, 'error');
+  }
+}
+
+function initializeSettingsForm() {
+  const form = document.getElementById('settings-form');
+  const syncBtn = document.getElementById('admin-sync-btn');
+  
+  if (syncBtn) {
+    syncBtn.addEventListener('click', async () => {
+      syncBtn.disabled = true;
+      const originalText = syncBtn.innerHTML;
+      syncBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" class="sync-icon-svg spinning" style="transition: transform 0.3s ease;">
+          <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+        <span>Sincronizando...</span>
+      `;
+      
+      try {
+        const response = await fetch('/api/sync', { method: 'POST' });
+        if (!response.ok) throw new Error('Falha ao iniciar sincronização.');
+        const data = await response.json();
+        
+        if (data.status === 'ok') {
+          showToast(`Sincronização concluída! ${data.count} discos importados.`, 'success');
+          await loadDatabase();
+          applyFiltersAndRender();
+        } else {
+          showToast(`Erro na sincronização: ${data.message || 'Erro desconhecido'}`, 'error');
+        }
+      } catch (error) {
+        console.error('Error syncing collection:', error);
+        showToast(`Erro do servidor ao sincronizar: ${error.message}`, 'error');
+      } finally {
+        syncBtn.disabled = false;
+        syncBtn.innerHTML = originalText;
+      }
+    });
+  }
+
+  if (!form) return;
+  
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const discogs_user = document.getElementById('setting-discogs-user').value.trim();
+    const discogs_user_agent = document.getElementById('setting-discogs-user-agent').value.trim();
+    const discogs_token = document.getElementById('setting-discogs-token').value.trim();
+    const rapidapi_shazam_key = document.getElementById('setting-shazam-key').value.trim();
+    const rapidapi_shazam_host = document.getElementById('setting-shazam-host').value.trim();
+    
+    const payload = {
+      discogs_user,
+      discogs_user_agent,
+      discogs_token,
+      rapidapi_shazam_key,
+      rapidapi_shazam_host
+    };
+    
+    try {
+      const response = await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) throw new Error('Falha ao salvar as configurações.');
+      
+      // Also save discogs token locally to sync with search fallback
+      localStorage.setItem('lpweek_discogs_token', discogs_token);
+      
+      // Update form inputs in index & admin search if any
+      const discogsTokenInput = document.getElementById('discogs-token-input');
+      if (discogsTokenInput) discogsTokenInput.value = discogs_token;
+      
+      showToast('Configurações salvas com sucesso!', 'success');
+    } catch (error) {
+      console.error('Error saving settings:', error);
+      showToast(error.message, 'error');
+    }
+  });
 }

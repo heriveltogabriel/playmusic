@@ -245,7 +245,6 @@ function labelForStatus(status, hasNextTrack) {
   };
   return labels[status] || "AGUARDANDO NOVO DISCO";
 }
-}
 
 async function pollState() {
   try {
@@ -524,16 +523,18 @@ if (popupOverlay) {
   });
 }
 
-elements.syncButton.addEventListener("click", async () => {
-  elements.statusLabel.textContent = "Sincronizando";
-  try {
-    await fetchJson("/api/sync", { method: "POST" });
-    await pollState();
-  } catch (error) {
-    console.error("Erro na sincronização:", error);
-    showError("Erro do servidor ao sincronizar a coleção: " + error.message);
-  }
-});
+if (elements.syncButton) {
+  elements.syncButton.addEventListener("click", async () => {
+    elements.statusLabel.textContent = "Sincronizando";
+    try {
+      await fetchJson("/api/sync", { method: "POST" });
+      await pollState();
+    } catch (error) {
+      console.error("Erro na sincronização:", error);
+      showError("Erro do servidor ao sincronizar a coleção: " + error.message);
+    }
+  });
+}
 
 async function handleFirstGesture() {
   if (!micAudioContext && !isInitializingMic) {

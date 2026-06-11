@@ -3,7 +3,6 @@ from __future__ import annotations
 from typing import Any
 
 from vinyl_display.catalog import CatalogStore
-from vinyl_display.clients.audd import AudDClient
 from vinyl_display.clients.shazam import ShazamClient
 from vinyl_display.clients.discogs import DiscogsClient
 from vinyl_display.matcher import CollectionMatcher
@@ -15,14 +14,36 @@ class VinylDisplayApp:
         self,
         store: CatalogStore,
         discogs_client: DiscogsClient,
-        audd_client: AudDClient | ShazamClient | Any,
+        shazam_client: ShazamClient | Any,
+        config: Any = None,
     ):
         self.store = store
         self.discogs_client = discogs_client
-        self.audd_client = audd_client
+        self.shazam_client = shazam_client
+        self.config = config
         self.matcher = CollectionMatcher(store)
-        self.playback = PlaybackController()
+        self.playback = PlaybackController(on_scrobble=self.store.increment_auditions)
         self.store.initialize()
+
+    def update_config(self, updates: dict[str, str]) -> None:
+        import dataclasses
+        from vinyl_display.config import update_dotenv
+        
+        # Write to .env and update os.environ
+        update_dotenv(updates)
+        
+        # Build new config dataclass
+        new_fields = {}
+        for k, v in updates.items():
+            field_name = k.lower()
+            if hasattr(self.config, field_name):
+                new_fields[field_name] = v
+        self.config = dataclasses.replace(self.config, **new_fields)
+        
+        # Re-initialize clients
+        self.discogs_client = DiscogsClient(self.config.discogs_user, self.config.discogs_user_agent)
+        self.shazam_client = ShazamClient(self.config.rapidapi_shazam_key, self.config.rapidapi_shazam_host)
+        print("[SERVER] Hot-swapped config to use Shazam for music recognition.")
 
     def state(self) -> dict[str, Any]:
         state = self.playback.current_state()
@@ -60,7 +81,7 @@ class VinylDisplayApp:
                 print(f"[RECOGNIZE] Error calculating RMS: {e}")
         print(f"[RECOGNIZE] Received audio data: {len(audio_bytes)} bytes, filename: {filename}, RMS Volume: {rms:.5f}")
         try:
-            recognition = self.audd_client.recognize(audio_bytes, filename=filename)
+            recognition = self.shazam_client.recognize(audio_bytes, filename=filename)
         except Exception as error:
             self.playback.set_listening()
             print(f"[RECOGNIZE] Recognition client raised exception: {error}")
@@ -154,6 +175,7 @@ class VinylDisplayApp:
         title: str,
         artist: str,
         year: int | None,
+        cover_url: str,
         genres: list[str],
         styles: list[str],
         labels: list[str],
@@ -166,6 +188,7 @@ class VinylDisplayApp:
             title=title,
             artist=artist,
             year=year,
+            cover_url=cover_url,
             genres=genres,
             styles=styles,
             labels=labels,

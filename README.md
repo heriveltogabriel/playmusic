@@ -5,6 +5,9 @@ Tela de exibição minimalista (estilo "now playing") de disco de vinil para ser
 ## O Que Faz
 
 - **Sincroniza Coleção do Discogs**: Espelhamento de catálogo local para correspondências rápidas offline.
+- **Scrobble/Audição Automática**: Registra automaticamente uma audição para o disco se mais de uma faixa dele for tocada na mesma sessão de reprodução.
+- **Favorito Automático**: Marca o disco automaticamente como favorito assim que ele alcançar 20 audições acumuladas.
+- **Sincronização Centralizada nas Configurações**: O botão de atualizar/sincronizar coleção agora fica estrategicamente localizado no topo da aba de Configurações, removendo o botão redundante dos botões de navegação de mídia.
 - **Design Retrô Bauhaus (Amber Landscape)**: Paleta AMOLED de carvão fosco, creme analógico quente e laranja ferrugem/âmbar com animação de disco de vinil girando e deslizando, otimizada para telas móveis no modo paisagem.
 - **Acesso Dinâmico ao Microfone no iOS**: Inicializa o microfone e o `AudioContext` da Web Audio API de forma segura dentro de eventos de toque/clique do usuário para contornar restrições de reprodução automática e captura silenciosa do iOS Safari.
 - **Reamostragem de PCM em Tempo Real**: Realiza reamostragem linear no cliente para converter as taxas nativas do dispositivo (ex. 48kHz) para PCM de 16 bits assinado mono a 44.1kHz dinamicamente para reconhecimento via Shazam Core.
@@ -17,13 +20,9 @@ Tela de exibição minimalista (estilo "now playing") de disco de vinil para ser
 
 Copie o arquivo `.env.example` para `.env` e preencha com as suas credenciais locais. O arquivo `.env` é ignorado pelo git para que seus segredos permaneçam locais.
 
-Necessário para o reconhecimento (AudD ou Shazam via RapidAPI):
+Necessário para o reconhecimento (Shazam via RapidAPI):
 
 ```env
-# Opção 1: AudD
-AUDD_API_TOKEN=seu-token
-
-# Opção 2: Shazam (via RapidAPI)
 RAPIDAPI_SHAZAM_KEY=sua-chave-rapidapi
 RAPIDAPI_SHAZAM_HOST=shazam-core.p.rapidapi.com
 ```
@@ -39,15 +38,15 @@ export VINYL_KEY_FILE="/caminho/para/key-local.pem"
 
 A API de microfone do navegador exige um contexto seguro (HTTPS). No Raspberry Pi, execute este aplicativo via HTTPS usando um certificado local no qual o celular confie.
 
-## Instalação Rápida no Raspberry Pi
+## Instalação Servidor Remoto Linux
 
-Disponibilizamos um script de configuração automatizado que instala as dependências de sistema necessárias, gera certificados SSL/TLS locais autoassinados, copia os arquivos de configuração e configura um serviço `systemd` para que o aplicativo seja iniciado automaticamente quando o Raspberry Pi ligar.
+Disponibilizamos um script de configuração automatizado que instala as dependências de sistema necessárias, gera certificados SSL/TLS locais autoassinados, copia os arquivos de configuração e configura um serviço `systemd` para que o aplicativo seja iniciado automaticamente quando o servidor ligar.
 
 Para executar a instalação:
 
 ```bash
-chmod +x setup_pi.sh
-./setup_pi.sh
+chmod +x setup.sh
+./setup.sh
 ```
 
 Depois de concluído, preencha suas chaves de API no arquivo `.env` gerado e reinicie o serviço:

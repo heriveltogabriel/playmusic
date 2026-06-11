@@ -3,7 +3,6 @@ import unittest
 from pathlib import Path
 
 from vinyl_display.catalog import CatalogStore
-from vinyl_display.clients.audd import parse_audd_response
 from vinyl_display.matcher import CollectionMatcher, normalize_text
 from vinyl_display.models import RecognitionResult, Release, Track
 
@@ -35,25 +34,6 @@ def make_store() -> CatalogStore:
 
 
 class RecognitionMatchingTests(unittest.TestCase):
-    def test_parse_audd_response(self):
-        result = parse_audd_response(
-            {
-                "status": "success",
-                "result": {
-                    "title": "Come Together",
-                    "artist": "The Beatles",
-                    "album": "Abbey Road",
-                    "score": 92,
-                },
-            }
-        )
-
-        self.assertIsNotNone(result)
-        self.assertEqual(result.title, "Come Together")
-        self.assertEqual(result.artist, "The Beatles")
-        self.assertEqual(result.album, "Abbey Road")
-        self.assertEqual(result.provider, "audd")
-
     def test_normalize_text_removes_case_and_punctuation_noise(self):
         self.assertEqual(normalize_text("  Come Together! "), "come together")
         self.assertEqual(normalize_text("Beatles, The"), "beatles the")
@@ -69,7 +49,7 @@ class RecognitionMatchingTests(unittest.TestCase):
             title="Come Together",
             artist="The Beatles",
             album="Abbey Road",
-            provider="audd",
+            provider="shazam",
             confidence=0.92,
         )
 
@@ -87,7 +67,7 @@ class RecognitionMatchingTests(unittest.TestCase):
             title="A Song Not In The Collection",
             artist="Unknown Artist",
             album=None,
-            provider="audd",
+            provider="shazam",
             confidence=0.9,
         )
 

@@ -32,7 +32,7 @@ class FailingDiscogsClient:
         raise RuntimeError("Discogs unavailable")
 
 
-class FakeAudDClient:
+class FakeShazamClient:
     def recognize(self, audio_bytes, filename="clip.webm"):
         self.audio_bytes = audio_bytes
         self.filename = filename
@@ -40,32 +40,32 @@ class FakeAudDClient:
             title="Come Together",
             artist="The Beatles",
             album="Abbey Road",
-            provider="audd",
+            provider="shazam",
             confidence=0.92,
         )
 
 
-class EmptyAudDClient:
+class EmptyShazamClient:
     def recognize(self, audio_bytes, filename="clip.webm"):
         return RecognitionResult(
             title="Outside Song",
             artist="Outside Artist",
             album=None,
-            provider="audd",
+            provider="shazam",
             confidence=0.9,
         )
 
 
-class FailingAudDClient:
+class FailingShazamClient:
     def recognize(self, audio_bytes, filename="clip.webm"):
-        raise RuntimeError("AUDD_API_TOKEN is required for recognition")
+        raise RuntimeError("RAPIDAPI_SHAZAM_KEY is required for Shazam recognition")
 
 
 class AppServiceTests(unittest.TestCase):
     def test_sync_collection_returns_count(self):
         with tempfile.TemporaryDirectory() as tmp:
             store = CatalogStore(Path(tmp) / "catalog.sqlite3")
-            app = VinylDisplayApp(store, FakeDiscogsClient(), FakeAudDClient())
+            app = VinylDisplayApp(store, FakeDiscogsClient(), FakeShazamClient())
 
             response = app.sync_collection()
 
@@ -75,7 +75,7 @@ class AppServiceTests(unittest.TestCase):
     def test_sync_collection_returns_structured_error(self):
         with tempfile.TemporaryDirectory() as tmp:
             store = CatalogStore(Path(tmp) / "catalog.sqlite3")
-            app = VinylDisplayApp(store, FailingDiscogsClient(), FakeAudDClient())
+            app = VinylDisplayApp(store, FailingDiscogsClient(), FakeShazamClient())
 
             response = app.sync_collection()
 
@@ -86,7 +86,7 @@ class AppServiceTests(unittest.TestCase):
     def test_recognize_audio_sets_playing_state(self):
         with tempfile.TemporaryDirectory() as tmp:
             store = CatalogStore(Path(tmp) / "catalog.sqlite3")
-            app = VinylDisplayApp(store, FakeDiscogsClient(), FakeAudDClient())
+            app = VinylDisplayApp(store, FakeDiscogsClient(), FakeShazamClient())
             app.sync_collection()
 
             response = app.recognize_audio(b"audio-data", filename="clip.webm")
@@ -99,7 +99,7 @@ class AppServiceTests(unittest.TestCase):
     def test_recognize_audio_not_found(self):
         with tempfile.TemporaryDirectory() as tmp:
             store = CatalogStore(Path(tmp) / "catalog.sqlite3")
-            app = VinylDisplayApp(store, FakeDiscogsClient(), EmptyAudDClient())
+            app = VinylDisplayApp(store, FakeDiscogsClient(), EmptyShazamClient())
             app.sync_collection()
 
             response = app.recognize_audio(b"audio-data", filename="clip.webm")
@@ -110,14 +110,14 @@ class AppServiceTests(unittest.TestCase):
     def test_recognize_audio_returns_to_listening_when_provider_unavailable(self):
         with tempfile.TemporaryDirectory() as tmp:
             store = CatalogStore(Path(tmp) / "catalog.sqlite3")
-            app = VinylDisplayApp(store, FakeDiscogsClient(), FailingAudDClient())
+            app = VinylDisplayApp(store, FakeDiscogsClient(), FailingShazamClient())
 
             response = app.recognize_audio(b"audio-data", filename="clip.webm")
             state = app.state()
 
             self.assertEqual(response["status"], "recognition_unavailable")
             self.assertEqual(state["status"], "listening")
-            self.assertIn("AUDD_API_TOKEN", response["message"])
+            self.assertIn("RAPIDAPI_SHAZAM_KEY", response["message"])
 
 
 if __name__ == "__main__":

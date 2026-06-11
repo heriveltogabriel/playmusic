@@ -1570,6 +1570,27 @@ body {
   color: var(--text-muted);
 }
 
+.lp-card-favorite-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.lp-card-favorite-btn:hover {
+  color: var(--danger);
+  transform: scale(1.2);
+}
+
+.lp-card-favorite-btn.active {
+  color: var(--danger);
+}
+
 /* Empty search state styling */
 .empty-state {
   display: flex;
@@ -1745,6 +1766,15 @@ body {
   border: 1px solid var(--border-color);
   border-radius: 8px;
   font-size: 0.85rem;
+  transition: var(--transition-fast);
+  cursor: pointer;
+}
+
+.ranking-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateX(4px);
+  border-color: rgba(230, 92, 0, 0.2);
+  box-shadow: var(--shadow-sm);
 }
 
 .ranking-item-left {
@@ -2834,5 +2864,76 @@ dialog::backdrop {
 .timeline-stats-summary-grid .stat-desc {
   font-size: 0.8rem;
   color: var(--text-secondary);
+}
+
+/* ==================== SETTINGS VIEW ==================== */
+.settings-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 12px 0 40px 0;
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.settings-card {
+  background: var(--card-bg, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: border-color var(--transition-normal, 0.3s);
+}
+
+.settings-card:hover {
+  border-color: rgba(230, 92, 0, 0.2);
+}
+
+.settings-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.settings-card-header svg {
+  color: var(--primary);
+}
+
+.settings-card-header h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.settings-card-desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.settings-submit-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+#save-settings-btn {
+  padding: 12px 28px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(230, 92, 0, 0.3);
+}
+
+.sync-icon-svg.spinning {
+  animation: spin 1s linear infinite;
 }
 

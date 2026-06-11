@@ -9,7 +9,7 @@ from pathlib import Path
 class Config:
     discogs_user: str
     discogs_user_agent: str
-    audd_api_token: str
+    discogs_token: str
     rapidapi_shazam_key: str
     rapidapi_shazam_host: str
     data_dir: Path
@@ -70,7 +70,7 @@ def load_config() -> Config:
             "DISCOGS_USER_AGENT",
             "VinylDisplayMVP/0.1 +https://localhost",
         ),
-        audd_api_token=os.environ.get("AUDD_API_TOKEN", ""),
+        discogs_token=os.environ.get("DISCOGS_TOKEN", ""),
         rapidapi_shazam_key=os.environ.get("RAPIDAPI_SHAZAM_KEY", ""),
         rapidapi_shazam_host=os.environ.get(
             "RAPIDAPI_SHAZAM_HOST", "shazam-core.p.rapidapi.com"
@@ -84,3 +84,35 @@ def load_config() -> Config:
         cert_file=_optional_path(os.environ.get("VINYL_CERT_FILE")),
         key_file=_optional_path(os.environ.get("VINYL_KEY_FILE")),
     )
+
+
+def update_dotenv(updates: dict[str, str]) -> None:
+    env_path = Path(os.environ.get("VINYL_ENV_FILE", ".env")).expanduser()
+    lines = []
+    existing_keys = set()
+    
+    if env_path.exists():
+        for line in env_path.read_text(encoding="utf-8").splitlines():
+            stripped = line.strip()
+            if stripped and not stripped.startswith("#") and "=" in stripped:
+                parsed_line = stripped
+                if parsed_line.startswith("export "):
+                    parsed_line = parsed_line[len("export ") :].strip()
+                key, val = parsed_line.split("=", 1)
+                key = key.strip()
+                if key in updates:
+                    lines.append(f"{key}={updates[key]}")
+                    existing_keys.add(key)
+                    continue
+            lines.append(line)
+            
+    # Add new keys that were not in .env before
+    for key, val in updates.items():
+        if key not in existing_keys:
+            lines.append(f"{key}={val}")
+            
+    env_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    
+    # Update os.environ
+    for key, val in updates.items():
+        os.environ[key] = val

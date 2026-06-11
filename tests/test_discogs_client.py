@@ -26,6 +26,8 @@ class FakeJsonTransport:
                 "artists_sort": "Beatles, The",
                 "artists": [{"name": "The Beatles"}],
                 "year": 2019,
+                "master_id": 24047,
+                "master_url": "https://api.discogs.com/masters/24047",
                 "country": "US",
                 "uri": "https://www.discogs.com/release/14192689-The-Beatles-Abbey-Road",
                 "labels": [{"name": "Apple Records", "catno": "B0030719-01"}],
@@ -46,6 +48,11 @@ class FakeJsonTransport:
                     },
                     {"position": "", "type_": "heading", "title": "Side B"},
                 ],
+            }
+        if "/masters/24047" in url:
+            return {
+                "id": 24047,
+                "year": 1969
             }
         raise AssertionError(f"Unexpected URL: {url}")
 

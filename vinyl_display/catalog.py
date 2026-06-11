@@ -190,10 +190,14 @@ class CatalogStore:
             # Make sure listen_dates is a list (could be missing/None)
             listen_dates = list(release.listen_dates) if release.listen_dates is not None else []
             listen_dates.append(now_str)
+            favorite = release.favorite
+            if auditions >= 20:
+                favorite = True
             updated_release = dataclasses.replace(
                 release,
                 auditions=auditions,
-                listen_dates=listen_dates
+                listen_dates=listen_dates,
+                favorite=favorite
             )
             self.upsert_release(updated_release)
             
@@ -287,6 +291,7 @@ class CatalogStore:
         title: str,
         artist: str,
         year: int | None,
+        cover_url: str,
         genres: list[str],
         styles: list[str],
         labels: list[str],
@@ -302,6 +307,7 @@ class CatalogStore:
                 title=title,
                 artist=artist,
                 year=year,
+                cover_url=cover_url,
                 genres=genres,
                 styles=styles,
                 labels=labels,

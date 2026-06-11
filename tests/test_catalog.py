@@ -98,6 +98,7 @@ class CatalogStoreTests(unittest.TestCase):
                 title="Madonna Edited",
                 artist="Madonna",
                 year=1983,
+                cover_url="http://madonna.png",
                 genres=["Pop"],
                 styles=["Dance-pop"],
                 labels=["Sire"],
@@ -122,6 +123,26 @@ class CatalogStoreTests(unittest.TestCase):
             # Test delete release
             store.delete_release(manual.release_id)
             self.assertEqual(store.collection_count(), 0)
+
+    def test_auto_favorite_on_20_auditions(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = CatalogStore(Path(tmp) / "catalog.sqlite3")
+            store.initialize()
+            
+            manual = store.add_manual_release("Madonna", "Madonna", 1983, "http://madonna.png")
+            self.assertFalse(manual.favorite)
+            
+            # Increment 19 times
+            for _ in range(19):
+                store.increment_auditions(manual.release_id)
+                
+            release = store.get_release(manual.release_id)
+            self.assertFalse(release.favorite)
+            
+            # 20th audition
+            store.increment_auditions(manual.release_id)
+            release = store.get_release(manual.release_id)
+            self.assertTrue(release.favorite)
 
 
 if __name__ == "__main__":

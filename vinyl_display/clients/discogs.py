@@ -200,7 +200,20 @@ class DiscogsClient:
 
     def release_details(self, release_id: int) -> Release:
         payload = self._request_json(f"{self.api_base}/releases/{release_id}")
-        return release_from_discogs(payload)
+        release = release_from_discogs(payload)
+        
+        master_id = payload.get("master_id")
+        if master_id:
+            try:
+                master_payload = self._request_json(f"{self.api_base}/masters/{master_id}")
+                master_year = master_payload.get("year")
+                if master_year:
+                    import dataclasses
+                    release = dataclasses.replace(release, year=int(master_year))
+            except Exception as e:
+                print(f"[DISCOGS] Error fetching master {master_id} for release {release_id}: {e}")
+                
+        return release
 
     def sync_collection(self, store: CatalogStore) -> int:
         count = 0
