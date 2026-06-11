@@ -415,6 +415,7 @@ body {
   padding: 24px;
   border-top: 1px solid var(--border-color);
   background: transparent;
+  margin-top: auto;
   text-align: center;
 }
 
