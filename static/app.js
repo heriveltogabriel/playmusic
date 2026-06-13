@@ -837,9 +837,12 @@ function updateLyricsProgress(seconds) {
     return;
   }
 
+  // Compensação de atraso de 0.8s para antecipar a legenda e sincronizar com o áudio real
+  const adjustedTime = seconds + 0.8;
+
   let newActiveIndex = -1;
   for (let i = 0; i < parsedLyrics.length; i++) {
-    if (parsedLyrics[i].timeSeconds !== undefined && seconds >= parsedLyrics[i].timeSeconds) {
+    if (parsedLyrics[i].timeSeconds !== undefined && adjustedTime >= parsedLyrics[i].timeSeconds) {
       newActiveIndex = i;
     } else {
       break;
