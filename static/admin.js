@@ -1575,8 +1575,15 @@ function renderPlaysChart() {
     const barRow = document.createElement('div');
     barRow.classList.add('chart-bar-row');
 
+    const latestDate = getLatestListenDate(lp);
+    let dateStr = "";
+    if (latestDate) {
+      const d = new Date(latestDate);
+      dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + " " + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
+
     const labelName = `#${idx + 1} - ${lp.title} - ${lp.artist}`;
-    const labelVal = `${lp.plays} ${lp.plays === 1 ? 'audição' : 'audições'}`;
+    const labelVal = `${lp.plays} ${lp.plays === 1 ? 'audição' : 'audições'} ${dateStr ? `• última: ${dateStr}` : ''}`;
 
     barRow.innerHTML = `
       <div class="chart-bar-labels">
@@ -2190,6 +2197,25 @@ function openDetailsDialog(id) {
   // Details note text
   document.getElementById('details-notes-text').textContent = lp.notes || '';
   
+  // Auditions history list
+  const detailsHistory = document.getElementById('details-auditions-history');
+  if (detailsHistory) {
+    if (lp.listen_dates && lp.listen_dates.length > 0) {
+      // Sort dates descending (newest first)
+      const sortedDates = [...lp.listen_dates].sort((a, b) => new Date(b) - new Date(a));
+      detailsHistory.innerHTML = sortedDates.map((dateStr, idx) => {
+        const d = new Date(dateStr);
+        const formatted = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        return `<div style="display: flex; justify-content: space-between; color: var(--text-primary); padding: 4px 6px; border-bottom: 1px solid rgba(255,255,255,0.03); font-family: monospace;">
+          <span style="color: var(--primary); font-weight: 600;">#${sortedDates.length - idx}</span>
+          <span>${formatted}</span>
+        </div>`;
+      }).join('');
+    } else {
+      detailsHistory.innerHTML = '<span class="text-muted" style="font-style: italic; padding: 4px;">Nenhuma audição registrada.</span>';
+    }
+  }
+
   // Interactive stars
   renderDetailsStars(lp);
   
@@ -2656,6 +2682,13 @@ function renderPlaysRankingPage() {
       `;
     }
     
+    const latestDate = getLatestListenDate(lp);
+    let dateStr = "";
+    if (latestDate) {
+      const d = new Date(latestDate);
+      dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + " " + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
+
     return `
       <div class="podium-step ${positionClass}" data-lp-id="${lp.id}">
         <div class="podium-cover-wrapper">
@@ -2667,8 +2700,9 @@ function renderPlaysRankingPage() {
           <div class="podium-info">
             <div class="podium-title" title="${lp.title}">${lp.title}</div>
             <div class="podium-artist" title="${lp.artist}">${lp.artist}</div>
-            <div class="podium-plays">
-              <span>${lp.plays} ${lp.plays === 1 ? 'audição' : 'audições'}</span>
+            <div class="podium-plays" style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+              <span style="font-weight: 600;">${lp.plays} ${lp.plays === 1 ? 'audição' : 'audições'}</span>
+              ${dateStr ? `<span style="font-size: 0.72rem; color: var(--text-muted); font-weight: normal; margin-top: 1px;">última: ${dateStr}</span>` : ''}
             </div>
           </div>
         </div>
