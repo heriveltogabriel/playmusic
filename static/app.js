@@ -27,7 +27,8 @@ const elements = {
 let currentTrackKey = null;
 let parsedLyrics = null;
 let activeLyricIndex = -1;
-let lyricsVisible = localStorage.getItem("lyricsVisible") === "true";
+let lyricsVisible = false;
+let lyricsEnabled = localStorage.getItem("lyricsEnabled") === "true";
 
 let mediaStream = null;
 let recording = false;
@@ -676,6 +677,10 @@ async function fetchLyrics(track, release) {
     parsedLyrics = null;
     activeLyricIndex = -1;
     renderLyrics(null);
+    if (elements.coverPanel) {
+      elements.coverPanel.classList.remove("has-lyrics");
+    }
+    setLyricsVisibility(false);
     return;
   }
 
@@ -747,6 +752,10 @@ async function fetchLyrics(track, release) {
   if (elements.lyricsScroll) {
     elements.lyricsScroll.innerHTML = `<p class="lyrics-empty">Letra não encontrada para esta faixa</p>`;
   }
+  if (elements.coverPanel) {
+    elements.coverPanel.classList.remove("has-lyrics");
+  }
+  setLyricsVisibility(false);
 }
 
 function handleLyricsResponse(data) {
@@ -757,7 +766,13 @@ function handleLyricsResponse(data) {
       if (elements.lyricsOverlay) {
         elements.lyricsOverlay.classList.remove("plain-lyrics-mode");
       }
+      if (elements.coverPanel) {
+        elements.coverPanel.classList.add("has-lyrics");
+      }
       renderLyrics(parsedLyrics);
+      if (lyricsEnabled) {
+        setLyricsVisibility(true);
+      }
       return;
     }
   }
@@ -767,7 +782,13 @@ function handleLyricsResponse(data) {
     if (elements.lyricsOverlay) {
       elements.lyricsOverlay.classList.add("plain-lyrics-mode");
     }
+    if (elements.coverPanel) {
+      elements.coverPanel.classList.add("has-lyrics");
+    }
     renderLyrics(parsedLyrics, true);
+    if (lyricsEnabled) {
+      setLyricsVisibility(true);
+    }
     return;
   }
 
@@ -776,6 +797,10 @@ function handleLyricsResponse(data) {
     if (elements.lyricsScroll) {
       elements.lyricsScroll.innerHTML = `<p class="lyrics-empty">♪ Instrumental ♪</p>`;
     }
+    if (elements.coverPanel) {
+      elements.coverPanel.classList.remove("has-lyrics");
+    }
+    setLyricsVisibility(false);
     return;
   }
 
@@ -783,6 +808,10 @@ function handleLyricsResponse(data) {
   if (elements.lyricsScroll) {
     elements.lyricsScroll.innerHTML = `<p class="lyrics-empty">Letra indisponível para esta música</p>`;
   }
+  if (elements.coverPanel) {
+    elements.coverPanel.classList.remove("has-lyrics");
+  }
+  setLyricsVisibility(false);
 }
 
 function renderLyrics(lyrics, isPlain = false) {

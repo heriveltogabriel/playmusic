@@ -240,6 +240,10 @@ button:hover {
     top: 16px;
     right: 16px;
   }
+  .top-left-controls {
+    top: 16px;
+    left: 16px;
+  }
   .btn-top-control {
     width: 32px;
     height: 32px;
@@ -468,6 +472,16 @@ h1 {
   z-index: 50;
 }
 
+/* Top-left discrete controls */
+.top-left-controls {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  display: flex;
+  gap: 8px;
+  z-index: 50;
+}
+
 .btn-top-control {
   width: 38px;
   height: 38px;
@@ -629,11 +643,11 @@ h1 {
   box-shadow: 0 0 10px var(--glow);
 }
 
-/* Bottom-right controls */
+/* Bottom-left controls */
 .bottom-controls {
   position: absolute;
   bottom: 24px;
-  right: 24px;
+  left: 24px;
   display: flex;
   gap: 8px;
   z-index: 50;
@@ -642,7 +656,7 @@ h1 {
 @media (orientation: portrait) {
   .bottom-controls {
     bottom: 16px;
-    right: 16px;
+    left: 16px;
   }
 }
 
@@ -1952,6 +1966,10 @@ h1 {
 }
 
 #album-cover {
+  cursor: default;
+}
+
+.cover-panel.has-lyrics #album-cover {
   cursor: pointer;
 }
 
