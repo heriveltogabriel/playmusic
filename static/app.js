@@ -690,7 +690,7 @@ async function fetchLyrics(track, release) {
   const duration = track.duration_seconds || 0;
 
   if (elements.lyricsScroll) {
-    elements.lyricsScroll.innerHTML = `<p class="lyrics-empty">Buscando letra para "${track.title}"...</p>`;
+    elements.lyricsScroll.innerHTML = `<p class="lyrics-empty">Sincronizando Legenda...</p>`;
   }
   if (elements.lyricsOverlay) {
     elements.lyricsOverlay.classList.remove("plain-lyrics-mode");
