@@ -770,9 +770,7 @@ function handleLyricsResponse(data) {
         elements.coverPanel.classList.add("has-lyrics");
       }
       renderLyrics(parsedLyrics);
-      if (lyricsEnabled) {
-        setLyricsVisibility(true);
-      }
+      setLyricsVisibility(true); // Abre automaticamente as letras ao carregar
       return;
     }
   }
@@ -786,9 +784,7 @@ function handleLyricsResponse(data) {
       elements.coverPanel.classList.add("has-lyrics");
     }
     renderLyrics(parsedLyrics, true);
-    if (lyricsEnabled) {
-      setLyricsVisibility(true);
-    }
+    setLyricsVisibility(true); // Abre automaticamente as letras ao carregar
     return;
   }
 
@@ -837,8 +833,8 @@ function updateLyricsProgress(seconds) {
     return;
   }
 
-  // Compensação de atraso de 1.5s para antecipar a legenda e sincronizar com o áudio real em conexões remotas
-  const adjustedTime = seconds + 1.5;
+  // Compensação de atraso de 5.0s para antecipar a legenda e sincronizar com o áudio real em conexões remotas
+  const adjustedTime = seconds + 5.0;
 
   let newActiveIndex = -1;
   for (let i = 0; i < parsedLyrics.length; i++) {
