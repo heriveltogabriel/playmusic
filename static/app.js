@@ -17,7 +17,6 @@ const elements = {
   progressBar: document.querySelector("#progress-bar"),
   progressTimeCurrent: document.querySelector("#progress-time-current"),
   progressTimeTotal: document.querySelector("#progress-time-total"),
-  lyricsButton: document.querySelector("#lyrics-button"),
   lyricsOverlay: document.querySelector("#lyrics-overlay"),
   lyricsScroll: document.querySelector("#lyrics-scroll"),
   lyricsContainer: document.querySelector(".lyrics-container"),
@@ -63,10 +62,9 @@ function updateProgressBar() {
   }
 
   const elapsed = (Date.now() - playbackTracker.lastUpdate) / 1000;
-  const currentProgress = Math.min(
-    playbackTracker.duration,
-    playbackTracker.baseProgress + elapsed
-  );
+  const currentProgress = playbackTracker.duration > 0
+    ? Math.min(playbackTracker.duration, playbackTracker.baseProgress + elapsed)
+    : playbackTracker.baseProgress + elapsed;
 
   if (elements.progressBar) {
     if (playbackTracker.duration > 0) {
@@ -162,7 +160,7 @@ function renderState(state) {
 
       // Calculate next auto-listen timestamp when the track ends
       const progress = state.progress_seconds || 0;
-      const duration = track.duration_seconds;
+      const duration = track.duration_seconds || state.duration_seconds || 0;
       if (duration && progress < duration) {
         const remaining = duration - progress;
         window.nextAutoListenAt = Date.now() + (remaining * 1000);
@@ -175,7 +173,7 @@ function renderState(state) {
       // Update local playback tracker for smooth interpolation
       playbackTracker.active = true;
       playbackTracker.baseProgress = progress;
-      playbackTracker.duration = duration || 0;
+      playbackTracker.duration = duration;
       playbackTracker.lastUpdate = Date.now();
       updateProgressBar();
     } else {
@@ -590,15 +588,7 @@ elements.retryButton.addEventListener("click", async (e) => {
   recordClip();
 });
 
-elements.albumCover.addEventListener("click", () => {
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen().catch((err) => {
-      console.error("Erro ao ativar tela cheia:", err);
-    });
-  } else {
-    document.exitFullscreen();
-  }
-});
+// O clique na capa agora alterna a exibição das letras
 
 elements.prevButton.addEventListener("click", async () => {
   try {
@@ -655,7 +645,7 @@ function parseLRC(lrcText) {
   if (!lrcText) return null;
   const lines = lrcText.split("\n");
   const lyrics = [];
-  const timeRegex = /^\[(\d{2}):(\d{2})(?:\.(\d{2,3}))?\](.*)$/;
+  const timeRegex = /^\[(\d{1,2}):(\d{2})(?:\.(\d{1,3}))?\](.*)$/;
 
   for (let line of lines) {
     line = line.trim();
@@ -672,7 +662,11 @@ function parseLRC(lrcText) {
       lyrics.push({ timeSeconds, text });
     }
   }
-  return lyrics.length > 0 ? lyrics : null;
+  if (lyrics.length > 0) {
+    lyrics.sort((a, b) => a.timeSeconds - b.timeSeconds);
+    return lyrics;
+  }
+  return null;
 }
 
 async function fetchLyrics(track, release) {
@@ -852,20 +846,26 @@ function setLyricsVisibility(visible) {
   lyricsVisible = visible;
   localStorage.setItem("lyricsVisible", visible ? "true" : "false");
   
-  if (elements.lyricsOverlay && elements.lyricsButton) {
+  if (elements.lyricsOverlay) {
     if (visible) {
       elements.lyricsOverlay.classList.remove("hidden");
-      elements.lyricsButton.classList.add("active");
     } else {
       elements.lyricsOverlay.classList.add("hidden");
-      elements.lyricsButton.classList.remove("active");
     }
   }
 }
 
-if (elements.lyricsButton) {
-  elements.lyricsButton.addEventListener("click", () => {
+if (elements.albumCover) {
+  elements.albumCover.addEventListener("click", (e) => {
+    e.stopPropagation();
     setLyricsVisibility(!lyricsVisible);
+  });
+}
+
+if (elements.lyricsOverlay) {
+  elements.lyricsOverlay.addEventListener("click", (e) => {
+    e.stopPropagation();
+    setLyricsVisibility(false);
   });
 }
 

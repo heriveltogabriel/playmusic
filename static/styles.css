@@ -1951,6 +1951,10 @@ h1 {
   background: rgba(230, 92, 0, 0.15);
 }
 
+#album-cover {
+  cursor: pointer;
+}
+
 /* Glassmorphic Lyrics Overlay */
 .lyrics-overlay {
   position: absolute;
@@ -1974,6 +1978,7 @@ h1 {
   transition: opacity 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
               transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
               visibility 0.4s;
+  cursor: pointer;
 }
 
 .lyrics-overlay.hidden {
@@ -1993,6 +1998,7 @@ h1 {
   scroll-behavior: smooth;
   mask-image: linear-gradient(to bottom, transparent, white 20%, white 80%, transparent);
   -webkit-mask-image: linear-gradient(to bottom, transparent, white 20%, white 80%, transparent);
+  position: relative;
 }
 
 .lyrics-container::-webkit-scrollbar {
@@ -2068,6 +2074,34 @@ h1 {
 .plain-lyrics-mode .lyrics-line:hover {
   opacity: 0.85;
   color: var(--muted);
+}
+
+/* Tablet Responsive overrides */
+@media (min-width: 600px) {
+  .lyrics-line {
+    font-size: clamp(1.15rem, 2.6vh, 1.45rem);
+  }
+  .lyrics-line.active {
+    font-size: clamp(1.35rem, 3vh, 1.7rem);
+  }
+  .lyrics-scroll {
+    gap: 22px;
+  }
+}
+
+@media (min-width: 768px) {
+  .lyrics-line {
+    font-size: clamp(1.25rem, 2.8vh, 1.6rem);
+  }
+  .lyrics-line.active {
+    font-size: clamp(1.45rem, 3.2vh, 1.85rem);
+  }
+  .lyrics-scroll {
+    gap: 24px;
+  }
+  .plain-lyrics-mode .lyrics-line {
+    font-size: clamp(1.1rem, 2.4vh, 1.35rem);
+  }
 }
 
 
