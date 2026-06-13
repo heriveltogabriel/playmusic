@@ -117,12 +117,14 @@ class AuthManager:
                     pass
 
     def verify_password(self, password: str) -> bool:
+        self.load()
         if not self.password_hash or not self.password_salt:
             return False
         h, _ = self._hash(password, self.password_salt)
         return h == self.password_hash
 
     def verify_recovery_key(self, key: str) -> bool:
+        self.load()
         if not self.recovery_hash or not self.recovery_salt:
             return False
         # Normalize recovery key input
