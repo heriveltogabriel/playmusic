@@ -1544,12 +1544,22 @@ function renderPlaysChart() {
   const playsCont = document.getElementById('plays-chart-container');
   if (!playsCont) return;
 
+  const getLatestListenDate = (lp) => {
+    if (!lp.listen_dates || lp.listen_dates.length === 0) return "";
+    const dates = Array.isArray(lp.listen_dates) ? lp.listen_dates : [lp.listen_dates];
+    return dates[dates.length - 1] || "";
+  };
+
   const sortedLpsByPlays = [...state.lps]
     .filter(lp => lp.plays > 0)
     .sort((a, b) => {
-      if (b.plays !== a.plays) {
-        return b.plays - a.plays;
+      const dateA = getLatestListenDate(a);
+      const dateB = getLatestListenDate(b);
+      if (dateA && dateB) {
+        return dateB.localeCompare(dateA);
       }
+      if (dateA) return -1;
+      if (dateB) return 1;
       return a.title.localeCompare(b.title);
     });
 
@@ -2585,13 +2595,23 @@ function renderPlaysRankingPage() {
   
   if (!podiumContainer || !emptyState || !listSection || !playsChartContainer) return;
   
-  // Sort LPs by play count descending, and title A-Z if plays are equal
+  // Sort LPs by latest audition date descending
+  const getLatestListenDate = (lp) => {
+    if (!lp.listen_dates || lp.listen_dates.length === 0) return "";
+    const dates = Array.isArray(lp.listen_dates) ? lp.listen_dates : [lp.listen_dates];
+    return dates[dates.length - 1] || "";
+  };
+
   const sorted = state.lps
     .filter(lp => lp.plays > 0)
     .sort((a, b) => {
-      if (b.plays !== a.plays) {
-        return b.plays - a.plays;
+      const dateA = getLatestListenDate(a);
+      const dateB = getLatestListenDate(b);
+      if (dateA && dateB) {
+        return dateB.localeCompare(dateA);
       }
+      if (dateA) return -1;
+      if (dateB) return 1;
       return a.title.localeCompare(b.title);
     });
     
