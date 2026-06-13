@@ -20,6 +20,8 @@ const elements = {
   lyricsOverlay: document.querySelector("#lyrics-overlay"),
   lyricsScroll: document.querySelector("#lyrics-scroll"),
   lyricsContainer: document.querySelector(".lyrics-container"),
+  coverPanel: document.querySelector(".cover-panel"),
+  fullscreenButton: document.querySelector("#fullscreen-button"),
 };
 
 let currentTrackKey = null;
@@ -866,6 +868,36 @@ if (elements.lyricsOverlay) {
   elements.lyricsOverlay.addEventListener("click", (e) => {
     e.stopPropagation();
     setLyricsVisibility(false);
+  });
+}
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch((err) => {
+      console.error("Erro ao ativar tela cheia:", err);
+    });
+  } else {
+    document.exitFullscreen();
+  }
+}
+
+if (elements.fullscreenButton) {
+  elements.fullscreenButton.addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleFullscreen();
+  });
+}
+
+if (elements.coverPanel) {
+  elements.coverPanel.addEventListener("click", (e) => {
+    if (
+      e.target === elements.coverPanel ||
+      e.target.closest(".vinyl-disc") ||
+      e.target.classList.contains("vinyl-wrapper")
+    ) {
+      e.stopPropagation();
+      toggleFullscreen();
+    }
   });
 }
 
