@@ -6,6 +6,7 @@ data/
 certs/
 static-backup-v1/
 static-backup-v2/
+static-backup-v3/
 ssh/
 scratch/catalogolp/
 
