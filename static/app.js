@@ -833,8 +833,8 @@ function updateLyricsProgress(seconds) {
     return;
   }
 
-  // Compensação de atraso de 5.0s para antecipar a legenda e sincronizar com o áudio real em conexões remotas
-  const adjustedTime = seconds + 5.0;
+  // Compensação de atraso de 10.0s para antecipar a legenda e sincronizar com o áudio real em conexões remotas
+  const adjustedTime = seconds + 10.0;
 
   let newActiveIndex = -1;
   for (let i = 0; i < parsedLyrics.length; i++) {
