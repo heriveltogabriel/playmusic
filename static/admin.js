@@ -2768,6 +2768,8 @@ async function loadSettingsFromServer() {
     document.getElementById('setting-shazam-key').value = config.rapidapi_shazam_key || '';
     document.getElementById('setting-shazam-host').value = config.rapidapi_shazam_host || '';
     
+    document.getElementById('setting-lyrics-latency').value = config.lyrics_latency_offset !== undefined ? config.lyrics_latency_offset : 1.3;
+    
     updateSyncStatusUI(config);
   } catch (error) {
     console.error('Error loading settings:', error);
@@ -2836,13 +2838,15 @@ function initializeSettingsForm() {
     const discogs_token = document.getElementById('setting-discogs-token').value.trim();
     const rapidapi_shazam_key = document.getElementById('setting-shazam-key').value.trim();
     const rapidapi_shazam_host = document.getElementById('setting-shazam-host').value.trim();
+    const lyrics_latency_offset = parseFloat(document.getElementById('setting-lyrics-latency').value) || 1.3;
     
     const payload = {
       discogs_user,
       discogs_user_agent,
       discogs_token,
       rapidapi_shazam_key,
-      rapidapi_shazam_host
+      rapidapi_shazam_host,
+      lyrics_latency_offset
     };
     
     try {

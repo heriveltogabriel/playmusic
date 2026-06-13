@@ -37,7 +37,13 @@ class VinylDisplayApp:
         for k, v in updates.items():
             field_name = k.lower()
             if hasattr(self.config, field_name):
-                new_fields[field_name] = v
+                orig_val = getattr(self.config, field_name)
+                if isinstance(orig_val, float):
+                    new_fields[field_name] = float(v)
+                elif isinstance(orig_val, int):
+                    new_fields[field_name] = int(v)
+                else:
+                    new_fields[field_name] = v
         self.config = dataclasses.replace(self.config, **new_fields)
         
         # Re-initialize clients
@@ -60,6 +66,7 @@ class VinylDisplayApp:
                     )
         state["collection_count"] = self.store.collection_count()
         state["last_sync_at"] = self.store.get_metadata("discogs_last_sync_at")
+        state["lyrics_latency_offset"] = self.config.lyrics_latency_offset if self.config else 1.3
         return state
 
     def sync_collection(self) -> dict[str, Any]:

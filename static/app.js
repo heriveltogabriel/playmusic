@@ -29,6 +29,11 @@ let parsedLyrics = null;
 let activeLyricIndex = -1;
 let lyricsVisible = false;
 let lyricsEnabled = localStorage.getItem("lyricsEnabled") === "true";
+let lyricsLatencyOffset = 1.3;
+let lyricsTimeoutId = null;
+const lyricsCache = new Map();
+let nextTrack = null;
+let currentRelease = null;
 
 let mediaStream = null;
 let recording = false;
@@ -87,6 +92,17 @@ function updateProgressBar() {
   }
 
   updateLyricsProgress(currentProgress);
+
+  // Prefetch da letra da próxima música quando faltar menos de 10 segundos
+  if (playbackTracker.duration > 0 && nextTrack && currentRelease) {
+    const remaining = playbackTracker.duration - currentProgress;
+    if (remaining <= 10) {
+      const nextCacheKey = getLyricsCacheKey(nextTrack.title, currentRelease.artist);
+      if (!lyricsCache.has(nextCacheKey)) {
+        fetchLyrics(nextTrack, currentRelease, true);
+      }
+    }
+  }
 }
 
 function setCover(release) {
@@ -117,6 +133,10 @@ function setCover(release) {
 }
 
 function renderState(state) {
+  if (state.lyrics_latency_offset !== undefined) {
+    lyricsLatencyOffset = parseFloat(state.lyrics_latency_offset);
+  }
+
   const hasNextTrack = !!state.next_track;
   elements.statusLabel.textContent = labelForStatus(state.status, hasNextTrack);
 
@@ -132,6 +152,9 @@ function renderState(state) {
   if (isPlayingActive) {
     const release = state.release;
     const track = state.track;
+    
+    currentRelease = release;
+    nextTrack = state.next_track;
 
     const trackKey = `${track.title}-${release.artist}`;
     if (trackKey !== currentTrackKey) {
@@ -205,11 +228,16 @@ function renderState(state) {
 
   // ESTADO DE ESPERA / OCIOSO (Sem música tocando)
   setCover(null); // Renderiza a logo do LP DA SEMANA
+  currentRelease = null;
+  nextTrack = null;
   currentTrackKey = null;
   parsedLyrics = null;
   activeLyricIndex = -1;
   if (elements.lyricsScroll) {
-    elements.lyricsScroll.innerHTML = `<p class="lyrics-empty">Sem letras carregadas</p>`;
+    const p = document.createElement("p");
+    p.className = "lyrics-empty";
+    p.textContent = "Sem letras carregadas";
+    elements.lyricsScroll.replaceChildren(p);
   }
   
   if (elements.vinylWrapper) {
@@ -672,16 +700,101 @@ function parseLRC(lrcText) {
   return null;
 }
 
-async function fetchLyrics(track, release) {
-  if (!track || !release) {
-    parsedLyrics = null;
-    activeLyricIndex = -1;
-    renderLyrics(null);
-    if (elements.coverPanel) {
-      elements.coverPanel.classList.remove("has-lyrics");
-    }
+function getLyricsCacheKey(trackTitle, artistName) {
+  const t = trackTitle ? cleanMetadataString(trackTitle).toLowerCase() : "";
+  const a = artistName ? cleanMetadataString(artistName).toLowerCase() : "";
+  return `${t}||${a}`;
+}
+
+function showTemporaryMessage(message) {
+  if (lyricsTimeoutId) {
+    clearTimeout(lyricsTimeoutId);
+    lyricsTimeoutId = null;
+  }
+  
+  parsedLyrics = null;
+  activeLyricIndex = -1;
+  
+  if (elements.lyricsScroll) {
+    const p = document.createElement("p");
+    p.className = "lyrics-empty";
+    p.textContent = message;
+    elements.lyricsScroll.replaceChildren(p);
+  }
+  if (elements.coverPanel) {
+    elements.coverPanel.classList.remove("has-lyrics");
+  }
+  
+  setLyricsVisibility(true);
+  
+  lyricsTimeoutId = setTimeout(() => {
     setLyricsVisibility(false);
+    lyricsTimeoutId = null;
+  }, 5000);
+}
+
+async function fetchLyrics(track, release, isPrefetch = false) {
+  if (lyricsTimeoutId) {
+    clearTimeout(lyricsTimeoutId);
+    lyricsTimeoutId = null;
+  }
+
+  if (!track || !release) {
+    if (!isPrefetch) {
+      parsedLyrics = null;
+      activeLyricIndex = -1;
+      renderLyrics(null);
+      if (elements.coverPanel) {
+        elements.coverPanel.classList.remove("has-lyrics");
+      }
+      setLyricsVisibility(false);
+    }
     return;
+  }
+
+  const cacheKey = getLyricsCacheKey(track.title, release.artist);
+
+  // Se já estiver no cache
+  if (lyricsCache.has(cacheKey)) {
+    const cached = lyricsCache.get(cacheKey);
+    if (!isPrefetch) {
+      if (cached.status === "success") {
+        handleLyricsResponse(cached.data);
+      } else if (cached.status === "empty") {
+        showTemporaryMessage(cached.message);
+      } else if (cached.status === "loading") {
+        if (elements.lyricsScroll) {
+          const p = document.createElement("p");
+          p.className = "lyrics-empty";
+          p.textContent = "Sincronizando Legenda...";
+          elements.lyricsScroll.replaceChildren(p);
+        }
+        try {
+          const data = await cached.promise;
+          if (data) {
+            handleLyricsResponse(data);
+          } else {
+            showTemporaryMessage("Letra indisponível para esta música");
+          }
+        } catch (e) {
+          showTemporaryMessage("Letra não encontrada para esta faixa");
+        }
+      }
+    }
+    return;
+  }
+
+  // Prepara exibição de carregamento
+  if (!isPrefetch) {
+    if (elements.lyricsScroll) {
+      const p = document.createElement("p");
+      p.className = "lyrics-empty";
+      p.textContent = "Sincronizando Legenda...";
+      elements.lyricsScroll.replaceChildren(p);
+    }
+    if (elements.lyricsOverlay) {
+      elements.lyricsOverlay.classList.remove("plain-lyrics-mode");
+    }
   }
 
   const artistClean = cleanMetadataString(release.artist);
@@ -689,76 +802,103 @@ async function fetchLyrics(track, release) {
   const albumClean = release.title ? cleanMetadataString(release.title) : "";
   const duration = track.duration_seconds || 0;
 
-  if (elements.lyricsScroll) {
-    elements.lyricsScroll.innerHTML = `<p class="lyrics-empty">Sincronizando Legenda...</p>`;
-  }
-  if (elements.lyricsOverlay) {
-    elements.lyricsOverlay.classList.remove("plain-lyrics-mode");
-  }
-
-  // Strategy 1: exact API get
-  try {
-    let url = `https://lrclib.net/api/get?artist_name=${encodeURIComponent(artistClean)}&track_name=${encodeURIComponent(trackClean)}`;
-    if (albumClean) {
-      url += `&album_name=${encodeURIComponent(albumClean)}`;
-    }
-    if (duration > 0) {
-      url += `&duration=${duration}`;
-    }
-
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent": "VinylDisplay/2.0.0 (https://github.com/heriveltogabriel/playmusic)"
+  // Cria a promessa de carregamento
+  const fetchPromise = (async () => {
+    // Strategy 1: exact API get
+    try {
+      let url = `https://lrclib.net/api/get?artist_name=${encodeURIComponent(artistClean)}&track_name=${encodeURIComponent(trackClean)}`;
+      if (albumClean) {
+        url += `&album_name=${encodeURIComponent(albumClean)}`;
       }
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      handleLyricsResponse(data);
-      return;
-    }
-  } catch (err) {
-    console.warn("lrclib get error, trying search:", err);
-  }
-
-  // Strategy 2: search fallback
-  try {
-    const query = `${artistClean} ${trackClean}`;
-    const searchUrl = `https://lrclib.net/api/search?q=${encodeURIComponent(query)}`;
-    const response = await fetch(searchUrl, {
-      headers: {
-        "User-Agent": "VinylDisplay/2.0.0 (https://github.com/heriveltogabriel/playmusic)"
+      if (duration > 0) {
+        url += `&duration=${duration}`;
       }
-    });
 
-    if (response.ok) {
-      const results = await response.json();
-      if (results && results.length > 0) {
-        let bestMatch = results[0];
-        if (duration > 0) {
-          const closeMatch = results.find(r => Math.abs((r.duration || 0) - duration) <= 10);
-          if (closeMatch) bestMatch = closeMatch;
+      const response = await fetch(url, {
+        headers: {
+          "User-Agent": "VinylDisplay/2.0.0 (https://github.com/heriveltogabriel/playmusic)"
         }
-        handleLyricsResponse(bestMatch);
-        return;
+      });
+
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (err) {
+      console.warn("lrclib get error, trying search:", err);
+    }
+
+    // Strategy 2: search fallback
+    try {
+      const query = `${artistClean} ${trackClean}`;
+      const searchUrl = `https://lrclib.net/api/search?q=${encodeURIComponent(query)}`;
+      const response = await fetch(searchUrl, {
+        headers: {
+          "User-Agent": "VinylDisplay/2.0.0 (https://github.com/heriveltogabriel/playmusic)"
+        }
+      });
+
+      if (response.ok) {
+        const results = await response.json();
+        if (results && results.length > 0) {
+          let bestMatch = results[0];
+          if (duration > 0) {
+            const closeMatch = results.find(r => Math.abs((r.duration || 0) - duration) <= 10);
+            if (closeMatch) bestMatch = closeMatch;
+          }
+          return bestMatch;
+        }
+      }
+    } catch (err) {
+      console.error("lrclib search error:", err);
+    }
+    return null;
+  })();
+
+  lyricsCache.set(cacheKey, {
+    status: "loading",
+    promise: fetchPromise
+  });
+
+  try {
+    const data = await fetchPromise;
+    if (data && (data.syncedLyrics || data.plainLyrics || data.instrumental)) {
+      lyricsCache.set(cacheKey, {
+        status: "success",
+        data: data
+      });
+      if (!isPrefetch) {
+        handleLyricsResponse(data);
+      }
+    } else {
+      let emptyMsg = "Letra não encontrada para esta faixa";
+      if (data && data.instrumental) {
+        emptyMsg = "♪ Instrumental ♪";
+      }
+      lyricsCache.set(cacheKey, {
+        status: "empty",
+        message: emptyMsg
+      });
+      if (!isPrefetch) {
+        showTemporaryMessage(emptyMsg);
       }
     }
   } catch (err) {
-    console.error("lrclib search error:", err);
+    lyricsCache.set(cacheKey, {
+      status: "empty",
+      message: "Letra não encontrada para esta faixa"
+    });
+    if (!isPrefetch) {
+      showTemporaryMessage("Letra não encontrada para esta faixa");
+    }
   }
-
-  parsedLyrics = null;
-  activeLyricIndex = -1;
-  if (elements.lyricsScroll) {
-    elements.lyricsScroll.innerHTML = `<p class="lyrics-empty">Letra não encontrada para esta faixa</p>`;
-  }
-  if (elements.coverPanel) {
-    elements.coverPanel.classList.remove("has-lyrics");
-  }
-  setLyricsVisibility(false);
 }
 
 function handleLyricsResponse(data) {
+  if (lyricsTimeoutId) {
+    clearTimeout(lyricsTimeoutId);
+    lyricsTimeoutId = null;
+  }
+
   activeLyricIndex = -1;
   if (data.syncedLyrics) {
     parsedLyrics = parseLRC(data.syncedLyrics);
@@ -789,25 +929,11 @@ function handleLyricsResponse(data) {
   }
 
   if (data.instrumental) {
-    parsedLyrics = null;
-    if (elements.lyricsScroll) {
-      elements.lyricsScroll.innerHTML = `<p class="lyrics-empty">♪ Instrumental ♪</p>`;
-    }
-    if (elements.coverPanel) {
-      elements.coverPanel.classList.remove("has-lyrics");
-    }
-    setLyricsVisibility(false);
+    showTemporaryMessage("♪ Instrumental ♪");
     return;
   }
 
-  parsedLyrics = null;
-  if (elements.lyricsScroll) {
-    elements.lyricsScroll.innerHTML = `<p class="lyrics-empty">Letra indisponível para esta música</p>`;
-  }
-  if (elements.coverPanel) {
-    elements.coverPanel.classList.remove("has-lyrics");
-  }
-  setLyricsVisibility(false);
+  showTemporaryMessage("Letra indisponível para esta música");
 }
 
 function renderLyrics(lyrics, isPlain = false) {
@@ -833,8 +959,8 @@ function updateLyricsProgress(seconds) {
     return;
   }
 
-  // Compensação de atraso de 1.3s para antecipar a legenda e sincronizar com o áudio real em conexões remotas
-  const adjustedTime = seconds + 1.3;
+  // Compensação de atraso dinâmica para antecipar a legenda e sincronizar com o áudio real
+  const adjustedTime = seconds + lyricsLatencyOffset;
 
   let newActiveIndex = -1;
   for (let i = 0; i < parsedLyrics.length; i++) {
@@ -875,6 +1001,11 @@ function updateLyricsProgress(seconds) {
 function setLyricsVisibility(visible) {
   lyricsVisible = visible;
   localStorage.setItem("lyricsVisible", visible ? "true" : "false");
+  
+  if (!visible && lyricsTimeoutId) {
+    clearTimeout(lyricsTimeoutId);
+    lyricsTimeoutId = null;
+  }
   
   if (elements.lyricsOverlay) {
     if (visible) {

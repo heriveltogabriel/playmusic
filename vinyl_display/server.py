@@ -93,6 +93,7 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                 "last_sync_added": self.app.store.get_metadata("discogs_last_sync_added"),
                 "last_sync_updated": self.app.store.get_metadata("discogs_last_sync_updated"),
                 "last_sync_deleted": self.app.store.get_metadata("discogs_last_sync_deleted"),
+                "lyrics_latency_offset": self.app.config.lyrics_latency_offset if self.app.config else 1.3,
             }
             self._json(config_data)
             return
@@ -429,6 +430,7 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                 "DISCOGS_TOKEN": payload.get("discogs_token", "").strip(),
                 "RAPIDAPI_SHAZAM_KEY": payload.get("rapidapi_shazam_key", "").strip(),
                 "RAPIDAPI_SHAZAM_HOST": payload.get("rapidapi_shazam_host", "").strip(),
+                "LYRICS_LATENCY_OFFSET": str(payload.get("lyrics_latency_offset", 1.3)).strip(),
             }
             
             try:

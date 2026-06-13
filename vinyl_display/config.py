@@ -20,6 +20,7 @@ class Config:
     clip_seconds: int
     cert_file: Path | None
     key_file: Path | None
+    lyrics_latency_offset: float
 
 
 
@@ -83,6 +84,7 @@ def load_config() -> Config:
         clip_seconds=int(os.environ.get("VINYL_CLIP_SECONDS", "10")),
         cert_file=_optional_path(os.environ.get("VINYL_CERT_FILE")),
         key_file=_optional_path(os.environ.get("VINYL_KEY_FILE")),
+        lyrics_latency_offset=float(os.environ.get("LYRICS_LATENCY_OFFSET", "1.3")),
     )
 
 
