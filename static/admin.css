@@ -3100,6 +3100,51 @@ dialog::backdrop {
   animation: spin 1s linear infinite;
 }
 
+.ranking-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
 .ranking-header-flex .ranking-section-title {
   margin: 0;
+}
+
+.ranking-stats-summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ranking-stats-prefix {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-right: 4px;
+}
+
+.ranking-stats-summary .stat-mini-card {
+  padding: 10px 16px;
+  border-radius: 12px;
+  min-width: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ranking-stats-summary .mini-card-label {
+  margin-bottom: 0;
+  font-size: 0.65rem;
+  letter-spacing: 0.5px;
+}
+
+.ranking-stats-summary .mini-card-value {
+  font-size: 1.4rem;
+  line-height: 1.2;
 }
