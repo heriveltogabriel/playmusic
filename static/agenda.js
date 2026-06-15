@@ -16,13 +16,10 @@ async function loadAgendaData() {
   const grid = document.getElementById('agenda-grid');
   
   try {
-    const response = await fetch('/api/ouvir/releases');
-    if (!response.ok) throw new Error('Falha ao obter catálogo do servidor');
+    const response = await fetch('/api/ouvir/agenda');
+    if (!response.ok) throw new Error('Falha ao obter agenda do servidor');
     
-    state.releases = await response.json();
-    
-    // Resolve or generate weekly agenda
-    resolveWeeklyAgenda();
+    state.agenda = await response.json();
     
     renderAgenda();
     
@@ -43,67 +40,6 @@ async function loadAgendaData() {
   }
 }
 
-// ==================== AGENDA RESOLVING ====================
-function resolveWeeklyAgenda() {
-  if (state.releases.length === 0) {
-    state.agenda = [];
-    return;
-  }
-  
-  const savedAgendaIdsStr = localStorage.getItem('lpweek_daily_agenda_ids');
-  let agendaIds = [];
-  
-  if (savedAgendaIdsStr) {
-    try {
-      agendaIds = JSON.parse(savedAgendaIdsStr);
-    } catch (e) {
-      console.error('Error parsing saved agenda ids', e);
-    }
-  }
-  
-  // If we don't have exactly 7 valid release matches, generate a new one
-  let agendaLps = agendaIds.map(id => state.releases.find(lp => lp.id == id)).filter(Boolean);
-  
-  if (agendaLps.length !== 7) {
-    // Generate weekly agenda
-    const unplayed = state.releases.filter(lp => !lp.plays || lp.plays === 0);
-    const played = state.releases.filter(lp => lp.plays > 0).sort((a, b) => a.plays - b.plays);
-    
-    let pool = [...unplayed];
-    pool.sort(() => Math.random() - 0.5);
-    
-    if (pool.length < 7) {
-      const remainingCount = 7 - pool.length;
-      const lowPlayed = played.slice(0, remainingCount * 4);
-      lowPlayed.sort(() => Math.random() - 0.5);
-      pool = pool.concat(lowPlayed.slice(0, remainingCount));
-    }
-    
-    // De-duplicate
-    const uniquePool = [];
-    const seenIds = new Set();
-    for (const lp of pool) {
-      if (!seenIds.has(lp.id)) {
-        uniquePool.push(lp);
-        seenIds.add(lp.id);
-      }
-    }
-    
-    // Fill up if collection is very small
-    if (uniquePool.length < 7 && state.releases.length > 0) {
-      while (uniquePool.length < 7) {
-        const randomLp = state.releases[Math.floor(Math.random() * state.releases.length)];
-        uniquePool.push(randomLp);
-      }
-    }
-    
-    state.agenda = uniquePool.slice(0, 7);
-    // Save generated IDs to localStorage
-    localStorage.setItem('lpweek_daily_agenda_ids', JSON.stringify(state.agenda.map(lp => lp.id)));
-  } else {
-    state.agenda = agendaLps;
-  }
-}
 
 // ==================== RENDERING ====================
 function renderAgenda() {
@@ -248,9 +184,11 @@ async function registerAgendaAudition(lp, dayIndex, buttonEl) {
     // Update local state
     lp.plays = newCount;
     
-    // Update matching LP in state.releases
-    const matchGlobal = state.releases.find(item => item.id === lp.id);
-    if (matchGlobal) matchGlobal.plays = newCount;
+    // Update matching LP in state.releases (if loaded)
+    if (state.releases && state.releases.length > 0) {
+      const matchGlobal = state.releases.find(item => item.id === lp.id);
+      if (matchGlobal) matchGlobal.plays = newCount;
+    }
     
     // Update UI value immediately
     const playsCountEl = document.getElementById(`plays-count-${lp.id}`);

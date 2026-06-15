@@ -226,8 +226,8 @@ class StaticAssetTests(unittest.TestCase):
         css = (ROOT / "static" / "agenda.css").read_text()
 
         self.assertIn('id="agenda-grid"', html)
-        self.assertIn('/api/ouvir/releases', js)
-        self.assertIn('lpweek_daily_agenda_ids', js)
+        self.assertIn('/api/ouvir/agenda', js)
+        self.assertNotIn('lpweek_daily_agenda_ids', js)
         self.assertIn('listened-check', css)
         self.assertIn('agenda-card.today', css)
 

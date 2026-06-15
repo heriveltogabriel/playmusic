@@ -128,6 +128,22 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             ]
             self._json(clean_data)
             return
+        if path == "/api/ouvir/agenda":
+            agenda_releases = self.app.get_weekly_agenda()
+            clean_data = [
+                {
+                    "id": r.get("release_id"),
+                    "title": r.get("title"),
+                    "artist": r.get("artist"),
+                    "year": r.get("year"),
+                    "cover_url": r.get("cover_url"),
+                    "plays": r.get("auditions", 0),
+                    "synced_at": r.get("synced_at") or 0.0
+                }
+                for r in agenda_releases
+            ]
+            self._json(clean_data)
+            return
         if path == "/api/admin/releases":
             self._json(self.app.list_admin_releases())
             return
@@ -555,6 +571,25 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                     rating=rating,
                 )
             )
+            return
+        if path == "/api/admin/agenda":
+            length = int(self.headers.get("Content-Length", "0"))
+            body_bytes = self.rfile.read(length)
+            try:
+                payload = json.loads(body_bytes.decode("utf-8"))
+            except Exception:
+                payload = {}
+            ids = payload.get("ids", [])
+            if not isinstance(ids, list) or len(ids) != 7:
+                body = json.dumps({"success": False, "error": "A agenda deve ter exatamente 7 LPs."}, ensure_ascii=False).encode("utf-8")
+                self.send_response(HTTPStatus.BAD_REQUEST)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+                return
+            self.app.store.set_metadata("weekly_agenda_ids", json.dumps(ids))
+            self._json({"success": True})
             return
         if path.startswith("/api/admin/releases/") and path.endswith("/delete"):
             parts = path.split("/")

@@ -138,6 +138,36 @@ class AppServiceTests(unittest.TestCase):
             self.assertEqual(decremented, {"status": "ok", "auditions": 0})
             self.assertEqual(decremented_again, {"status": "ok", "auditions": 0})
 
+    def test_weekly_agenda_generation_and_persistence(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = CatalogStore(Path(tmp) / "catalog.sqlite3")
+            app = VinylDisplayApp(store, FakeDiscogsClient(), FakeShazamClient())
+            
+            # Populate with 10 releases
+            for i in range(10):
+                store.add_manual_release(
+                    title=f"LP {i}",
+                    artist="Artist",
+                    year=2020 + i,
+                    cover_url=""
+                )
+                
+            agenda1 = app.get_weekly_agenda()
+            self.assertEqual(len(agenda1), 7)
+            
+            # Fetching again should return the exact same LPs in the same order
+            agenda2 = app.get_weekly_agenda()
+            self.assertEqual([r["release_id"] for r in agenda1], [r["release_id"] for r in agenda2])
+            
+            # If one is deleted, it should automatically regenerate a new healthy one
+            deleted_id = agenda1[0]["release_id"]
+            app.delete_release(deleted_id)
+            
+            agenda3 = app.get_weekly_agenda()
+            self.assertEqual(len(agenda3), 7)
+            self.assertNotIn(deleted_id, [r["release_id"] for r in agenda3])
+
+
 
 if __name__ == "__main__":
     unittest.main()

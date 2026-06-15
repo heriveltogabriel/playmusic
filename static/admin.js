@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   state.selectedAgendaIndex = getTodayAgendaIndex();
   
   // Initialize weekly suggestions
-  generateWeeklyAgenda(false);
+  await loadWeeklyAgenda();
   renderWeeklyAgenda();
   renderSelectedAgendaLp();
   renderHistoryRanking();
@@ -354,6 +354,42 @@ function getTodayAgendaIndex() {
   return new Date().getDay(); // 0-6 (0 is Sunday, 1 is Monday, ..., 6 is Saturday)
 }
 
+async function saveWeeklyAgendaToServer() {
+  try {
+    const ids = state.agenda.map(lp => lp.id);
+    const response = await fetch('/api/admin/agenda', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ ids })
+    });
+    if (!response.ok) throw new Error('Erro ao salvar agenda no servidor');
+  } catch (e) {
+    console.error('Error saving weekly agenda:', e);
+    showToast('Erro ao sincronizar agenda com o servidor.', 'error');
+  }
+}
+
+async function loadWeeklyAgenda() {
+  try {
+    const response = await fetch('/api/ouvir/agenda');
+    if (!response.ok) throw new Error('Falha ao obter agenda do servidor');
+    const agendaData = await response.json();
+    
+    // Map server format to state.agenda using loaded state.lps
+    state.agenda = agendaData.map(r => state.lps.find(lp => lp.id == r.id)).filter(Boolean);
+    
+    // Fallback if length isn't 7
+    if (state.agenda.length !== 7) {
+      generateWeeklyAgenda(true);
+    }
+  } catch (e) {
+    console.error('Error loading weekly agenda from server:', e);
+    generateWeeklyAgenda(false);
+  }
+}
+
 function generateWeeklyAgenda(forceNew = false) {
   if (state.lps.length === 0) {
     state.agenda = [];
@@ -415,6 +451,7 @@ function generateWeeklyAgenda(forceNew = false) {
   
   // Save to localStorage
   localStorage.setItem('lpweek_daily_agenda_ids', JSON.stringify(state.agenda.map(lp => lp.id)));
+  saveWeeklyAgendaToServer();
 }
 
 function renderWeeklyAgenda() {
@@ -514,6 +551,7 @@ function changeSingleDayAgendaLp(dayIndex) {
   if (selectedLp) {
     state.agenda[dayIndex] = selectedLp;
     localStorage.setItem('lpweek_daily_agenda_ids', JSON.stringify(state.agenda.map(lp => lp.id)));
+    saveWeeklyAgendaToServer();
     
     renderWeeklyAgenda();
     if (state.selectedAgendaIndex === dayIndex) {

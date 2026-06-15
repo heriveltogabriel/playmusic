@@ -156,6 +156,75 @@ class VinylDisplayApp:
         releases = self.store.list_releases_with_stats()
         return [r.to_dict() for r in releases]
 
+    def _generate_and_save_weekly_agenda(self) -> list[int]:
+        releases = self.store.list_releases_with_stats()
+        if not releases:
+            return []
+        
+        # Prioritize unplayed (auditions == 0)
+        unplayed = [r for r in releases if r.auditions == 0]
+        played = sorted([r for r in releases if r.auditions > 0], key=lambda x: x.auditions)
+        
+        import random
+        pool = list(unplayed)
+        random.shuffle(pool)
+        
+        if len(pool) < 7:
+            remaining_count = 7 - len(pool)
+            low_played = played[:remaining_count * 4]
+            random.shuffle(low_played)
+            pool.extend(low_played[:remaining_count])
+            
+        # De-duplicate
+        unique_pool = []
+        seen_ids = set()
+        for r in pool:
+            if r.release_id not in seen_ids:
+                unique_pool.append(r)
+                seen_ids.add(r.release_id)
+                
+        # Fill up if collection is very small
+        if len(unique_pool) < 7:
+            while len(unique_pool) < 7 and releases:
+                random_r = random.choice(releases)
+                unique_pool.append(random_r)
+                
+        agenda_releases = unique_pool[:7]
+        agenda_ids = [r.release_id for r in agenda_releases]
+        
+        import json
+        self.store.set_metadata("weekly_agenda_ids", json.dumps(agenda_ids))
+        return agenda_ids
+
+    def get_weekly_agenda(self) -> list[dict[str, Any]]:
+        saved_ids_str = self.store.get_metadata("weekly_agenda_ids")
+        agenda_ids = []
+        if saved_ids_str:
+            try:
+                import json
+                agenda_ids = json.loads(saved_ids_str)
+            except Exception:
+                pass
+                
+        # If not exactly 7 IDs, generate a new one
+        if not agenda_ids or len(agenda_ids) != 7 or not isinstance(agenda_ids, list):
+            agenda_ids = self._generate_and_save_weekly_agenda()
+            
+        all_releases = {r.release_id: r for r in self.store.list_releases_with_stats()}
+        
+        # If any of the IDs are not found in current releases (e.g. deleted), regenerate to keep it healthy
+        if any(aid not in all_releases for aid in agenda_ids):
+            agenda_ids = self._generate_and_save_weekly_agenda()
+            
+        agenda_releases = []
+        for aid in agenda_ids:
+            r = all_releases.get(aid)
+            if r:
+                agenda_releases.append(r.to_dict())
+                
+        return agenda_releases
+
+
     def add_manual_release(
         self,
         title: str,
