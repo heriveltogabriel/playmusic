@@ -2620,6 +2620,45 @@ function renderPlaysRankingPage() {
   const playsChartContainer = document.getElementById('plays-chart-container');
   
   if (!podiumContainer || !emptyState || !listSection || !playsChartContainer) return;
+
+  // Calcular estatísticas: semana, mês, todos (soma dos ouvidos)
+  const now = new Date();
+  const oneWeekAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000;
+  const oneMonthAgo = now.getTime() - 30 * 24 * 60 * 60 * 1000;
+  
+  let weekCount = 0;
+  let monthCount = 0;
+  let totalCount = 0;
+  
+  state.lps.forEach(lp => {
+    if (lp.listen_dates && Array.isArray(lp.listen_dates)) {
+      lp.listen_dates.forEach(dateStr => {
+        try {
+          const d = new Date(dateStr);
+          const t = d.getTime();
+          if (!isNaN(t)) {
+            totalCount++;
+            if (t >= oneWeekAgo) {
+              weekCount++;
+            }
+            if (t >= oneMonthAgo) {
+              monthCount++;
+            }
+          }
+        } catch (e) {
+          console.error("Erro ao converter data de audição:", dateStr, e);
+        }
+      });
+    }
+  });
+  
+  const statWeekEl = document.getElementById('ranking-stat-week');
+  const statMonthEl = document.getElementById('ranking-stat-month');
+  const statTotalEl = document.getElementById('ranking-stat-total');
+  
+  if (statWeekEl) statWeekEl.textContent = weekCount;
+  if (statMonthEl) statMonthEl.textContent = monthCount;
+  if (statTotalEl) statTotalEl.textContent = totalCount;
   
   // Sort LPs by latest audition date descending
   const getLatestListenDate = (lp) => {
