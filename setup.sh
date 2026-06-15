@@ -95,6 +95,18 @@ SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 
 echo "Configuring systemd service..."
 
+# Find the best Python executable (prefer 3.9+)
+PYTHON_CMD="python3"
+if command -v python3.11 &> /dev/null; then
+    PYTHON_CMD="python3.11"
+elif command -v python3.10 &> /dev/null; then
+    PYTHON_CMD="python3.10"
+elif command -v python3.9 &> /dev/null; then
+    PYTHON_CMD="python3.9"
+fi
+PYTHON_PATH=$(command -v "$PYTHON_CMD")
+echo "Using Python executable: $PYTHON_PATH"
+
 # We generate the service content
 cat <<EOF | sudo tee "$SERVICE_FILE" > /dev/null
 [Unit]
@@ -105,7 +117,7 @@ After=network.target
 Type=simple
 User=$USER
 WorkingDirectory=$PROJECT_DIR
-ExecStart=/usr/bin/python3 -m vinyl_display.server
+ExecStart=$PYTHON_PATH -m vinyl_display.server
 Restart=always
 RestartSec=5
 
