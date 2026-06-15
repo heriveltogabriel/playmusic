@@ -8,8 +8,8 @@
   "description": "Vinyl now-playing display",
   "icons": [
     {
-      "src": "/static/icon.png",
-      "sizes": "192x192",
+      "src": "/static/logo_lp_da_semana.png",
+      "sizes": "512x512",
       "type": "image/png"
     }
   ]

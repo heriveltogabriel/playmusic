@@ -115,6 +115,9 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
         if path == "/herivelto" or path == "/herivelto/":
             self._send_static("herivelto.html")
             return
+        if path in ("/apple-touch-icon.png", "/apple-touch-icon-precomposed.png", "/favicon.ico"):
+            self._send_static("logo_lp_da_semana.png")
+            return
         if path == "/api/ouvir/releases":
             releases = self.app.list_admin_releases()
             clean_data = [

@@ -10,12 +10,12 @@ tar --exclude="static-backup-v1" \
     --exclude="ssh" \
     --exclude="data" \
     --exclude="arquivos_sensiveis.zip" \
-    -cf - . | ssh -i ssh/ssh-key-2026-05-26.key opc@152.70.194.246 "tar -C /home/opc/vinyl_display -xf -"
+    -cf - . | ssh -o StrictHostKeyChecking=no -i ssh/ssh-key-2026-05-26.key opc@150.136.207.62 "tar -C /home/opc/vinyl_display -xf -"
 
 echo "🧹 Cleaning up metadata files on the remote server..."
-ssh -i ssh/ssh-key-2026-05-26.key opc@152.70.194.246 "find /home/opc/vinyl_display -name \"._*\" -delete"
+ssh -o StrictHostKeyChecking=no -i ssh/ssh-key-2026-05-26.key opc@150.136.207.62 "find /home/opc/vinyl_display -name \"._*\" -delete"
 
 echo "🔄 Restarting the vinyl-display systemd service..."
-ssh -i ssh/ssh-key-2026-05-26.key opc@152.70.194.246 "sudo systemctl restart vinyl-display"
+ssh -o StrictHostKeyChecking=no -i ssh/ssh-key-2026-05-26.key opc@150.136.207.62 "sudo systemctl restart vinyl-display"
 
 echo "✅ Deployment finished successfully! Remote database preserved."
