@@ -95,37 +95,18 @@ body {
 
 .logo-wrapper {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  justify-content: center;
   margin-bottom: 16px;
 }
 
-.logo-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  object-fit: cover;
-  animation: logo-spin 12s linear infinite;
-  animation-play-state: paused;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.logo-wrapper:hover .logo-icon {
-  animation-play-state: running;
-}
-
 .logo-text {
-  font-size: 1.25rem;
-  font-weight: 700;
+  font-size: 1.55rem;
+  font-weight: 800;
   letter-spacing: -0.5px;
   background: linear-gradient(90deg, #fff 40%, var(--primary) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-}
-
-@keyframes logo-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  text-align: center;
 }
 
 /* ==================== SEARCH BAR ==================== */
