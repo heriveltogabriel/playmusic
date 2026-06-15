@@ -109,6 +109,9 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
         if path == "/ouvir" or path == "/ouvir/":
             self._send_static("ouvir.html")
             return
+        if path == "/agenda" or path == "/agenda/":
+            self._send_static("agenda.html")
+            return
         if path == "/api/ouvir/releases":
             releases = self.app.list_admin_releases()
             clean_data = [

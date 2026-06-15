@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Escuta da Semana - Agenda</title>
+  <!-- Google Fonts: Outfit for sleek modern UI -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/agenda.css">
+</head>
+<body>
+  <!-- Ambient background glow representing album colors -->
+  <div id="ambient-glow" class="ambient-glow"></div>
+
+  <div class="app-container">
+    <header class="header">
+      <div class="header-top">
+        <a href="/ouvir" class="back-link">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+          Voltar
+        </a>
+        <h1 class="header-title">Escuta da Semana</h1>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <!-- Grid listing the 7 days of the week -->
+      <div id="agenda-grid" class="agenda-grid">
+        <!-- Dynamically populated cards -->
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Carregando a agenda...</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="/static/agenda.js"></script>
+</body>
+</html>

@@ -220,6 +220,17 @@ class StaticAssetTests(unittest.TestCase):
         self.assertIn('toast-success', css)
         self.assertIn('glass-border', css)
 
+    def test_agenda_page(self):
+        html = (ROOT / "static" / "agenda.html").read_text()
+        js = (ROOT / "static" / "agenda.js").read_text()
+        css = (ROOT / "static" / "agenda.css").read_text()
+
+        self.assertIn('id="agenda-grid"', html)
+        self.assertIn('/api/ouvir/releases', js)
+        self.assertIn('lpweek_daily_agenda_ids', js)
+        self.assertIn('listened-check', css)
+        self.assertIn('agenda-card.today', css)
+
 
 if __name__ == "__main__":
     unittest.main()
