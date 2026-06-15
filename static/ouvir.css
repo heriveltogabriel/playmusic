@@ -93,37 +93,39 @@ body {
   border-bottom: 1px solid rgba(255, 255, 255, 0.03);
 }
 
-.header-top {
+.logo-wrapper {
   display: flex;
   align-items: center;
+  gap: 12px;
   margin-bottom: 16px;
 }
 
-.back-link {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--text-secondary);
-  text-decoration: none;
-  font-size: 0.9rem;
-  font-weight: 500;
-  padding: 6px 12px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  transition: var(--transition-fast);
+.logo-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  animation: logo-spin 12s linear infinite;
+  animation-play-state: paused;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.back-link:hover, .back-link:active {
-  color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.08);
+.logo-wrapper:hover .logo-icon {
+  animation-play-state: running;
 }
 
-.header-title {
-  font-size: 1.35rem;
+.logo-text {
+  font-size: 1.25rem;
   font-weight: 700;
-  margin-left: 16px;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.5px;
+  background: linear-gradient(90deg, #fff 40%, var(--primary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@keyframes logo-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* ==================== SEARCH BAR ==================== */

@@ -118,7 +118,8 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                     "artist": r.get("artist"),
                     "year": r.get("year"),
                     "cover_url": r.get("cover_url"),
-                    "plays": r.get("auditions", 0)
+                    "plays": r.get("auditions", 0),
+                    "synced_at": r.get("synced_at") or 0.0
                 }
                 for r in releases
             ]

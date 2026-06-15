@@ -20,12 +20,12 @@ async function loadCollection() {
     
     const data = await response.json();
     
-    // Sort alphabetically by artist, then by title
+    // Sort by recently added descending (highest synced_at and id first)
     state.releases = data.sort((a, b) => {
-      const artA = (a.artist || '').toLowerCase();
-      const artB = (b.artist || '').toLowerCase();
-      if (artA !== artB) return artA.localeCompare(artB);
-      return (a.title || '').toLowerCase().localeCompare((b.title || '').toLowerCase());
+      const timeA = a.synced_at || 0;
+      const timeB = b.synced_at || 0;
+      if (timeA !== timeB) return timeB - timeA;
+      return b.id - a.id;
     });
     
     state.filtered = [...state.releases];
