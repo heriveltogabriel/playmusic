@@ -112,6 +112,9 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
         if path == "/agenda" or path == "/agenda/":
             self._send_static("agenda.html")
             return
+        if path == "/herivelto" or path == "/herivelto/":
+            self._send_static("herivelto.html")
+            return
         if path == "/api/ouvir/releases":
             releases = self.app.list_admin_releases()
             clean_data = [

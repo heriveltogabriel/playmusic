@@ -231,6 +231,19 @@ class StaticAssetTests(unittest.TestCase):
         self.assertIn('listened-check', css)
         self.assertIn('agenda-card.today', css)
 
+    def test_herivelto_profile_page(self):
+        html = (ROOT / "static" / "herivelto.html").read_text()
+        css = (ROOT / "static" / "herivelto.css").read_text()
+
+        self.assertIn("Herivelto Gabriel", html)
+        self.assertIn("https://150.136.207.62:8080/admin", html)
+        self.assertIn("https://150.136.207.62:8080/ouvir", html)
+        self.assertIn("https://lpdasemana.com.br/gerador.html", html)
+        self.assertIn("https://lpdasemana.com.br", html)
+        self.assertIn("http://150.136.207.62:5001/", html)
+        self.assertIn("Outfit", css)
+        self.assertIn("backdrop-filter", css)
+
 
 if __name__ == "__main__":
     unittest.main()

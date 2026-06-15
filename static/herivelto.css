@@ -1,0 +1,292 @@
+/* ==================== VARIABLE SYSTEM ==================== */
+:root {
+  --bg-base: #060606;
+  --bg-gradient: linear-gradient(180deg, #0d0d0d 0%, #060606 100%);
+  
+  --primary: #e65c00;
+  --primary-hover: #ff751a;
+  --primary-light: rgba(230, 92, 0, 0.12);
+  --primary-glow: rgba(230, 92, 0, 0.25);
+  
+  --text-primary: #eae5d9;
+  --text-secondary: #a09a8e;
+  --text-muted: #5e584f;
+  
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-hover-bg: rgba(255, 255, 255, 0.06);
+  --glass-border: 1px solid rgba(234, 229, 217, 0.06);
+  --glass-border-hover: 1px solid rgba(230, 92, 0, 0.4);
+  
+  --transition-smooth: 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  --transition-fast: 0.15s ease-out;
+}
+
+/* ==================== RESET & BASE ==================== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-base);
+  background-image: var(--bg-gradient);
+  color: var(--text-primary);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* ==================== LAYOUT CONTAINER ==================== */
+.profile-container {
+  width: 100%;
+  max-width: 580px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  padding-bottom: 40px;
+}
+
+/* ==================== BANNER ==================== */
+.banner {
+  width: 100%;
+  height: 160px;
+  background: linear-gradient(135deg, #1f0f00 0%, #0a0500 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.banner-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 50% 120%, var(--primary-glow) 0%, transparent 70%);
+  opacity: 0.8;
+}
+
+/* ==================== HEADER ==================== */
+.profile-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-top: -65px; /* Overlap avatar onto banner */
+  padding: 0 24px;
+  margin-bottom: 32px;
+  z-index: 10;
+}
+
+/* Avatar Wrapper */
+.avatar-wrapper {
+  position: relative;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  padding: 4px;
+  background: linear-gradient(180deg, var(--primary) 0%, rgba(230, 92, 0, 0.2) 100%);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), 0 0 15px var(--primary-glow);
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.profile-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #0d0d0d;
+}
+
+.avatar-fallback {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: #141414;
+  border: 3px solid #0d0d0d;
+  display: none; /* Controlled by onerror JS in HTML */
+  justify-content: center;
+  align-items: center;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: 1px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* Typography */
+.profile-name {
+  font-size: 1.65rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin-bottom: 4px;
+  color: var(--text-primary);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.profile-handle {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--primary);
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
+}
+
+.profile-bio {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  max-width: 380px;
+}
+
+/* ==================== LINKS LIST ==================== */
+.links-list {
+  width: 100%;
+  padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  z-index: 5;
+}
+
+/* Pill Link Card */
+.link-card {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background-color: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: var(--glass-border);
+  border-radius: 9999px; /* Pill shaped */
+  text-decoration: none;
+  color: var(--text-primary);
+  transition: transform var(--transition-smooth), 
+              border var(--transition-fast), 
+              background-color var(--transition-fast),
+              box-shadow var(--transition-smooth);
+}
+
+/* Icon */
+.icon-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 24px;
+  height: 24px;
+  color: var(--primary);
+  transition: transform var(--transition-smooth), color var(--transition-fast);
+}
+
+.icon-container svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Text */
+.link-text {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  flex: 1;
+  text-align: center;
+  margin-right: 24px; /* Offset the left icon to keep text perfectly centered */
+  transition: color var(--transition-fast);
+}
+
+/* Arrow Right */
+.arrow-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 24px;
+  height: 24px;
+  color: var(--text-muted);
+  opacity: 0;
+  transform: translateX(-8px);
+  transition: transform var(--transition-smooth), opacity var(--transition-smooth), color var(--transition-smooth);
+}
+
+.arrow-container svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Hover States */
+.link-card:hover {
+  transform: translateY(-4px);
+  background-color: var(--primary-light);
+  border: var(--glass-border-hover);
+  box-shadow: 0 10px 25px rgba(230, 92, 0, 0.15), 0 0 12px rgba(230, 92, 0, 0.1);
+}
+
+.link-card:hover .icon-container {
+  color: var(--primary-hover);
+  transform: scale(1.15);
+}
+
+.link-card:hover .link-text {
+  color: #fff;
+}
+
+.link-card:hover .arrow-container {
+  opacity: 1;
+  transform: translateX(0);
+  color: var(--primary);
+}
+
+/* Active/Press State */
+.link-card:active {
+  transform: translateY(-1px);
+  background-color: rgba(230, 92, 0, 0.18);
+  box-shadow: 0 4px 12px rgba(230, 92, 0, 0.1);
+}
+
+/* ==================== FOOTER ==================== */
+.profile-footer {
+  margin-top: auto;
+  padding: 40px 24px 20px 24px;
+  text-align: center;
+}
+
+.profile-footer p {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ==================== RESPONSIVE TUNING ==================== */
+@media (max-width: 480px) {
+  .banner {
+    height: 140px;
+  }
+  .profile-header {
+    margin-top: -55px;
+  }
+  .avatar-wrapper {
+    width: 110px;
+    height: 110px;
+  }
+  .profile-name {
+    font-size: 1.45rem;
+  }
+  .link-card {
+    padding: 14px 20px;
+  }
+  .link-text {
+    font-size: 0.98rem;
+  }
+}
