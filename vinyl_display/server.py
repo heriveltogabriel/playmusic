@@ -106,6 +106,24 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             else:
                 self._send_static("admin.html")
             return
+        if path == "/ouvir" or path == "/ouvir/":
+            self._send_static("ouvir.html")
+            return
+        if path == "/api/ouvir/releases":
+            releases = self.app.list_admin_releases()
+            clean_data = [
+                {
+                    "id": r.get("release_id"),
+                    "title": r.get("title"),
+                    "artist": r.get("artist"),
+                    "year": r.get("year"),
+                    "cover_url": r.get("cover_url"),
+                    "plays": r.get("auditions", 0)
+                }
+                for r in releases
+            ]
+            self._json(clean_data)
+            return
         if path == "/api/admin/releases":
             self._json(self.app.list_admin_releases())
             return
@@ -554,6 +572,11 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             self._json(self.app.update_release_rating(release_id, rating))
             return
         if path.startswith("/api/admin/releases/") and path.endswith("/listen"):
+            parts = path.split("/")
+            release_id = int(parts[4])
+            self._json(self.app.increment_release_auditions(release_id))
+            return
+        if path.startswith("/api/ouvir/releases/") and path.endswith("/listen"):
             parts = path.split("/")
             release_id = int(parts[4])
             self._json(self.app.increment_release_auditions(release_id))

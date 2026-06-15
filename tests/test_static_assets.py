@@ -208,6 +208,18 @@ class StaticAssetTests(unittest.TestCase):
         self.assertNotIn("margin-left: auto;", css)
         self.assertIn("#details-favorite-btn.active", css)
 
+    def test_ouvir_scrobble_page(self):
+        html = (ROOT / "static" / "ouvir.html").read_text()
+        js = (ROOT / "static" / "ouvir.js").read_text()
+        css = (ROOT / "static" / "ouvir.css").read_text()
+
+        self.assertIn('id="ouvir-grid"', html)
+        self.assertIn('id="search-input"', html)
+        self.assertIn('/api/ouvir/releases', js)
+        self.assertIn('listen-btn', js)
+        self.assertIn('toast-success', css)
+        self.assertIn('glass-border', css)
+
 
 if __name__ == "__main__":
     unittest.main()
