@@ -2106,6 +2106,32 @@ dialog::backdrop {
   padding-right: 4px;
 }
 
+#weekly-plays-dialog {
+  max-width: 480px;
+  width: min(92vw, 480px);
+}
+
+.weekly-plays-dialog-content {
+  padding: 36px 28px;
+}
+
+#weekly-plays-title {
+  margin-bottom: 24px;
+  padding-right: 44px;
+  font-weight: 700;
+  font-size: 1.3rem;
+  color: var(--text-primary);
+}
+
+#weekly-plays-list {
+  max-height: 400px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 4px;
+}
+
 .dialog-close-btn {
   position: absolute;
   top: 20px;

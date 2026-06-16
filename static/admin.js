@@ -2050,6 +2050,7 @@ function initializeDialogs() {
   const detailDialog = document.getElementById('lp-details-dialog');
   const formDialog = document.getElementById('lp-form-dialog');
   const artistAlbumsDialog = document.getElementById('artist-albums-dialog');
+  const weeklyPlaysDialog = document.getElementById('weekly-plays-dialog');
   const lpForm = document.getElementById('lp-entry-form');
   const addBtn = document.getElementById('add-lp-btn');
   
@@ -2059,6 +2060,7 @@ function initializeDialogs() {
       detailDialog.close();
       formDialog.close();
       if (artistAlbumsDialog) artistAlbumsDialog.close();
+      if (weeklyPlaysDialog) weeklyPlaysDialog.close();
     });
   });
   
@@ -2067,6 +2069,7 @@ function initializeDialogs() {
     if (e.target === detailDialog) detailDialog.close();
     if (e.target === formDialog) formDialog.close();
     if (e.target === artistAlbumsDialog) artistAlbumsDialog.close();
+    if (e.target === weeklyPlaysDialog) weeklyPlaysDialog.close();
   });
   
   // Add LP button click
@@ -2685,6 +2688,7 @@ function renderPlaysRankingPage() {
   let monthCount = 0;
   let totalCount = 0;
   const weekdayCounts = [0, 0, 0, 0, 0, 0, 0];
+  const weekdayPlays = [[], [], [], [], [], [], []];
   
   state.lps.forEach(lp => {
     if (lp.listen_dates && Array.isArray(lp.listen_dates)) {
@@ -2699,6 +2703,7 @@ function renderPlaysRankingPage() {
               const wDayIndex = d.getDay();
               if (wDayIndex >= 0 && wDayIndex < 7) {
                 weekdayCounts[wDayIndex]++;
+                weekdayPlays[wDayIndex].push({ lp, dateStr });
               }
             }
             if (t >= oneMonthAgo) {
@@ -2737,6 +2742,10 @@ function renderPlaysRankingPage() {
       const count = weekdayCounts[idx];
       if (count > 0) {
         card.classList.add('has-plays');
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', () => {
+          openWeeklyPlaysDialog(label, weekdayPlays[idx]);
+        });
       }
       
       card.innerHTML = `
@@ -2864,6 +2873,65 @@ function renderPlaysRankingPage() {
   // 2. Render full plays chart below the podium
   listSection.style.display = 'block';
   renderPlaysChart();
+}
+
+function openWeeklyPlaysDialog(dayName, plays) {
+  const dialog = document.getElementById('weekly-plays-dialog');
+  const titleEl = document.getElementById('weekly-plays-title');
+  const listEl = document.getElementById('weekly-plays-list');
+  
+  if (!dialog || !titleEl || !listEl) return;
+  
+  titleEl.textContent = `Discos ouvidos: ${dayName}`;
+  listEl.innerHTML = '';
+  
+  if (!plays || plays.length === 0) {
+    listEl.innerHTML = '<div class="text-muted italic" style="padding: 12px; text-align: center;">Nenhuma audição registrada neste dia.</div>';
+    dialog.showModal();
+    return;
+  }
+  
+  const defaultCover = 'https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=200&auto=format&fit=crop';
+  
+  plays.forEach(play => {
+    const lp = play.lp;
+    const d = new Date(play.dateStr);
+    let timeStr = "";
+    if (!isNaN(d.getTime())) {
+      timeStr = String(d.getHours()).padStart(2, '0') + ":" + String(d.getMinutes()).padStart(2, '0');
+    }
+    
+    const item = document.createElement('div');
+    item.style.cssText = 'display: flex; align-items: center; gap: 12px; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; transition: background 0.2s; border-radius: 8px; margin-bottom: 4px;';
+    
+    item.addEventListener('mouseenter', () => {
+      item.style.background = 'rgba(255, 255, 255, 0.04)';
+    });
+    item.addEventListener('mouseleave', () => {
+      item.style.background = 'transparent';
+    });
+    
+    item.innerHTML = `
+      <img src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.src='${defaultCover}'" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover; border: 1px solid rgba(255,255,255,0.1);">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
+        <span style="font-weight: 600; font-size: 0.9rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${lp.title}">${lp.title}</span>
+        <span style="font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${lp.artist}">${lp.artist}</span>
+      </div>
+      <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 2px;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary);">${timeStr}</span>
+        <span style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;">Audição</span>
+      </div>
+    `;
+    
+    item.addEventListener('click', () => {
+      dialog.close();
+      openDetailsDialog(lp.id);
+    });
+    
+    listEl.appendChild(item);
+  });
+  
+  dialog.showModal();
 }
 
 // ==================== SETTINGS SCREEN LOGIC ====================
