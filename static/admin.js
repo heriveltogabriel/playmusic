@@ -1617,7 +1617,15 @@ function renderPlaysChart() {
     let dateStr = "";
     if (latestDate) {
       const d = new Date(latestDate);
-      dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + " " + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      if (!isNaN(d.getTime())) {
+        const weekdays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+        const wDay = weekdays[d.getDay()];
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const hours = String(d.getHours()).padStart(2, '0');
+        const minutes = String(d.getMinutes()).padStart(2, '0');
+        dateStr = `${wDay} ${day}/${month} ${hours}:${minutes}`;
+      }
     }
 
     const labelName = `#${idx + 1} - ${lp.title} - ${lp.artist}`;
@@ -2772,7 +2780,15 @@ function renderPlaysRankingPage() {
     let dateStr = "";
     if (latestDate) {
       const d = new Date(latestDate);
-      dateStr = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + " " + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      if (!isNaN(d.getTime())) {
+        const weekdays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+        const wDay = weekdays[d.getDay()];
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const hours = String(d.getHours()).padStart(2, '0');
+        const minutes = String(d.getMinutes()).padStart(2, '0');
+        dateStr = `${wDay} ${day}/${month} ${hours}:${minutes}`;
+      }
     }
 
     return `
