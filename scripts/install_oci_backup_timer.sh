@@ -78,7 +78,7 @@ Environment=OCI_CLI_PROFILE=$OCI_CLI_PROFILE
 Environment=OCI_CLI_REGION=$OCI_CLI_REGION
 Environment=OCI_NAMESPACE=$OCI_NAMESPACE
 Environment=LOCAL_RETENTION_DAYS=$LOCAL_RETENTION_DAYS
-ExecStart=$PROJECT_DIR/scripts/backup_oci.sh
+ExecStart=/usr/bin/bash $PROJECT_DIR/scripts/backup_oci.sh
 EOF
 
 echo "== Writing $TIMER_FILE =="
