@@ -2891,9 +2891,12 @@ function openWeeklyPlaysDialog(dayName, plays) {
     return;
   }
   
+  // Ordena do horário mais recente para o mais antigo (maior hora para menor)
+  const sortedPlays = [...plays].sort((a, b) => new Date(b.dateStr) - new Date(a.dateStr));
+  
   const defaultCover = 'https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=200&auto=format&fit=crop';
   
-  plays.forEach(play => {
+  sortedPlays.forEach(play => {
     const lp = play.lp;
     const d = new Date(play.dateStr);
     let timeStr = "";
