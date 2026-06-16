@@ -532,9 +532,9 @@ body {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  gap: 20px;
-  margin: 40px 0 20px 0;
-  min-height: 280px;
+  gap: 16px;
+  margin: 12px 0 20px 0;
+  min-height: 245px;
   flex-wrap: wrap;
 }
 
@@ -542,9 +542,9 @@ body {
   .ranking-podium {
     flex-direction: column;
     align-items: center;
-    gap: 32px;
+    gap: 24px;
     min-height: auto;
-    margin: 20px 0;
+    margin: 10px 0;
   }
 }
 
@@ -555,7 +555,7 @@ body {
   position: relative;
   transition: var(--transition-normal);
   cursor: pointer;
-  width: 170px;
+  width: 153px;
 }
 
 .podium-step:hover {
@@ -564,15 +564,15 @@ body {
 
 .podium-step .podium-cover-wrapper {
   position: relative;
-  width: 110px;
-  height: 110px;
-  margin-bottom: 16px;
+  width: 99px;
+  height: 99px;
+  margin-bottom: 12px;
   transition: var(--transition-normal);
 }
 
 .podium-step.gold .podium-cover-wrapper {
-  width: 130px;
-  height: 130px;
+  width: 117px;
+  height: 117px;
 }
 
 .podium-cover {
@@ -586,10 +586,10 @@ body {
 
 .podium-crown {
   position: absolute;
-  top: -18px;
+  top: -15px;
   left: 50%;
   transform: translateX(-50%) rotate(-5deg);
-  font-size: 1.4rem;
+  font-size: 1.25rem;
   z-index: 2;
   filter: drop-shadow(0 2px 5px rgba(0,0,0,0.5));
   animation: crown-float 2.5s ease-in-out infinite;
@@ -626,7 +626,7 @@ body {
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
-  padding: 20px 12px;
+  padding: 16px 10px;
   text-align: center;
   box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1), var(--step-glow);
   backdrop-filter: blur(10px);
@@ -646,7 +646,7 @@ body {
   --step-border-color: #ffd700;
   --step-bg-color: #ffd700;
   --step-bg-grad-start: rgba(255, 215, 0, 0.15);
-  --step-height: 130px;
+  --step-height: 117px;
   --step-glow: 0 0 30px rgba(255, 215, 0, 0.2);
   z-index: 3;
 }
@@ -655,7 +655,7 @@ body {
   --step-border-color: #c0c0c0;
   --step-bg-color: #c0c0c0;
   --step-bg-grad-start: rgba(192, 192, 192, 0.1);
-  --step-height: 100px;
+  --step-height: 90px;
   --step-glow: 0 0 20px rgba(192, 192, 192, 0.1);
   z-index: 2;
 }
@@ -664,7 +664,7 @@ body {
   --step-border-color: #cd7f32;
   --step-bg-color: #cd7f32;
   --step-bg-grad-start: rgba(205, 127, 50, 0.08);
-  --step-height: 80px;
+  --step-height: 72px;
   --step-glow: 0 0 20px rgba(205, 127, 50, 0.08);
   z-index: 1;
 }
