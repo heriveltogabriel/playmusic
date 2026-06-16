@@ -2684,6 +2684,7 @@ function renderPlaysRankingPage() {
   let weekCount = 0;
   let monthCount = 0;
   let totalCount = 0;
+  const weekdayCounts = [0, 0, 0, 0, 0, 0, 0];
   
   state.lps.forEach(lp => {
     if (lp.listen_dates && Array.isArray(lp.listen_dates)) {
@@ -2695,6 +2696,10 @@ function renderPlaysRankingPage() {
             totalCount++;
             if (t >= startOfWeek.getTime() && t <= endOfWeek.getTime()) {
               weekCount++;
+              const wDayIndex = d.getDay();
+              if (wDayIndex >= 0 && wDayIndex < 7) {
+                weekdayCounts[wDayIndex]++;
+              }
             }
             if (t >= oneMonthAgo) {
               monthCount++;
@@ -2714,6 +2719,33 @@ function renderPlaysRankingPage() {
   if (statWeekEl) statWeekEl.textContent = weekCount;
   if (statMonthEl) statMonthEl.textContent = monthCount;
   if (statTotalEl) statTotalEl.textContent = totalCount;
+
+  // Renderizar a régua semanal por dia
+  const activityGridEl = document.getElementById('weekly-activity-grid');
+  if (activityGridEl) {
+    activityGridEl.innerHTML = '';
+    const dayLabels = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+    const todayIndex = now.getDay();
+    
+    dayLabels.forEach((label, idx) => {
+      const card = document.createElement('div');
+      card.className = 'weekly-day-card';
+      if (idx === todayIndex) {
+        card.classList.add('active-today');
+      }
+      
+      const count = weekdayCounts[idx];
+      if (count > 0) {
+        card.classList.add('has-plays');
+      }
+      
+      card.innerHTML = `
+        <span class="weekly-day-label">${label}</span>
+        <span class="weekly-day-value">${count}</span>
+      `;
+      activityGridEl.appendChild(card);
+    });
+  }
   
   // Sort LPs by latest audition date descending
   const getLatestListenDate = (lp) => {

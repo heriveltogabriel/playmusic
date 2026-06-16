@@ -714,6 +714,96 @@ body {
   box-shadow: var(--shadow-md);
 }
 
+/* Weekly activity styles */
+.weekly-activity-section {
+  margin: 16px 0 28px 0;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 16px;
+}
+
+.weekly-activity-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.weekly-activity-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+@media (max-width: 480px) {
+  .weekly-activity-grid {
+    gap: 4px;
+  }
+}
+
+.weekly-day-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 4px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.weekly-day-card.active-today {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.weekly-day-card.active-today::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  width: 4px;
+  height: 4px;
+  background-color: var(--text-muted);
+  border-radius: 50%;
+}
+
+.weekly-day-card.has-plays {
+  background: radial-gradient(circle at center, var(--primary-light) 0%, rgba(255, 255, 255, 0.02) 100%);
+  border-color: var(--primary);
+  box-shadow: 0 0 12px var(--primary-light);
+}
+
+.weekly-day-card.has-plays.active-today::after {
+  background-color: var(--primary);
+}
+
+.weekly-day-label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.weekly-day-card.has-plays .weekly-day-label {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.weekly-day-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.weekly-day-card.has-plays .weekly-day-value {
+  color: var(--primary);
+  text-shadow: 0 0 8px var(--primary-glow);
+}
+
 .ranking-section-title {
   font-size: 1.25rem;
   font-weight: 700;
