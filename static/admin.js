@@ -2661,7 +2661,16 @@ function renderPlaysRankingPage() {
 
   // Calcular estatísticas: semana, mês, todos (soma dos ouvidos)
   const now = new Date();
-  const oneWeekAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000;
+  
+  // Semana calendário: inicia no domingo (00:00:00.000) e vai até o sábado (23:59:59.999)
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - now.getDay());
+  startOfWeek.setHours(0, 0, 0, 0);
+  
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setHours(23, 59, 59, 999);
+  
   const oneMonthAgo = now.getTime() - 30 * 24 * 60 * 60 * 1000;
   
   let weekCount = 0;
@@ -2676,7 +2685,7 @@ function renderPlaysRankingPage() {
           const t = d.getTime();
           if (!isNaN(t)) {
             totalCount++;
-            if (t >= oneWeekAgo) {
+            if (t >= startOfWeek.getTime() && t <= endOfWeek.getTime()) {
               weekCount++;
             }
             if (t >= oneMonthAgo) {
