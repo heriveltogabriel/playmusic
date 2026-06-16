@@ -17,6 +17,7 @@ Optional:
   OCI_NAMESPACE         OCI Object Storage namespace override.
   PROJECT_DIR           Vinyl Display project directory. Default: script parent.
   APP_USER              Linux user that runs the backup. Default: current user.
+  SERVICE_PATH          PATH used by systemd service. Default includes user bins.
   BACKUP_SERVICE_NAME   systemd backup service name. Default: vinyl-display-backup
   BACKUP_ON_CALENDAR    systemd OnCalendar value. Default: *-*-* 03:00:00
   LOCAL_RETENTION_DAYS  Days to keep local archives. Default: 7
@@ -31,12 +32,14 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="${PROJECT_DIR:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 APP_USER="${APP_USER:-${SUDO_USER:-$USER}}"
+APP_HOME="$(getent passwd "$APP_USER" | cut -d: -f6)"
 OCI_BACKUP_BUCKET="${OCI_BACKUP_BUCKET:-}"
 OCI_BACKUP_PREFIX="${OCI_BACKUP_PREFIX:-oracle-primary}"
 OCI_CLI_AUTH="${OCI_CLI_AUTH:-instance_principal}"
 OCI_CLI_PROFILE="${OCI_CLI_PROFILE:-}"
 OCI_CLI_REGION="${OCI_CLI_REGION:-}"
 OCI_NAMESPACE="${OCI_NAMESPACE:-}"
+SERVICE_PATH="${SERVICE_PATH:-$APP_HOME/.local/bin:$APP_HOME/bin:/usr/local/bin:/usr/bin:/bin}"
 BACKUP_SERVICE_NAME="${BACKUP_SERVICE_NAME:-vinyl-display-backup}"
 BACKUP_ON_CALENDAR="${BACKUP_ON_CALENDAR:-*-*-* 03:00:00}"
 LOCAL_RETENTION_DAYS="${LOCAL_RETENTION_DAYS:-7}"
@@ -70,6 +73,7 @@ After=network-online.target
 Type=oneshot
 User=$APP_USER
 WorkingDirectory=$PROJECT_DIR
+Environment=PATH=$SERVICE_PATH
 Environment=PROJECT_DIR=$PROJECT_DIR
 Environment=OCI_BACKUP_BUCKET=$OCI_BACKUP_BUCKET
 Environment=OCI_BACKUP_PREFIX=$OCI_BACKUP_PREFIX
