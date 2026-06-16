@@ -111,7 +111,7 @@ head_object() {
 require_cmd oci
 require_cmd sqlite3
 require_cmd tar
-require_cmd rsync
+require_cmd cp
 
 DATA_DIR_VALUE="$(read_env_value VINYL_DATA_DIR)"
 DATABASE_PATH_VALUE="$(read_env_value VINYL_DATABASE_PATH)"
@@ -148,8 +148,12 @@ fi
 
 echo "== Staging data directory =="
 if [ -d "$DATA_DIR" ]; then
-  rsync -a --exclude "$(basename "$DB_PATH")" "$DATA_DIR/" "$STAGING_DIR/data/"
+  cp -a "$DATA_DIR/." "$STAGING_DIR/data/"
 fi
+rm -f \
+  "$STAGING_DIR/data/$(basename "$DB_PATH")" \
+  "$STAGING_DIR/data/$(basename "$DB_PATH")-shm" \
+  "$STAGING_DIR/data/$(basename "$DB_PATH")-wal"
 cp "$SQLITE_SNAPSHOT" "$STAGING_DIR/data/$(basename "$DB_PATH")"
 
 if [ "$INCLUDE_ENV" = "1" ] && [ -f "$PROJECT_DIR/.env" ]; then
@@ -157,7 +161,8 @@ if [ "$INCLUDE_ENV" = "1" ] && [ -f "$PROJECT_DIR/.env" ]; then
 fi
 
 if [ "$INCLUDE_CERTS" = "1" ] && [ -d "$PROJECT_DIR/certs" ]; then
-  rsync -a "$PROJECT_DIR/certs/" "$STAGING_DIR/certs/"
+  mkdir -p "$STAGING_DIR/certs"
+  cp -a "$PROJECT_DIR/certs/." "$STAGING_DIR/certs/"
 fi
 
 cat > "$STAGING_DIR/manifest.env" <<EOF
