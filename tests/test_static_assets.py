@@ -236,8 +236,9 @@ class StaticAssetTests(unittest.TestCase):
         css = (ROOT / "static" / "herivelto.css").read_text()
 
         self.assertIn("Herivelto Gabriel", html)
-        self.assertIn("https://150.136.207.62:8080/admin", html)
-        self.assertIn("https://150.136.207.62:8080/ouvir", html)
+        self.assertIn("https://heriveltogabriel.com.br/admin", html)
+        self.assertIn("https://heriveltogabriel.com.br/ouvir", html)
+        self.assertIn("https://heriveltogabriel.com.br/vinyl/", html)
         self.assertIn("https://lpdasemana.com.br/gerador.html", html)
         self.assertIn("https://lpdasemana.com.br", html)
         self.assertIn("http://150.136.207.62:5001/", html)

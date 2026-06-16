@@ -32,6 +32,7 @@ let lyricsEnabled = localStorage.getItem("lyricsEnabled") === "true";
 let lyricsLatencyOffset = 1.3;
 let lyricsTimeoutId = null;
 const lyricsCache = new Map();
+let lyricsStatusMessage = "Letra não encontrada para esta faixa";
 let nextTrack = null;
 let currentRelease = null;
 
@@ -160,6 +161,7 @@ function renderState(state) {
     if (trackKey !== currentTrackKey) {
       currentTrackKey = trackKey;
       fetchLyrics(track, release);
+      setLyricsVisibility(false);
     }
 
     setCover(release);
@@ -302,11 +304,13 @@ function labelForStatus(status, hasNextTrack) {
 async function pollState() {
   try {
     const state = await fetchJson("/api/state");
-    if (!recording) {
+    const isPlaying = (currentRelease !== null);
+    if (!recording || isPlaying) {
       renderState(state);
     }
   } catch (error) {
-    if (!recording) {
+    const isPlaying = (currentRelease !== null);
+    if (!recording || isPlaying) {
       elements.statusLabel.textContent = "Offline";
       elements.trackTitle.textContent = "Sem conexão";
       elements.artistName.textContent = "Servidor indisponível";
@@ -443,11 +447,15 @@ function recordClip() {
   }
   lastRecognitionAt = Date.now();
 
-  // Update UI immediately to show active listening feedback
-  elements.statusLabel.textContent = "Ouvindo";
-  elements.trackTitle.textContent = "Ouvindo o disco...";
-  elements.artistName.textContent = "Capturando áudio do microfone";
-  elements.albumLine.textContent = "Aguarde 4 segundos";
+  const isPlaying = (currentRelease !== null);
+
+  // Update UI immediately to show active listening feedback (ONLY IF NOT PLAYING)
+  if (!isPlaying) {
+    elements.statusLabel.textContent = "Ouvindo";
+    elements.trackTitle.textContent = "Ouvindo o disco...";
+    elements.artistName.textContent = "Capturando áudio do microfone";
+    elements.albumLine.textContent = "Aguarde 4 segundos";
+  }
   if (elements.micDebug) {
     elements.micDebug.textContent = "Microfone: gravando trecho de 4 segundos...";
   }
@@ -471,10 +479,12 @@ function recordClip() {
       micSourceNode.disconnect(processor);
     } catch (err) {}
 
-    // Show processing status
-    elements.statusLabel.textContent = "Identificando";
-    elements.trackTitle.textContent = "Buscando música...";
-    elements.artistName.textContent = "Processando áudio com o Shazam";
+    // Show processing status (ONLY IF NOT PLAYING)
+    if (!isPlaying) {
+      elements.statusLabel.textContent = "Identificando";
+      elements.trackTitle.textContent = "Buscando música...";
+      elements.artistName.textContent = "Processando áudio com o Shazam";
+    }
     if (elements.micDebug) {
       elements.micDebug.textContent = "Shazam: identificando música no servidor...";
     }
@@ -725,12 +735,15 @@ function showTemporaryMessage(message) {
     elements.coverPanel.classList.remove("has-lyrics");
   }
   
-  setLyricsVisibility(true);
-  
-  lyricsTimeoutId = setTimeout(() => {
+  if (lyricsVisible) {
+    setLyricsVisibility(true);
+    lyricsTimeoutId = setTimeout(() => {
+      setLyricsVisibility(false);
+      lyricsTimeoutId = null;
+    }, 5000);
+  } else {
     setLyricsVisibility(false);
-    lyricsTimeoutId = null;
-  }, 5000);
+  }
 }
 
 async function fetchLyrics(track, release, isPrefetch = false) {
@@ -761,6 +774,7 @@ async function fetchLyrics(track, release, isPrefetch = false) {
       if (cached.status === "success") {
         handleLyricsResponse(cached.data);
       } else if (cached.status === "empty") {
+        lyricsStatusMessage = cached.message;
         showTemporaryMessage(cached.message);
       } else if (cached.status === "loading") {
         if (elements.lyricsScroll) {
@@ -774,9 +788,11 @@ async function fetchLyrics(track, release, isPrefetch = false) {
           if (data) {
             handleLyricsResponse(data);
           } else {
+            lyricsStatusMessage = "Letra indisponível para esta música";
             showTemporaryMessage("Letra indisponível para esta música");
           }
         } catch (e) {
+          lyricsStatusMessage = "Letra não encontrada para esta faixa";
           showTemporaryMessage("Letra não encontrada para esta faixa");
         }
       }
@@ -878,6 +894,7 @@ async function fetchLyrics(track, release, isPrefetch = false) {
         status: "empty",
         message: emptyMsg
       });
+      lyricsStatusMessage = emptyMsg;
       if (!isPrefetch) {
         showTemporaryMessage(emptyMsg);
       }
@@ -887,6 +904,7 @@ async function fetchLyrics(track, release, isPrefetch = false) {
       status: "empty",
       message: "Letra não encontrada para esta faixa"
     });
+    lyricsStatusMessage = "Letra não encontrada para esta faixa";
     if (!isPrefetch) {
       showTemporaryMessage("Letra não encontrada para esta faixa");
     }
@@ -910,7 +928,7 @@ function handleLyricsResponse(data) {
         elements.coverPanel.classList.add("has-lyrics");
       }
       renderLyrics(parsedLyrics);
-      setLyricsVisibility(true); // Abre automaticamente as letras ao carregar
+      setLyricsVisibility(false); // Mantém a capa de disco como padrão
       return;
     }
   }
@@ -924,15 +942,17 @@ function handleLyricsResponse(data) {
       elements.coverPanel.classList.add("has-lyrics");
     }
     renderLyrics(parsedLyrics, true);
-    setLyricsVisibility(true); // Abre automaticamente as letras ao carregar
+    setLyricsVisibility(false); // Mantém a capa de disco como padrão
     return;
   }
 
   if (data.instrumental) {
+    lyricsStatusMessage = "♪ Instrumental ♪";
     showTemporaryMessage("♪ Instrumental ♪");
     return;
   }
 
+  lyricsStatusMessage = "Letra indisponível para esta música";
   showTemporaryMessage("Letra indisponível para esta música");
 }
 
@@ -1019,7 +1039,12 @@ function setLyricsVisibility(visible) {
 if (elements.albumCover) {
   elements.albumCover.addEventListener("click", (e) => {
     e.stopPropagation();
-    setLyricsVisibility(!lyricsVisible);
+    if (elements.coverPanel && elements.coverPanel.classList.contains("has-lyrics")) {
+      setLyricsVisibility(!lyricsVisible);
+    } else {
+      lyricsVisible = true;
+      showTemporaryMessage(lyricsStatusMessage);
+    }
   });
 }
 
