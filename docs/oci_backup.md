@@ -4,6 +4,40 @@ Este projeto usa SQLite em `data/vinyl_display.sqlite3`. Para evitar perda de da
 
 O servidor principal no OCI deve enviar backups automaticamente para um bucket. Outras maquinas podem restaurar a partir desse bucket quando necessario.
 
+## Estado atual em producao
+
+Configuracao validada em 2026-06-16 no servidor principal OCI:
+
+| Item | Valor |
+| --- | --- |
+| Servidor | `investify-app` |
+| Usuario Linux | `opc` |
+| Diretorio do projeto | `/home/opc/vinyl_display` |
+| Bucket | `vinyl-display-backups` |
+| Namespace Object Storage | `idgyl5tkfygk` |
+| Regiao | `us-ashburn-1` |
+| Compartment | `investify` |
+| Prefixo no bucket | `oracle-primary` |
+| Servico do app | `vinyl-display.service` |
+| Servico de backup | `vinyl-display-backup.service` |
+| Timer de backup | `vinyl-display-backup.timer` |
+| Horario | diario perto de `03:00 GMT`, com atraso aleatorio de ate 10 minutos |
+
+Ultimo teste manual validado:
+
+```text
+OCI object: oracle-primary/daily/playmusic-backup-20260616-205250.tgz
+OCI latest: oracle-primary/latest.tgz
+vinyl-display-backup.service: Succeeded.
+```
+
+Status esperado do timer:
+
+```text
+Loaded: loaded (/etc/systemd/system/vinyl-display-backup.timer; enabled)
+Active: active (waiting)
+```
+
 ## O que entra no backup
 
 Por padrao, `scripts/backup_oci.sh` inclui:
@@ -39,7 +73,7 @@ Sugestao de retencao:
 
 No servidor principal OCI, prefira Instance Principal. Assim a VM envia backups sem chave de API salva em disco.
 
-1. Crie um Dynamic Group para a instancia principal.
+1. Em `Identity & Security > Domains > Default > Dynamic groups`, crie um Dynamic Group para a instancia principal.
 2. Crie uma Policy no compartment do bucket.
 
 Exemplo de Dynamic Group por OCID da instancia:
@@ -48,17 +82,26 @@ Exemplo de Dynamic Group por OCID da instancia:
 ALL {instance.id = 'ocid1.instance.oc1...'}
 ```
 
-Exemplo de Policy:
+Exemplo de Policy usada para este projeto:
 
 ```text
-Allow dynamic-group vinyl-display-backup-instances to read buckets in compartment <nome-do-compartment> where target.bucket.name = 'vinyl-display-backups'
-Allow dynamic-group vinyl-display-backup-instances to manage objects in compartment <nome-do-compartment> where target.bucket.name = 'vinyl-display-backups'
+Allow dynamic-group vinyl-display-backup-instances to read buckets in compartment investify
+Allow dynamic-group vinyl-display-backup-instances to manage objects in compartment investify where target.bucket.name = 'vinyl-display-backups'
 ```
 
 Depois instale o OCI CLI na VM principal e teste:
 
 ```bash
 oci --auth instance_principal os ns get
+```
+
+Teste direto do bucket:
+
+```bash
+oci --auth instance_principal os bucket get \
+  --namespace-name idgyl5tkfygk \
+  --bucket-name vinyl-display-backups \
+  --region us-ashburn-1
 ```
 
 ## Backup manual
@@ -109,6 +152,17 @@ Comandos uteis:
 sudo systemctl list-timers 'vinyl-display-backup.timer'
 sudo systemctl start vinyl-display-backup.service
 sudo journalctl -u vinyl-display-backup.service -n 100 --no-pager
+sudo systemctl status vinyl-display-backup.timer --no-pager -l
+```
+
+Conferir objetos no bucket:
+
+```bash
+oci --auth instance_principal os object list \
+  --namespace-name idgyl5tkfygk \
+  --bucket-name vinyl-display-backups \
+  --prefix oracle-primary/ \
+  --region us-ashburn-1
 ```
 
 ## Restaurar no servidor OCI
@@ -183,6 +237,65 @@ curl -ksS https://127.0.0.1:8080/api/health
 | `LOCAL_RETENTION_DAYS` | retencao local dos `.tgz` | `7` |
 | `INCLUDE_ENV` | inclui `.env` no backup | `0` |
 | `INCLUDE_CERTS` | inclui `certs/` no backup | `0` |
+
+## Troubleshooting
+
+### `BucketNotFound`, mas o bucket existe
+
+No OCI Object Storage, `BucketNotFound` tambem aparece quando a identidade nao tem permissao. Confira:
+
+- bucket na regiao correta: `us-ashburn-1`
+- namespace correto: `idgyl5tkfygk`
+- policy criada no compartment `investify`
+- Dynamic Group incluindo o OCID correto da instancia
+
+Comando de teste:
+
+```bash
+oci --auth instance_principal os bucket get \
+  --namespace-name idgyl5tkfygk \
+  --bucket-name vinyl-display-backups \
+  --region us-ashburn-1
+```
+
+### `status=203/EXEC` ou `Permission denied` no `ExecStart`
+
+Em Oracle Linux com SELinux, o `systemd` pode negar executar diretamente um script em `/home`. O service deve chamar o Bash do sistema:
+
+```ini
+ExecStart=/usr/bin/bash /home/opc/vinyl_display/scripts/backup_oci.sh
+```
+
+Depois:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl start vinyl-display-backup.service
+```
+
+### `Missing required command: oci`
+
+O `oci` instalado com `pip --user` costuma ficar em `/home/opc/.local/bin`, que nao entra no PATH padrao do `systemd`.
+
+O service deve conter:
+
+```ini
+Environment=PATH=/home/opc/.local/bin:/home/opc/bin:/usr/local/bin:/usr/bin:/bin
+```
+
+### `Permission denied` ao ler `data/` ou escrever `backups/`
+
+Garanta que o usuario `opc` consegue ler o banco e gravar os backups locais:
+
+```bash
+cd /home/opc/vinyl_display
+sudo chown -R opc:opc /home/opc/vinyl_display/data
+sudo mkdir -p /home/opc/vinyl_display/backups/oci
+sudo chown -R opc:opc /home/opc/vinyl_display/backups
+sudo chmod -R u+rwX /home/opc/vinyl_display/data /home/opc/vinyl_display/backups
+```
+
+O script atual evita `rsync` no backup para reduzir bloqueios de SELinux durante a execucao pelo `systemd`.
 
 ## Observacoes de seguranca
 
