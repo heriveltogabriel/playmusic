@@ -542,7 +542,7 @@ function recordClip(isAutomatic = false) {
         }
       } else {
         // Failed to match
-        if (!isPlaying) {
+        if (!playbackTracker.active) {
           consecutiveFailedListens++;
           if (consecutiveFailedListens >= 3) {
             micSuspended = true;
@@ -571,8 +571,7 @@ function recordClip(isAutomatic = false) {
       await pollState();
     } catch (error) {
       console.error("Erro na identificação da música:", error);
-      const isPlaying = (currentRelease !== null);
-      if (!isPlaying) {
+      if (!playbackTracker.active) {
         consecutiveFailedListens++;
         if (consecutiveFailedListens >= 3) {
           micSuspended = true;
