@@ -172,7 +172,7 @@ class PlaybackController:
         initial_side = get_track_side(initial_track.position)
         remaining = max(0, elapsed)
         last_track_of_side = initial_track
-        GAP_SECONDS = 10
+        GAP_SECONDS = 3
 
         for i, track in enumerate(release.tracks[start_index:]):
             track_side = get_track_side(track.position)

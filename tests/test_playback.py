@@ -48,7 +48,8 @@ class PlaybackControllerTests(unittest.TestCase):
         controller = PlaybackController()
         controller.handle_match(match_at_a1(), now=1000)
 
-        state = controller.current_state(now=1000 + 280)
+        # A1 is 261s + 3s gap = 264s. At 1000 + 273, A2 has played for 9s.
+        state = controller.current_state(now=1000 + 273)
 
         self.assertEqual(state["track"]["position"], "A2")
         self.assertEqual(state["progress_seconds"], 9)
@@ -77,20 +78,20 @@ class PlaybackControllerTests(unittest.TestCase):
         controller = PlaybackController()
         controller.handle_match(match_at_a1(), now=1000)
 
-        # Ao passar de 454s (444s + 10s gap), o Lado A terminou e entra em waiting_flip no final de A2
-        state = controller.current_state(now=1460)
+        # Ao passar de 447s (444s + 3s gap), o Lado A terminou e entra em waiting_flip no final de A2
+        state = controller.current_state(now=1450)
         self.assertEqual(state["status"], "waiting_flip")
         self.assertEqual(state["track"]["position"], "A2")
 
         # Pular próxima (skip_next) deve avançar para B1
-        controller.skip_next(now=1460)
-        state = controller.current_state(now=1460)
+        controller.skip_next(now=1450)
+        state = controller.current_state(now=1450)
         self.assertEqual(state["status"], "playing")
         self.assertEqual(state["track"]["position"], "B1")
 
         # Tentar pular próxima no último elemento (B1) não deve fazer nada
-        controller.skip_next(now=1460)
-        state = controller.current_state(now=1460)
+        controller.skip_next(now=1450)
+        state = controller.current_state(now=1450)
         self.assertEqual(state["track"]["position"], "B1")
 
     def test_skip_prev_restarts_track_if_progress_greater_than_3(self):
@@ -108,11 +109,11 @@ class PlaybackControllerTests(unittest.TestCase):
         controller = PlaybackController()
         controller.handle_match(match_at_a1(), now=1000)
 
-        # Advance to A2 (A2 starts at 1271 because of the 10s gap).
-        # At 1273, progress on A2 is 2 seconds (<= 3).
-        controller.skip_prev(now=1273)
+        # Advance to A2 (A2 starts at 1264 because of the 3s gap).
+        # At 1266, progress on A2 is 2 seconds (<= 3).
+        controller.skip_prev(now=1266)
 
-        state = controller.current_state(now=1273)
+        state = controller.current_state(now=1266)
         self.assertEqual(state["track"]["position"], "A1")
         self.assertEqual(state["progress_seconds"], 0)
 
@@ -120,9 +121,9 @@ class PlaybackControllerTests(unittest.TestCase):
         controller = PlaybackController()
         controller.handle_match(match_at_a1(), now=1000)
 
-        # Side A has Come Together (261s) + Gap (10s) + Something (183s) = 454s.
-        # At now = 1000 + 454, Side A has finished.
-        state = controller.current_state(now=1454)
+        # Side A has Come Together (261s) + Gap (3s) + Something (183s) = 447s.
+        # At now = 1000 + 447, Side A has finished.
+        state = controller.current_state(now=1447)
 
         self.assertEqual(state["status"], "waiting_flip")
         self.assertEqual(state["track"]["position"], "A2")
@@ -172,16 +173,16 @@ class PlaybackControllerTests(unittest.TestCase):
         controller = PlaybackController()
         controller.handle_match(match, now=1000)
 
-        # At elapsed = 120s (now=1120), we are on Track 2 (pos "2").
-        # Track 1 is 100s, gap is 10s. Track 2 starts at 110s.
-        # So at 120s elapsed, we have played 10s of Track 2.
-        state = controller.current_state(now=1120)
+        # At elapsed = 123s (now=1123), we are on Track 2 (pos "2").
+        # Track 1 is 100s, gap is 3s. Track 2 starts at 103s.
+        # So at 123s elapsed, we have played 20s of Track 2.
+        state = controller.current_state(now=1123)
         self.assertEqual(state["status"], "playing")
         self.assertEqual(state["track"]["position"], "2")
-        self.assertEqual(state["progress_seconds"], 10)
+        self.assertEqual(state["progress_seconds"], 20)
 
-        # At elapsed = 210s (now=1210), we finished the entire release.
-        state = controller.current_state(now=1210)
+        # At elapsed = 203s (now=1203), we finished the entire release.
+        state = controller.current_state(now=1203)
         self.assertEqual(state["status"], "waiting_flip")
         self.assertEqual(state["progress_seconds"], 100)
         self.assertIn("Fim do disco!", state["message"])
@@ -208,13 +209,13 @@ class PlaybackControllerTests(unittest.TestCase):
         controller = PlaybackController(on_scrobble=on_scrobble)
         controller.handle_match(match_at_a1(), now=1000)
 
-        # A1 duration is 261s + 10s gap = 271s. At 1000 + 280, we are on A2.
-        state = controller.current_state(now=1280)
+        # A1 duration is 261s + 3s gap = 264s. At 1000 + 270, we are on A2.
+        state = controller.current_state(now=1270)
         self.assertEqual(state["track"]["position"], "A2")
         self.assertEqual(scrobbled_releases, [14192689])
 
-        # Query state again at 1290. It should not scrobble a second time.
-        state = controller.current_state(now=1290)
+        # Query state again at 1280. It should not scrobble a second time.
+        state = controller.current_state(now=1280)
         self.assertEqual(scrobbled_releases, [14192689])
 
     def test_scrobble_only_once_per_album_session_after_second_track(self):
@@ -248,17 +249,17 @@ class PlaybackControllerTests(unittest.TestCase):
         controller.current_state(now=1000)  # A1: no audition yet.
         self.assertEqual(scrobbled_releases, [])
 
-        controller.current_state(now=1075)  # A2 (starts at 1070 because of 10s gap): first and only automatic audition.
+        controller.current_state(now=1065)  # A2 (starts at 1063 because of 3s gap): first and only automatic audition.
         self.assertEqual(scrobbled_releases, [4242])
 
-        controller.current_state(now=1145)  # A3 (starts at 1140): do not count again.
-        controller.current_state(now=1215)  # A4 (starts at 1210): do not count again.
-        controller.current_state(now=1280)  # End of album: still only one audition.
+        controller.current_state(now=1130)  # A3 (starts at 1126): do not count again.
+        controller.current_state(now=1195)  # A4 (starts at 1189): do not count again.
+        controller.current_state(now=1255)  # End of album: still only one audition.
         self.assertEqual(scrobbled_releases, [4242])
 
         match_a4 = TrackMatch(release=release, track=release.tracks[3], score=100, reason="test")
-        controller.handle_match(match_a4, now=1290)
-        controller.current_state(now=1290)
+        controller.handle_match(match_a4, now=1260)
+        controller.current_state(now=1260)
         self.assertEqual(scrobbled_releases, [4242])
 
     def test_scrobble_on_skip_next(self):
