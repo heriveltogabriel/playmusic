@@ -35,6 +35,7 @@ const lyricsCache = new Map();
 let lyricsStatusMessage = "Letra não encontrada para esta faixa";
 let nextTrack = null;
 let currentRelease = null;
+let trackChangeCount = 0;
 
 let mediaStream = null;
 let recording = false;
@@ -159,6 +160,18 @@ function renderState(state) {
 
     const trackKey = `${track.title}-${release.artist}`;
     if (trackKey !== currentTrackKey) {
+      if (currentTrackKey !== null) {
+        trackChangeCount++;
+        if (trackChangeCount >= 2) {
+          trackChangeCount = 0;
+          setTimeout(() => {
+            if (currentRelease !== null && mediaStream && !recording) {
+              console.log("[AUTO-LISTEN] Executando identificação silenciosa em background após 2 faixas.");
+              recordClip(true);
+            }
+          }, 10000);
+        }
+      }
       currentTrackKey = trackKey;
       fetchLyrics(track, release);
       setLyricsVisibility(false);
@@ -229,6 +242,7 @@ function renderState(state) {
   }
 
   // ESTADO DE ESPERA / OCIOSO (Sem música tocando)
+  trackChangeCount = 0;
   setCover(null); // Renderiza a logo do LP DA SEMANA
   currentRelease = null;
   nextTrack = null;
@@ -439,7 +453,7 @@ async function startMicrophone() {
   }
 }
 
-function recordClip() {
+function recordClip(isAutomatic = false) {
   if (!mediaStream || !micAudioContext || recording) return;
   recording = true;
   if (elements.retryButton) {
@@ -511,7 +525,9 @@ function recordClip() {
         body: blob,
       });
       if (response && response.status === "recognition_unavailable") {
-        showError("Serviço de identificação indisponível: " + (response.message || "Erro desconhecido"));
+        if (!isAutomatic) {
+          showError("Serviço de identificação indisponível: " + (response.message || "Erro desconhecido"));
+        }
         if (elements.micDebug) {
           elements.micDebug.textContent = "Shazam: serviço indisponível (" + (response.message || "limite/erro") + ")";
         }
@@ -529,7 +545,9 @@ function recordClip() {
       await pollState();
     } catch (error) {
       console.error("Erro na identificação da música:", error);
-      showError("Erro do servidor ao identificar a música: " + error.message);
+      if (!isAutomatic) {
+        showError("Erro do servidor ao identificar a música: " + error.message);
+      }
       if (elements.micDebug) {
         elements.micDebug.textContent = `Erro do servidor: ${error.message}`;
       }
