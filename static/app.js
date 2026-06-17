@@ -36,6 +36,8 @@ let lyricsStatusMessage = "Letra não encontrada para esta faixa";
 let nextTrack = null;
 let currentRelease = null;
 let trackChangeCount = 0;
+let consecutiveFailedListens = 0;
+let micSuspended = false;
 
 let mediaStream = null;
 let recording = false;
@@ -417,6 +419,13 @@ async function startMicrophone() {
         return;
       }
 
+      if (micSuspended) {
+        if (elements.micDebug && !recording) {
+          elements.micDebug.textContent = "Microfone: em repouso (toque na tela ou no botão para reativar)";
+        }
+        return;
+      }
+
       const now = Date.now();
       const isCooldownActive = window.nextAutoListenAt && now < window.nextAutoListenAt;
 
@@ -524,31 +533,59 @@ function recordClip(isAutomatic = false) {
         },
         body: blob,
       });
-      if (response && response.status === "recognition_unavailable") {
-        if (!isAutomatic) {
-          showError("Serviço de identificação indisponível: " + (response.message || "Erro desconhecido"));
-        }
+      const isPlaying = (currentRelease !== null);
+
+      if (response && response.status === "matched" && response.match) {
+        consecutiveFailedListens = 0;
         if (elements.micDebug) {
-          elements.micDebug.textContent = "Shazam: serviço indisponível (" + (response.message || "limite/erro") + ")";
-        }
-        window.nextAutoListenAt = Date.now() + 45000;
-      } else if (response && response.status === "playing" && response.track) {
-        if (elements.micDebug) {
-          elements.micDebug.textContent = `Shazam: identificada com sucesso! (${response.track.title})`;
+          elements.micDebug.textContent = `Shazam: identificada com sucesso! (${response.match.track.title})`;
         }
       } else {
-        if (elements.micDebug) {
-          elements.micDebug.textContent = "Shazam: música não identificada na coleção";
+        // Failed to match
+        if (!isPlaying) {
+          consecutiveFailedListens++;
+          if (consecutiveFailedListens >= 3) {
+            micSuspended = true;
+            consecutiveFailedListens = 0;
+            if (elements.micDebug) {
+              elements.micDebug.textContent = "Microfone: em repouso (toque na tela ou no botão para reativar)";
+            }
+          }
         }
-        window.nextAutoListenAt = Date.now() + 45000;
+
+        if (response && response.status === "recognition_unavailable") {
+          if (!isAutomatic) {
+            showError("Serviço de identificação indisponível: " + (response.message || "Erro desconhecido"));
+          }
+          if (elements.micDebug && !micSuspended) {
+            elements.micDebug.textContent = "Shazam: serviço indisponível (" + (response.message || "limite/erro") + ")";
+          }
+          window.nextAutoListenAt = Date.now() + 45000;
+        } else {
+          if (elements.micDebug && !micSuspended) {
+            elements.micDebug.textContent = "Shazam: música não identificada na coleção";
+          }
+          window.nextAutoListenAt = Date.now() + 45000;
+        }
       }
       await pollState();
     } catch (error) {
       console.error("Erro na identificação da música:", error);
+      const isPlaying = (currentRelease !== null);
+      if (!isPlaying) {
+        consecutiveFailedListens++;
+        if (consecutiveFailedListens >= 3) {
+          micSuspended = true;
+          consecutiveFailedListens = 0;
+          if (elements.micDebug) {
+            elements.micDebug.textContent = "Microfone: em repouso (toque na tela ou no botão para reativar)";
+          }
+        }
+      }
       if (!isAutomatic) {
         showError("Erro do servidor ao identificar a música: " + error.message);
       }
-      if (elements.micDebug) {
+      if (elements.micDebug && !micSuspended) {
         elements.micDebug.textContent = `Erro do servidor: ${error.message}`;
       }
       window.nextAutoListenAt = Date.now() + 45000;
@@ -618,6 +655,8 @@ if (elements.syncButton) {
 }
 
 async function handleFirstGesture() {
+  micSuspended = false;
+  consecutiveFailedListens = 0;
   if (!micAudioContext && !isInitializingMic) {
     await startMicrophone();
   } else if (micAudioContext && micAudioContext.state === "suspended") {
@@ -630,6 +669,8 @@ document.addEventListener("touchstart", handleFirstGesture);
 
 elements.retryButton.addEventListener("click", async (e) => {
   e.stopPropagation();
+  micSuspended = false;
+  consecutiveFailedListens = 0;
   await handleFirstGesture();
 
   if (!mediaStream) {
