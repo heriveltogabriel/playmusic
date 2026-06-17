@@ -172,8 +172,9 @@ class PlaybackController:
         initial_side = get_track_side(initial_track.position)
         remaining = max(0, elapsed)
         last_track_of_side = initial_track
+        GAP_SECONDS = 10
 
-        for track in release.tracks[start_index:]:
+        for i, track in enumerate(release.tracks[start_index:]):
             track_side = get_track_side(track.position)
 
             # Se o lado mudou, significa que completamos todas as faixas do lado anterior
@@ -181,6 +182,13 @@ class PlaybackController:
                 return last_track_of_side, last_track_of_side.duration_seconds or 180, True
 
             track_duration = track.duration_seconds or 180
+
+            # Se não for a primeira faixa da iteração, existe uma pausa de 10s antes dela
+            if i > 0:
+                if remaining < GAP_SECONDS:
+                    # Estamos na pausa de transição; mostramos a faixa anterior concluída
+                    return last_track_of_side, last_track_of_side.duration_seconds or 180, False
+                remaining -= GAP_SECONDS
 
             if remaining < track_duration:
                 return track, remaining, False
