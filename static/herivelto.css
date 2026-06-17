@@ -159,17 +159,7 @@ body {
   letter-spacing: 0.5px;
   text-shadow: 0 1px 0px rgba(255, 255, 255, 0.15);
   box-shadow: inset 0 4px 10px rgba(0,0,0,0.5);
-  animation: spin-slow 20s linear infinite;
   z-index: 1;
-}
-
-@keyframes spin-slow {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 /* Typography */
