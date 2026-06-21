@@ -119,7 +119,11 @@ class VinylDisplayApp:
             return {"status": "no_result"}
 
         print(f"[RECOGNIZE] Recognized: '{recognition.title}' by '{recognition.artist}' (album: '{recognition.album or ''}', confidence: {recognition.confidence})")
-        match = self.matcher.match(recognition)
+        active_release_id = None
+        if self.playback.active and self.playback.active.match:
+            active_release_id = self.playback.active.match.release.release_id
+
+        match = self.matcher.match(recognition, active_release_id=active_release_id)
         recognition_payload = {
             "title": recognition.title,
             "artist": recognition.artist,

@@ -36,7 +36,9 @@ const state = {
   
   // Timeline page state
   timelineQuery: '',
-  timelineSort: 'added_desc'
+  timelineSort: 'added_desc',
+  monthlyFilterStart: null,
+  monthlyFilterEnd: null
 };
 
 // ==================== INITIALIZATION ====================
@@ -1440,9 +1442,48 @@ function renderTimeline() {
       currentGroup = groupTitle;
       const headerDiv = document.createElement('div');
       headerDiv.className = 'timeline-group-header';
+      const groupId = 'timeline-group-' + groupTitle.replace(/\s+/g, '-').toLowerCase();
+      headerDiv.id = groupId;
       const count = groupCounts[groupTitle] || 0;
       const countText = `${count} ${count === 1 ? 'Disco' : 'Discos'}`;
-      headerDiv.innerHTML = `<span class="timeline-group-title">${groupTitle} - ${countText}</span>`;
+      headerDiv.innerHTML = `
+        <span class="timeline-group-title">${groupTitle} - ${countText}</span>
+        <button class="timeline-scroll-top-btn" title="Voltar ao topo" style="
+          background: none;
+          border: none;
+          color: var(--text-muted);
+          cursor: pointer;
+          font-size: 0.8rem;
+          margin-left: 8px;
+          padding: 2px 6px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          transition: color 0.2s ease, transform 0.2s ease;
+        ">
+          ▲
+        </button>
+      `;
+      
+      const scrollTopBtn = headerDiv.querySelector('.timeline-scroll-top-btn');
+      if (scrollTopBtn) {
+        scrollTopBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const topSection = document.getElementById('view-timeline');
+          if (topSection) {
+            topSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        });
+        scrollTopBtn.addEventListener('mouseenter', () => {
+          scrollTopBtn.style.color = 'var(--primary)';
+          scrollTopBtn.style.transform = 'translateY(-2px)';
+        });
+        scrollTopBtn.addEventListener('mouseleave', () => {
+          scrollTopBtn.style.color = 'var(--text-muted)';
+          scrollTopBtn.style.transform = 'translateY(0)';
+        });
+      }
+      
       container.appendChild(headerDiv);
     }
     
@@ -1485,6 +1526,8 @@ function renderTimeline() {
     
     container.appendChild(itemDiv);
   });
+
+  renderTimelineStats();
 }
 
 // Renders the main catalog grid
@@ -1591,6 +1634,9 @@ function renderPlaysChart() {
   const sortedLpsByPlays = [...state.lps]
     .filter(lp => lp.plays > 0)
     .sort((a, b) => {
+      if (b.plays !== a.plays) {
+        return b.plays - a.plays;
+      }
       const dateA = getLatestListenDate(a);
       const dateB = getLatestListenDate(b);
       if (dateA && dateB) {
@@ -1859,6 +1905,7 @@ function renderStats() {
   });
 
   renderTimelineStats();
+  renderPlayPeriodStats();
 }
 
 function openArtistAlbumsDialog(artistName, lps) {
@@ -1916,52 +1963,147 @@ function renderTimelineStats() {
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
   ];
   
-  // 1. Get last 12 months (order: newest/current month first, oldest last)
   const today = new Date();
-  const last12 = [];
-  for (let i = 0; i < 12; i++) {
-    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-    last12.push({
-      year: d.getFullYear(),
-      month: d.getMonth(),
-      label: `${MONTHS_PT[d.getMonth()].slice(0, 3)}/${String(d.getFullYear()).slice(-2)}`,
-      key: `${MONTHS_PT[d.getMonth()]} de ${d.getFullYear()}`,
-      count: 0
-    });
-  }
-
-  // 2. Count additions in the last 12 months
-  const startTime = new Date(today.getFullYear(), today.getMonth() - 11, 1).getTime();
-  let totalAdded = 0;
-
+  
+  // Find the oldest LP addition date to define the full available range
+  let oldestDate = new Date(); // default to today
   state.lps.forEach(lp => {
     if (!lp.date_added) return;
-    const addedTime = new Date(lp.date_added).getTime();
-    if (addedTime >= startTime) {
-      totalAdded++;
-      const lpDate = new Date(lp.date_added);
-      const lpYear = lpDate.getFullYear();
-      const lpMonth = lpDate.getMonth();
-      
-      const match = last12.find(m => m.year === lpYear && m.month === lpMonth);
-      if (match) {
-        match.count++;
-      }
+    const d = new Date(lp.date_added);
+    if (d < oldestDate) {
+      oldestDate = d;
     }
   });
 
-  // 3. Find most active month
+  // Construct all months from oldest LP date to today (chronological order: oldest to newest)
+  const chronological = [];
+  let current = new Date(oldestDate.getFullYear(), oldestDate.getMonth(), 1);
+  const end = new Date(today.getFullYear(), today.getMonth(), 1);
+  
+  while (current <= end) {
+    chronological.push({
+      year: current.getFullYear(),
+      month: current.getMonth(),
+      label: `${MONTHS_PT[current.getMonth()].slice(0, 3)}/${String(current.getFullYear()).slice(-2)}`,
+      key: `${MONTHS_PT[current.getMonth()]} de ${current.getFullYear()}`,
+      count: 0
+    });
+    current.setMonth(current.getMonth() + 1);
+  }
+
+  // Define default values (last 12 months or less if history is shorter)
+  const newestMonth = chronological[chronological.length - 1];
+  const defaultStartIndex = Math.max(0, chronological.length - 12);
+  const defaultStartMonth = chronological[defaultStartIndex];
+  
+  const defaultStartVal = defaultStartMonth.year * 12 + defaultStartMonth.month;
+  const defaultEndVal = newestMonth.year * 12 + newestMonth.month;
+
+  // Populate filter dropdowns if not populated yet
+  const startSelect = document.getElementById('monthly-filter-start');
+  const endSelect = document.getElementById('monthly-filter-end');
+  
+  if (startSelect && endSelect) {
+    if (startSelect.options.length === 0) {
+      chronological.forEach(m => {
+        const val = m.year * 12 + m.month;
+        
+        const optStart = document.createElement('option');
+        optStart.value = val;
+        optStart.textContent = m.label;
+        startSelect.appendChild(optStart);
+        
+        const optEnd = document.createElement('option');
+        optEnd.value = val;
+        optEnd.textContent = m.label;
+        endSelect.appendChild(optEnd);
+      });
+      
+      if (state.monthlyFilterStart === null) {
+        state.monthlyFilterStart = defaultStartVal;
+      }
+      if (state.monthlyFilterEnd === null) {
+        state.monthlyFilterEnd = defaultEndVal;
+      }
+      
+      startSelect.value = state.monthlyFilterStart;
+      endSelect.value = state.monthlyFilterEnd;
+      
+      // Event listeners
+      startSelect.addEventListener('change', () => {
+        let startVal = parseInt(startSelect.value, 10);
+        let endVal = parseInt(endSelect.value, 10);
+        if (startVal > endVal) {
+          endSelect.value = startSelect.value;
+          endVal = startVal;
+        }
+        state.monthlyFilterStart = startVal;
+        state.monthlyFilterEnd = endVal;
+        renderTimelineStats();
+      });
+      
+      endSelect.addEventListener('change', () => {
+        let startVal = parseInt(startSelect.value, 10);
+        let endVal = parseInt(endSelect.value, 10);
+        if (startVal > endVal) {
+          startSelect.value = endSelect.value;
+          startVal = endVal;
+        }
+        state.monthlyFilterStart = startVal;
+        state.monthlyFilterEnd = endVal;
+        renderTimelineStats();
+      });
+    } else {
+      if (state.monthlyFilterStart !== null) {
+        startSelect.value = state.monthlyFilterStart;
+      }
+      if (state.monthlyFilterEnd !== null) {
+        endSelect.value = state.monthlyFilterEnd;
+      }
+    }
+  }
+
+  // Count additions for all months in the range
+  state.lps.forEach(lp => {
+    if (!lp.date_added) return;
+    const lpDate = new Date(lp.date_added);
+    const lpYear = lpDate.getFullYear();
+    const lpMonth = lpDate.getMonth();
+    
+    const match = chronological.find(m => m.year === lpYear && m.month === lpMonth);
+    if (match) {
+      match.count++;
+    }
+  });
+
+  // Filter months based on range selection
+  let filteredMonths = chronological;
+  if (state.monthlyFilterStart !== null && state.monthlyFilterEnd !== null) {
+    filteredMonths = chronological.filter(m => {
+      const val = m.year * 12 + m.month;
+      return val >= state.monthlyFilterStart && val <= state.monthlyFilterEnd;
+    });
+  }
+
+  // Recalculate indicators based on filtered range
+  let totalAdded = 0;
+  filteredMonths.forEach(m => {
+    totalAdded += m.count;
+  });
+
+  // Find most active month in the filtered range
   let mostActiveMonth = null;
   let maxCount = 0;
-  last12.forEach(m => {
+  filteredMonths.forEach(m => {
     if (m.count > maxCount) {
       maxCount = m.count;
       mostActiveMonth = m;
     }
   });
 
-  // 4. Update indicators
+  // Update indicators
   const totalEl = document.getElementById('timeline-stat-total');
+  const totalLabelEl = document.getElementById('timeline-stat-total-label');
   const averageEl = document.getElementById('timeline-stat-average');
   const chartContainer = document.getElementById('timeline-monthly-chart');
   const mostActiveValEl = document.getElementById('timeline-stat-most-active');
@@ -1970,6 +2112,11 @@ function renderTimelineStats() {
 
   totalEl.textContent = totalAdded;
   
+  const numMonths = filteredMonths.length || 1;
+  if (totalLabelEl) {
+    totalLabelEl.textContent = `Total adicionado (${numMonths} ${numMonths === 1 ? 'mês' : 'meses'})`;
+  }
+
   if (mostActiveMonth && maxCount > 0) {
     mostActiveValEl.textContent = mostActiveMonth.label;
     mostActiveDescEl.textContent = `${maxCount} ${maxCount === 1 ? 'disco' : 'discos'}`;
@@ -1978,15 +2125,16 @@ function renderTimelineStats() {
     mostActiveDescEl.textContent = '0 discos';
   }
 
-  const average = (totalAdded / 12).toFixed(1);
+  const average = (totalAdded / numMonths).toFixed(1);
   averageEl.textContent = average.replace('.', ',');
 
-  // 5. Render Monthly Chart
+  // Render Monthly Chart (newest month first at the top of the chart)
   chartContainer.innerHTML = '';
 
-  const maxVal = Math.max(...last12.map(m => m.count), 1);
+  const maxVal = Math.max(...filteredMonths.map(m => m.count), 1);
+  const chartMonths = [...filteredMonths].reverse();
 
-  last12.forEach(m => {
+  chartMonths.forEach(m => {
     const barRow = document.createElement('div');
     barRow.className = 'chart-bar-row';
     
@@ -2004,6 +2152,16 @@ function renderTimelineStats() {
     
     chartContainer.appendChild(barRow);
     
+    // Add click navigation to timeline month header
+    const groupId = 'timeline-group-' + m.key.replace(/\s+/g, '-').toLowerCase();
+    barRow.style.cursor = 'pointer';
+    barRow.addEventListener('click', () => {
+      const target = document.getElementById(groupId);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+    
     // Trigger animation in next frame
     requestAnimationFrame(() => {
       setTimeout(() => {
@@ -2012,6 +2170,215 @@ function renderTimelineStats() {
       }, 50);
     });
   });
+}
+
+function renderPlayPeriodStats() {
+  const MONTHS_PT = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+
+  const now = new Date();
+
+  // 1. Define time intervals
+  // Current Week (Sunday to Saturday)
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - now.getDay());
+  startOfWeek.setHours(0, 0, 0, 0);
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setHours(23, 59, 59, 999);
+
+  // Current Month
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+
+  // Last 6 Months (current month is index 0)
+  const last6Months = [];
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    last6Months.push({
+      year: d.getFullYear(),
+      month: d.getMonth(),
+      label: `${MONTHS_PT[d.getMonth()].slice(0, 3)}/${String(d.getFullYear()).slice(-2)}`,
+      key: `${MONTHS_PT[d.getMonth()]} de ${d.getFullYear()}`,
+      count: 0
+    });
+  }
+
+  // 2. Process data
+  let weeklyPlaysCount = 0;
+  let monthlyPlaysCount = 0;
+  const weeklyLpsMap = new Map(); // lpId -> { lp, count, latestDate }
+  const monthlyLpsMap = new Map(); // lpId -> { lp, count, latestDate }
+
+  const getLatestListenDate = (lp) => {
+    if (!lp.listen_dates || lp.listen_dates.length === 0) return "";
+    const dates = Array.isArray(lp.listen_dates) ? lp.listen_dates : [lp.listen_dates];
+    return dates[dates.length - 1] || "";
+  };
+
+  state.lps.forEach(lp => {
+    if (!lp.listen_dates || !Array.isArray(lp.listen_dates)) return;
+
+    lp.listen_dates.forEach(dateStr => {
+      try {
+        const d = new Date(dateStr);
+        const t = d.getTime();
+        if (isNaN(t)) return;
+
+        // Check if falls in current week
+        if (t >= startOfWeek.getTime() && t <= endOfWeek.getTime()) {
+          weeklyPlaysCount++;
+          if (!weeklyLpsMap.has(lp.id)) {
+            weeklyLpsMap.set(lp.id, { lp, count: 0, latestDate: "" });
+          }
+          const data = weeklyLpsMap.get(lp.id);
+          data.count++;
+          if (!data.latestDate || dateStr > data.latestDate) {
+            data.latestDate = dateStr;
+          }
+        }
+
+        // Check if falls in current month
+        if (t >= startOfMonth.getTime() && t <= endOfMonth.getTime()) {
+          monthlyPlaysCount++;
+          if (!monthlyLpsMap.has(lp.id)) {
+            monthlyLpsMap.set(lp.id, { lp, count: 0, latestDate: "" });
+          }
+          const data = monthlyLpsMap.get(lp.id);
+          data.count++;
+          if (!data.latestDate || dateStr > data.latestDate) {
+            data.latestDate = dateStr;
+          }
+        }
+
+        // Check last 6 months for chart
+        last6Months.forEach(m => {
+          const mStart = new Date(m.year, m.month, 1, 0, 0, 0, 0).getTime();
+          const mEnd = new Date(m.year, m.month + 1, 0, 23, 59, 59, 999).getTime();
+          if (t >= mStart && t <= mEnd) {
+            m.count++;
+          }
+        });
+
+      } catch (e) {
+        console.error("Erro ao computar período de audição:", dateStr, e);
+      }
+    });
+  });
+
+  // 3. Update Mini Cards
+  const statWeeklyLpsEl = document.getElementById('stat-weekly-lps');
+  const statWeeklyPlaysEl = document.getElementById('stat-weekly-plays');
+  const statMonthlyLpsEl = document.getElementById('stat-monthly-lps');
+  const statMonthlyPlaysEl = document.getElementById('stat-monthly-plays');
+
+  if (statWeeklyLpsEl) statWeeklyLpsEl.textContent = weeklyLpsMap.size;
+  if (statWeeklyPlaysEl) statWeeklyPlaysEl.textContent = weeklyPlaysCount;
+  if (statMonthlyLpsEl) statMonthlyLpsEl.textContent = monthlyLpsMap.size;
+  if (statMonthlyPlaysEl) statMonthlyPlaysEl.textContent = monthlyPlaysCount;
+
+  // 4. Render Weekly Top (up to 5 LPs)
+  const weeklyContainer = document.getElementById('weekly-ranking-container');
+  if (weeklyContainer) {
+    weeklyContainer.innerHTML = '';
+    const sortedWeekly = Array.from(weeklyLpsMap.values()).sort((a, b) => {
+      if (b.count !== a.count) return b.count - a.count;
+      if (a.latestDate && b.latestDate) return b.latestDate.localeCompare(a.latestDate);
+      return a.lp.title.localeCompare(b.lp.title);
+    }).slice(0, 5);
+
+    if (sortedWeekly.length === 0) {
+      weeklyContainer.innerHTML = '<div class="text-muted italic" style="font-size: 0.8rem; padding: 12px 0;">Nenhum LP ouvido nesta semana.</div>';
+    } else {
+      const defaultCover = 'https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=200&auto=format&fit=crop';
+      sortedWeekly.forEach((item, index) => {
+        const lp = item.lp;
+        const div = document.createElement('div');
+        div.className = 'ranking-item';
+        div.innerHTML = `
+          <div class="ranking-item-left" style="gap: 8px; flex: 1; min-width: 0; display: flex; align-items: center;">
+            <span class="ranking-badge">#${index+1}</span>
+            <img class="addition-thumb" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.src='${defaultCover}'" style="width: 32px; height: 32px; border-radius: 4px; object-fit: cover;">
+            <div class="addition-details">
+              <div class="addition-title" style="font-size: 0.85rem; font-weight: 600;">${lp.title}</div>
+              <div class="addition-artist" style="font-size: 0.75rem;">${lp.artist}</div>
+            </div>
+          </div>
+          <span class="ranking-count">${item.count} ${item.count === 1 ? 'play' : 'plays'}</span>
+        `;
+        div.addEventListener('click', () => openDetailsDialog(lp.id));
+        weeklyContainer.appendChild(div);
+      });
+    }
+  }
+
+  // 5. Render Monthly Top (up to 5 LPs)
+  const monthlyContainer = document.getElementById('monthly-ranking-container');
+  if (monthlyContainer) {
+    monthlyContainer.innerHTML = '';
+    const sortedMonthly = Array.from(monthlyLpsMap.values()).sort((a, b) => {
+      if (b.count !== a.count) return b.count - a.count;
+      if (a.latestDate && b.latestDate) return b.latestDate.localeCompare(a.latestDate);
+      return a.lp.title.localeCompare(b.lp.title);
+    }).slice(0, 5);
+
+    if (sortedMonthly.length === 0) {
+      monthlyContainer.innerHTML = '<div class="text-muted italic" style="font-size: 0.8rem; padding: 12px 0;">Nenhum LP ouvido este mês.</div>';
+    } else {
+      const defaultCover = 'https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=200&auto=format&fit=crop';
+      sortedMonthly.forEach((item, index) => {
+        const lp = item.lp;
+        const div = document.createElement('div');
+        div.className = 'ranking-item';
+        div.innerHTML = `
+          <div class="ranking-item-left" style="gap: 8px; flex: 1; min-width: 0; display: flex; align-items: center;">
+            <span class="ranking-badge">#${index+1}</span>
+            <img class="addition-thumb" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.src='${defaultCover}'" style="width: 32px; height: 32px; border-radius: 4px; object-fit: cover;">
+            <div class="addition-details">
+              <div class="addition-title" style="font-size: 0.85rem; font-weight: 600;">${lp.title}</div>
+              <div class="addition-artist" style="font-size: 0.75rem;">${lp.artist}</div>
+            </div>
+          </div>
+          <span class="ranking-count">${item.count} ${item.count === 1 ? 'play' : 'plays'}</span>
+        `;
+        div.addEventListener('click', () => openDetailsDialog(lp.id));
+        monthlyContainer.appendChild(div);
+      });
+    }
+  }
+
+  // 6. Render Monthly Listening Chart (last 6 months, oldest first for chart flow)
+  const listeningChartContainer = document.getElementById('listening-monthly-chart');
+  if (listeningChartContainer) {
+    listeningChartContainer.innerHTML = '';
+    const maxVal = Math.max(...last6Months.map(m => m.count), 1);
+
+    last6Months.forEach(m => {
+      const barRow = document.createElement('div');
+      barRow.className = 'chart-bar-row';
+      const pct = (m.count / maxVal) * 100;
+
+      barRow.innerHTML = `
+        <div class="chart-bar-labels">
+          <span class="chart-label-name">${m.key}</span>
+          <span class="chart-label-val">${m.count} ${m.count === 1 ? 'audição' : 'audições'}</span>
+        </div>
+        <div class="chart-bar-track">
+          <div class="chart-bar-fill" style="width: 0%"></div>
+        </div>
+      `;
+      listeningChartContainer.appendChild(barRow);
+
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          const fill = barRow.querySelector('.chart-bar-fill');
+          if (fill) fill.style.width = `${pct}%`;
+        }, 50);
+      });
+    });
+  }
 }
 
 // ==================== DIALOGS & FORM MANAGEMENT ====================
@@ -2766,6 +3133,9 @@ function renderPlaysRankingPage() {
   const sorted = state.lps
     .filter(lp => lp.plays > 0)
     .sort((a, b) => {
+      if (b.plays !== a.plays) {
+        return b.plays - a.plays;
+      }
       const dateA = getLatestListenDate(a);
       const dateB = getLatestListenDate(b);
       if (dateA && dateB) {

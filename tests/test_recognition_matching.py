@@ -73,6 +73,82 @@ class RecognitionMatchingTests(unittest.TestCase):
 
         self.assertIsNone(matcher.match(recognition))
 
+    def test_active_album_boost(self):
+        # Create a store with two releases that share a track
+        tmp = tempfile.TemporaryDirectory()
+        store = CatalogStore(Path(tmp.name) / "catalog.sqlite3")
+        store._tmp = tmp
+        store.initialize()
+        
+        # Release 1: Studio Album
+        store.upsert_release(
+            Release(
+                release_id=1,
+                title="Abbey Road",
+                artist="The Beatles",
+                year=1969,
+                cover_url="https://example.test/cover.jpg",
+                country="UK",
+                labels=["Apple"],
+                catalog_numbers=["1"],
+                formats=["Vinyl"],
+                tracks=[Track("A1", "Come Together", 261)],
+                discogs_url="url1",
+            )
+        )
+        
+        # Release 2: Compilation Album
+        store.upsert_release(
+            Release(
+                release_id=2,
+                title="The Beatles 1967-1970",
+                artist="The Beatles",
+                year=1973,
+                cover_url="https://example.test/cover.jpg",
+                country="UK",
+                labels=["Apple"],
+                catalog_numbers=["2"],
+                formats=["Vinyl"],
+                tracks=[Track("A1", "Come Together", 261)],
+                discogs_url="url2",
+            )
+        )
+        
+        matcher = CollectionMatcher(store)
+        recognition = RecognitionResult(
+            title="Come Together",
+            artist="The Beatles",
+            album=None,
+            provider="shazam",
+            confidence=0.9,
+        )
+        
+        # When active album is 2, it should match release 2
+        match = matcher.match(recognition, active_release_id=2)
+        self.assertEqual(match.release.release_id, 2)
+        self.assertIn("active album boost", match.reason)
+        
+        # When active album is 1, it should match release 1
+        match = matcher.match(recognition, active_release_id=1)
+        self.assertEqual(match.release.release_id, 1)
+        self.assertIn("active album boost", match.reason)
+
+    def test_side_start_boost(self):
+        store = make_store()
+        matcher = CollectionMatcher(store)
+        
+        # Match A1 (Come Together) - which is first track of side A
+        recognition = RecognitionResult(
+            title="Come Together",
+            artist="The Beatles",
+            album=None,
+            provider="shazam",
+            confidence=0.9,
+        )
+        match = matcher.match(recognition)
+        self.assertIsNotNone(match)
+        self.assertIn("side start boost", match.reason)
+
 
 if __name__ == "__main__":
     unittest.main()

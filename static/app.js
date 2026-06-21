@@ -472,7 +472,12 @@ function recordClip(isAutomatic = false) {
 
   const isPlaying = (currentRelease !== null);
 
-  // Update UI immediately to show active listening feedback (ONLY IF NOT PLAYING)
+  // Update UI immediately to show active listening feedback
+  if (elements.nextTrackTitle) {
+    elements.nextTrackTitle.textContent = "Ouvindo...";
+    elements.nextTrack.style.display = "block";
+  }
+
   if (!isPlaying) {
     elements.statusLabel.textContent = "Ouvindo";
     elements.trackTitle.textContent = "Ouvindo o disco...";
@@ -502,7 +507,11 @@ function recordClip(isAutomatic = false) {
       micSourceNode.disconnect(processor);
     } catch (err) {}
 
-    // Show processing status (ONLY IF NOT PLAYING)
+    // Show processing status
+    if (elements.nextTrackTitle) {
+      elements.nextTrackTitle.textContent = "Pesquisando...";
+    }
+
     if (!isPlaying) {
       elements.statusLabel.textContent = "Identificando";
       elements.trackTitle.textContent = "Buscando música...";
