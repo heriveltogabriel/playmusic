@@ -251,23 +251,73 @@
       <!-- VIEW 4: RANKING DE AUDIÇÕES -->
       <section id="view-ranking" class="content-view">
         <div class="ranking-container">
-          <!-- Filtros de Período -->
-          <div class="plays-history-filter-row" style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 24px; flex-wrap: wrap;">
-            <label style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">Filtrar Período:</label>
-            <select id="plays-history-filter-start" class="history-select"></select>
-            <span style="font-size: 0.85rem; color: var(--text-muted);">até</span>
-            <select id="plays-history-filter-end" class="history-select"></select>
+          <!-- Top 3 Podium -->
+          <div id="ranking-podium" class="ranking-podium">
+            <!-- Dynamically populated podium elements -->
           </div>
 
-          <!-- Novo Histórico de Audições (Timeline) -->
-          <div id="plays-history-container" class="plays-history-timeline">
-            <!-- Dynamically populated timeline elements -->
-          </div>
+          <!-- Rest of the Ranking (positions 4+) -->
+          <div class="ranking-list-section" id="ranking-list-section">
+            <div class="ranking-header-flex">
+              <h3 class="ranking-section-title">LPs por Audição</h3>
+              <div class="ranking-stats-summary" id="ranking-stats-summary">
+                <span class="ranking-stats-prefix">Discos ouvidos:</span>
+                <div class="stat-mini-card">
+                  <div class="mini-card-label">Semana</div>
+                  <div class="mini-card-value" id="ranking-stat-week">0</div>
+                </div>
+                <div class="stat-mini-card">
+                  <div class="mini-card-label">Mês</div>
+                  <div class="mini-card-value" id="ranking-stat-month">0</div>
+                </div>
+                <div class="stat-mini-card">
+                  <div class="mini-card-label">Total</div>
+                  <div class="mini-card-value" id="ranking-stat-total">0</div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Weekly Activity Section -->
+            <div class="weekly-activity-section">
+              <h4 class="weekly-activity-title">Audições por Dia da Semana (Esta Semana)</h4>
+              <div id="weekly-activity-grid" class="weekly-activity-grid">
+                <!-- Dynamically populated 7 days -->
+              </div>
+            </div>
+
+            <div style="height: 1px; background: rgba(255,255,255,0.05); margin: 32px 0;"></div>
+
+            <!-- Filtros de Período -->
+            <div class="plays-history-filter-row" style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 24px; flex-wrap: wrap;">
+              <label style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">Filtrar Período:</label>
+              <select id="plays-history-filter-start" class="history-select"></select>
+              <span style="font-size: 0.85rem; color: var(--text-muted);">até</span>
+              <select id="plays-history-filter-end" class="history-select"></select>
+            </div>
+
+            <!-- Novo Histórico de Audições (Timeline) -->
+            <div id="plays-history-container" class="plays-history-timeline">
+              <!-- Dynamically populated timeline elements -->
+            </div>
 
           <!-- Mantido oculto por compatibilidade de testes ou fallback -->
           <div style="display: none;">
             <h3 class="ranking-section-title">LPs por Audição</h3>
             <div id="plays-chart-container"></div>
+          </div>
+          </div> <!-- Close ranking-list-section -->
+
+          <!-- Empty State -->
+          <div id="ranking-empty-state" class="empty-state" style="display: none;">
+            <svg viewBox="0 0 24 24" width="64" height="64" stroke="currentColor" stroke-width="1.5" fill="none">
+              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+              <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+              <path d="M4 22h16"></path>
+              <path d="M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34"></path>
+              <path d="M12 2a4 4 0 0 1 4 4v7a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4Z"></path>
+            </svg>
+            <h3>Nenhum disco ouvido ainda</h3>
+            <p>Escute discos através da agenda da semana ou marque-os na sua coleção para iniciar o ranking!</p>
           </div>
         </div>
       </section>
