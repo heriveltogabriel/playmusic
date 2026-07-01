@@ -38,8 +38,13 @@ const state = {
   timelineQuery: '',
   timelineSort: 'added_desc',
   monthlyFilterStart: null,
-  monthlyFilterEnd: null
+  monthlyFilterEnd: null,
+
+  // Favorites page state
+  favoritesQuery: '',
+  favoritesSortBy: 'added_desc'
 };
+
 
 // ==================== INITIALIZATION ====================
 // ==================== INITIALIZATION ====================
@@ -47,6 +52,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadDatabase();
   initializeViews();
   initializeSidebarFilters();
+  initializeFavoritesControls();
   initializeSuggestionsControls();
   initializeDialogs();
   initializeTimelineEvents();
@@ -82,6 +88,8 @@ async function loadDatabase() {
       title: r.title,
       artist: r.artist,
       year: r.year,
+      original_year: r.original_year || r.year,
+      edition_year: r.edition_year || r.year,
       cover_image: r.cover_url,
       thumbnail: r.cover_url,
       country: r.country,
@@ -171,6 +179,9 @@ function initializeViews() {
       } else if (targetView === 'timeline') {
         viewTitle.textContent = 'Linha do Tempo';
         renderTimeline();
+      } else if (targetView === 'favorites') {
+        viewTitle.textContent = 'Favoritos';
+        renderFavoritesGrid();
       } else if (targetView === 'settings') {
         viewTitle.textContent = 'Configurações';
         loadSettingsFromServer();
@@ -179,6 +190,8 @@ function initializeViews() {
       // Trigger special animations or renders
       if (targetView === 'catalog') {
         renderGrid();
+      } else if (targetView === 'favorites') {
+        renderFavoritesGrid();
       } else if (targetView === 'ranking') {
         renderPlaysRankingPage();
       } else if (targetView === 'timeline') {
@@ -882,6 +895,16 @@ async function toggleFavoriteState(id) {
       
       if (state.currentView === 'catalog') {
         renderGrid();
+      } else if (state.currentView === 'favorites') {
+        const card = document.querySelector(`#favorites-grid .lp-card[data-id="${id}"]`);
+        if (card && !lp.favorite) {
+          card.classList.add('fade-out');
+          setTimeout(() => {
+            renderFavoritesGrid();
+          }, 300);
+        } else {
+          renderFavoritesGrid();
+        }
       }
       showToast(lp.favorite ? 'Adicionado aos Favoritos!' : 'Removido dos Favoritos.', 'success');
     } catch (e) {
@@ -1556,13 +1579,11 @@ function renderGrid() {
     card.innerHTML = `
       <div class="lp-card-cover-wrapper">
         <img class="lp-card-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" loading="lazy" onerror="this.src='${defaultCover}'">
-        ${lp.favorite ? `
-          <div class="lp-card-starred-badge" title="Favoritado">
-            <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-            </svg>
-          </div>
-        ` : ''}
+        <button class="lp-card-fav-btn ${lp.favorite ? 'active' : ''}" title="${lp.favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}" data-id="${lp.id}">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="${lp.favorite ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+        </button>
       </div>
       <div class="lp-card-info">
         <h4 class="lp-card-title" title="${lp.title}">${lp.title}</h4>
@@ -1577,7 +1598,9 @@ function renderGrid() {
         </div>
 
         <div class="lp-card-footer">
-          <span class="lp-card-year">${lp.year > 0 ? lp.year : 'N/A'}</span>
+          <span class="lp-card-year">
+            ${lp.original_year > 0 ? (lp.edition_year > 0 && lp.edition_year !== lp.original_year ? `${lp.original_year} <span style="font-size: 0.8em; opacity: 0.75; font-weight: normal;">(Ed. ${lp.edition_year})</span>` : lp.original_year) : 'N/A'}
+          </span>
         </div>
       </div>
     `;
@@ -1585,6 +1608,15 @@ function renderGrid() {
     card.addEventListener('click', () => {
       openDetailsDialog(lp.id);
     });
+
+    // Bind click event to favorite button
+    const favBtn = card.querySelector('.lp-card-fav-btn');
+    if (favBtn) {
+      favBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // prevent opening details dialog
+        toggleFavoriteState(lp.id);
+      });
+    }
     
     // Bind click event to scrobble button
     const scrobbleBtn = card.querySelector('.lp-card-scrobble-btn');
@@ -1598,6 +1630,164 @@ function renderGrid() {
     grid.appendChild(card);
   });
 }
+
+function initializeFavoritesControls() {
+  const searchInput = document.getElementById('favorites-search-input');
+  const clearSearchBtn = document.getElementById('clear-favorites-search-btn');
+  const sortSelect = document.getElementById('favorites-sort-select');
+  
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      state.favoritesQuery = e.target.value;
+      if (clearSearchBtn) {
+        clearSearchBtn.style.display = e.target.value.length > 0 ? 'flex' : 'none';
+      }
+      renderFavoritesGrid();
+    });
+  }
+  
+  if (clearSearchBtn) {
+    clearSearchBtn.addEventListener('click', () => {
+      if (searchInput) searchInput.value = '';
+      state.favoritesQuery = '';
+      clearSearchBtn.style.display = 'none';
+      renderFavoritesGrid();
+    });
+  }
+  
+  if (sortSelect) {
+    sortSelect.addEventListener('change', (e) => {
+      state.favoritesSortBy = e.target.value;
+      renderFavoritesGrid();
+    });
+  }
+}
+
+function renderFavoritesGrid() {
+  const grid = document.getElementById('favorites-grid');
+  const emptyState = document.getElementById('favorites-empty-state');
+  const filteredCountElem = document.getElementById('favorites-filtered-count');
+  
+  if (!grid) return;
+  
+  grid.innerHTML = '';
+  
+  // Filter only favorites
+  let favorites = state.lps.filter(lp => lp.favorite === true);
+  
+  // Apply search query
+  if (state.favoritesQuery) {
+    const query = state.favoritesQuery.toLowerCase().trim();
+    favorites = favorites.filter(lp => 
+      (lp.title && lp.title.toLowerCase().includes(query)) ||
+      (lp.artist && lp.artist.toLowerCase().includes(query))
+    );
+  }
+  
+  // Apply sorting
+  favorites.sort((a, b) => {
+    if (state.favoritesSortBy === 'added_desc') {
+      return new Date(b.date_added) - new Date(a.date_added);
+    }
+    if (state.favoritesSortBy === 'added_asc') {
+      return new Date(a.date_added) - new Date(b.date_added);
+    }
+    if (state.favoritesSortBy === 'year_desc') {
+      return (b.original_year || b.year) - (a.original_year || a.year);
+    }
+    if (state.favoritesSortBy === 'year_asc') {
+      return (a.original_year || a.year) - (b.original_year || b.year);
+    }
+    if (state.favoritesSortBy === 'title_asc') {
+      return (a.title || '').localeCompare(b.title || '');
+    }
+    if (state.favoritesSortBy === 'artist_asc') {
+      return (a.artist || '').localeCompare(b.artist || '');
+    }
+    if (state.favoritesSortBy === 'rating_desc') {
+      return (b.rating || 0) - (a.rating || 0);
+    }
+    if (state.favoritesSortBy === 'plays_desc') {
+      return (b.plays || 0) - (a.plays || 0);
+    }
+    return 0;
+  });
+  
+  if (filteredCountElem) {
+    filteredCountElem.textContent = favorites.length;
+  }
+  
+  if (favorites.length === 0) {
+    grid.style.display = 'none';
+    if (emptyState) emptyState.style.display = 'flex';
+    return;
+  }
+  
+  grid.style.display = 'grid';
+  if (emptyState) emptyState.style.display = 'none';
+  
+  favorites.forEach(lp => {
+    const card = document.createElement('div');
+    card.classList.add('lp-card');
+    card.dataset.id = lp.id;
+    
+    const defaultCover = 'https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=200&auto=format&fit=crop';
+    
+    card.innerHTML = `
+      <div class="lp-card-cover-wrapper">
+        <img class="lp-card-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" loading="lazy" onerror="this.src='${defaultCover}'">
+        <button class="lp-card-fav-btn ${lp.favorite ? 'active' : ''}" title="${lp.favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}" data-id="${lp.id}">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="${lp.favorite ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+        </button>
+      </div>
+      <div class="lp-card-info">
+        <h4 class="lp-card-title" title="${lp.title}">${lp.title}</h4>
+        <p class="lp-card-artist" title="${lp.artist}">${lp.artist}</p>
+        
+        <!-- Plays and Scrobble Row -->
+        <div class="lp-card-plays-row">
+          <span class="lp-card-plays-count">🎧 ${lp.plays || 0} ${lp.plays === 1 ? 'audição' : 'audições'}</span>
+          <button class="lp-card-scrobble-btn" title="Registrar audição agora" data-id="${lp.id}">
+            + Ouvir
+          </button>
+        </div>
+
+        <div class="lp-card-footer">
+          <span class="lp-card-year">
+            ${lp.original_year > 0 ? (lp.edition_year > 0 && lp.edition_year !== lp.original_year ? `${lp.original_year} <span style="font-size: 0.8em; opacity: 0.75; font-weight: normal;">(Ed. ${lp.edition_year})</span>` : lp.original_year) : 'N/A'}
+          </span>
+        </div>
+      </div>
+    `;
+    
+    card.addEventListener('click', () => {
+      openDetailsDialog(lp.id);
+    });
+
+    // Bind click event to favorite button
+    const favBtn = card.querySelector('.lp-card-fav-btn');
+    if (favBtn) {
+      favBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // prevent opening details dialog
+        toggleFavoriteState(lp.id);
+      });
+    }
+    
+    // Bind click event to scrobble button
+    const scrobbleBtn = card.querySelector('.lp-card-scrobble-btn');
+    if (scrobbleBtn) {
+      scrobbleBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // prevent opening details dialog
+        markAsListened(lp.id);
+      });
+    }
+    
+    grid.appendChild(card);
+  });
+}
+
 
 function renderStarsString(rating) {
   let starsHtml = '';
@@ -1634,9 +1824,6 @@ function renderPlaysChart() {
   const sortedLpsByPlays = [...state.lps]
     .filter(lp => lp.plays > 0)
     .sort((a, b) => {
-      if (b.plays !== a.plays) {
-        return b.plays - a.plays;
-      }
       const dateA = getLatestListenDate(a);
       const dateB = getLatestListenDate(b);
       if (dateA && dateB) {
@@ -1644,6 +1831,9 @@ function renderPlaysChart() {
       }
       if (dateA) return -1;
       if (dateB) return 1;
+      if (b.plays !== a.plays) {
+        return b.plays - a.plays;
+      }
       return a.title.localeCompare(b.title);
     });
 
@@ -2386,6 +2576,7 @@ const LP_FORM_EDITABLE_FIELD_IDS = [
   'form-cover-url',
   'form-title',
   'form-year',
+  'form-edition-year',
   'form-artist',
   'form-label',
   'form-catno',
@@ -2533,7 +2724,9 @@ function initializeDialogs() {
           resultItem.addEventListener('click', () => {
             document.getElementById('form-title').value = title;
             document.getElementById('form-artist').value = artist;
-            document.getElementById('form-year').value = item.year && !isNaN(item.year) ? item.year : '';
+            const itemYear = item.year && !isNaN(item.year) ? item.year : '';
+            document.getElementById('form-year').value = itemYear;
+            document.getElementById('form-edition-year').value = itemYear;
             document.getElementById('form-label').value = label.replace(/\s\(\d+\)/g, '');
             document.getElementById('form-catno').value = catno;
             
@@ -2592,7 +2785,18 @@ function openDetailsDialog(id) {
   document.getElementById('details-cover').src = lp.cover_image || lp.thumbnail || defaultCover;
   document.getElementById('details-title').textContent = lp.title;
   document.getElementById('details-artist').textContent = lp.artist;
-  document.getElementById('details-year').textContent = lp.year > 0 ? lp.year : 'Ano Desconhecido';
+  document.getElementById('details-year').textContent = lp.original_year > 0 ? lp.original_year : 'Ano Desconhecido';
+  
+  const editionYearContainer = document.getElementById('details-edition-year-container');
+  const editionYearEl = document.getElementById('details-edition-year');
+  if (editionYearContainer && editionYearEl) {
+    if (lp.edition_year > 0 && lp.edition_year !== lp.original_year) {
+      editionYearEl.textContent = lp.edition_year;
+      editionYearContainer.style.display = 'block';
+    } else {
+      editionYearContainer.style.display = 'none';
+    }
+  }
   document.getElementById('details-label-name').textContent = lp.labels.join(', ') || 'N/A';
   document.getElementById('details-catno').textContent = lp.catalog_number || 'N/A';
   
@@ -2753,7 +2957,8 @@ function openFormDialog(editId = null) {
     document.getElementById('form-lp-id').value = lp.id;
     document.getElementById('form-title').value = lp.title;
     document.getElementById('form-artist').value = lp.artist;
-    document.getElementById('form-year').value = lp.year > 0 ? lp.year : '';
+    document.getElementById('form-year').value = lp.original_year > 0 ? lp.original_year : '';
+    document.getElementById('form-edition-year').value = lp.edition_year > 0 ? lp.edition_year : '';
     document.getElementById('form-label').value = lp.labels.join(', ');
     document.getElementById('form-catno').value = lp.catalog_number;
     lpForm.dataset.genres = lp.genres ? lp.genres.join(', ') : '';
@@ -2825,6 +3030,9 @@ async function saveFormEntry() {
   const artist = document.getElementById('form-artist').value.trim();
   const yearVal = document.getElementById('form-year').value;
   const year = yearVal ? parseInt(yearVal) : null;
+  const editionYearVal = document.getElementById('form-edition-year').value;
+  const edition_year = editionYearVal ? parseInt(editionYearVal) : null;
+  const original_year = year;
   
   const labelsStr = document.getElementById('form-label').value;
   const labels = labelsStr ? labelsStr.split(',').map(s => s.trim()).filter(Boolean) : [];
@@ -2847,6 +3055,8 @@ async function saveFormEntry() {
     title,
     artist,
     year,
+    original_year,
+    edition_year,
     cover_url: coverImage,
     labels,
     catalog_numbers: catno ? [catno] : [],
@@ -3030,219 +3240,12 @@ document.head.appendChild(style);
 
 // ==================== RANKING DE AUDIÇÕES PAGE ====================
 function renderPlaysRankingPage() {
-  const podiumContainer = document.getElementById('ranking-podium');
-  const emptyState = document.getElementById('ranking-empty-state');
-  const listSection = document.getElementById('ranking-list-section');
-  const playsChartContainer = document.getElementById('plays-chart-container');
-  
-  if (!podiumContainer || !emptyState || !listSection || !playsChartContainer) return;
+  const historyContainer = document.getElementById('plays-history-container');
+  if (!historyContainer) return;
 
-  // Calcular estatísticas: semana, mês, todos (soma dos ouvidos)
-  const now = new Date();
-  
-  // Semana calendário: inicia no domingo (00:00:00.000) e vai até o sábado (23:59:59.999)
-  const startOfWeek = new Date(now);
-  startOfWeek.setDate(now.getDate() - now.getDay());
-  startOfWeek.setHours(0, 0, 0, 0);
-  
-  const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 6);
-  endOfWeek.setHours(23, 59, 59, 999);
-  
-  const oneMonthAgo = now.getTime() - 30 * 24 * 60 * 60 * 1000;
-  
-  let weekCount = 0;
-  let monthCount = 0;
-  let totalCount = 0;
-  const weekdayCounts = [0, 0, 0, 0, 0, 0, 0];
-  const weekdayPlays = [[], [], [], [], [], [], []];
-  
-  state.lps.forEach(lp => {
-    if (lp.listen_dates && Array.isArray(lp.listen_dates)) {
-      lp.listen_dates.forEach(dateStr => {
-        try {
-          const d = new Date(dateStr);
-          const t = d.getTime();
-          if (!isNaN(t)) {
-            totalCount++;
-            if (t >= startOfWeek.getTime() && t <= endOfWeek.getTime()) {
-              weekCount++;
-              const wDayIndex = d.getDay();
-              if (wDayIndex >= 0 && wDayIndex < 7) {
-                weekdayCounts[wDayIndex]++;
-                weekdayPlays[wDayIndex].push({ lp, dateStr });
-              }
-            }
-            if (t >= oneMonthAgo) {
-              monthCount++;
-            }
-          }
-        } catch (e) {
-          console.error("Erro ao converter data de audição:", dateStr, e);
-        }
-      });
-    }
-  });
-  
-  const statWeekEl = document.getElementById('ranking-stat-week');
-  const statMonthEl = document.getElementById('ranking-stat-month');
-  const statTotalEl = document.getElementById('ranking-stat-total');
-  
-  if (statWeekEl) statWeekEl.textContent = weekCount;
-  if (statMonthEl) statMonthEl.textContent = monthCount;
-  if (statTotalEl) statTotalEl.textContent = totalCount;
-
-  // Renderizar a régua semanal por dia
-  const activityGridEl = document.getElementById('weekly-activity-grid');
-  if (activityGridEl) {
-    activityGridEl.innerHTML = '';
-    const dayLabels = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-    const todayIndex = now.getDay();
-    
-    dayLabels.forEach((label, idx) => {
-      const card = document.createElement('div');
-      card.className = 'weekly-day-card';
-      if (idx === todayIndex) {
-        card.classList.add('active-today');
-      }
-      
-      const count = weekdayCounts[idx];
-      if (count > 0) {
-        card.classList.add('has-plays');
-        card.style.cursor = 'pointer';
-        card.addEventListener('click', () => {
-          openWeeklyPlaysDialog(label, weekdayPlays[idx]);
-        });
-      }
-      
-      card.innerHTML = `
-        <span class="weekly-day-label">${label}</span>
-        <span class="weekly-day-value">${count}</span>
-      `;
-      activityGridEl.appendChild(card);
-    });
-  }
-  
-  // Sort LPs by latest audition date descending
-  const getLatestListenDate = (lp) => {
-    if (!lp.listen_dates || lp.listen_dates.length === 0) return "";
-    const dates = Array.isArray(lp.listen_dates) ? lp.listen_dates : [lp.listen_dates];
-    return dates[dates.length - 1] || "";
-  };
-
-  const sorted = state.lps
-    .filter(lp => lp.plays > 0)
-    .sort((a, b) => {
-      if (b.plays !== a.plays) {
-        return b.plays - a.plays;
-      }
-      const dateA = getLatestListenDate(a);
-      const dateB = getLatestListenDate(b);
-      if (dateA && dateB) {
-        return dateB.localeCompare(dateA);
-      }
-      if (dateA) return -1;
-      if (dateB) return 1;
-      return a.title.localeCompare(b.title);
-    });
-    
-  if (sorted.length === 0) {
-    podiumContainer.innerHTML = '';
-    podiumContainer.style.display = 'none';
-    listSection.style.display = 'none';
-    emptyState.style.display = 'flex';
-    return;
-  }
-  
-  emptyState.style.display = 'none';
-  podiumContainer.style.display = 'flex';
-  podiumContainer.innerHTML = '';
-  
-  // 1. Render Podium (Silver - Gold - Bronze)
-  const renderPodiumStep = (lp, rank, positionClass, crownEmoji) => {
-    const defaultCover = 'https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=200&auto=format&fit=crop';
-    
-    if (!lp) {
-      // Empty slot placeholder
-      return `
-        <div class="podium-step ${positionClass} empty">
-          <div class="podium-cover-wrapper">
-            <div class="podium-crown" style="opacity: 0.2;">👑</div>
-            <div class="podium-cover" style="background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; box-shadow: none;">
-              <svg viewBox="0 0 24 24" width="36" height="36" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" fill="none">
-                <circle cx="12" cy="12" r="10" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-            </div>
-            <span class="podium-badge">#${rank}</span>
-          </div>
-          <div class="podium-column">
-            <div class="podium-info">
-              <div class="podium-title" style="color: var(--text-muted); font-style: italic;">Espaço Vazio</div>
-              <div class="podium-artist" style="color: var(--text-muted);">-</div>
-              <div class="podium-plays" style="color: var(--text-muted);">0 audições</div>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-    
-    const latestDate = getLatestListenDate(lp);
-    let dateStr = "";
-    if (latestDate) {
-      const d = new Date(latestDate);
-      if (!isNaN(d.getTime())) {
-        const weekdays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-        const wDay = weekdays[d.getDay()];
-        const day = String(d.getDate()).padStart(2, '0');
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const hours = String(d.getHours()).padStart(2, '0');
-        const minutes = String(d.getMinutes()).padStart(2, '0');
-        dateStr = `${wDay} ${day}/${month} ${hours}:${minutes}`;
-      }
-    }
-
-    return `
-      <div class="podium-step ${positionClass}" data-lp-id="${lp.id}">
-        <div class="podium-cover-wrapper">
-          <div class="podium-crown">${crownEmoji}</div>
-          <img class="podium-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.src='${defaultCover}'">
-          <span class="podium-badge">#${rank}</span>
-        </div>
-        <div class="podium-column">
-          <div class="podium-info">
-            <div class="podium-title" title="${lp.title}">${lp.title}</div>
-            <div class="podium-artist" title="${lp.artist}">${lp.artist}</div>
-            <div class="podium-plays" style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
-              <span style="font-weight: 600;">${lp.plays} ${lp.plays === 1 ? 'audição' : 'audições'}</span>
-              ${dateStr ? `<span style="font-size: 0.72rem; color: var(--text-muted); font-weight: normal; margin-top: 1px;">última: ${dateStr}</span>` : ''}
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-  };
-  
-  // Athletic layout: Silver (2nd) - Gold (1st) - Bronze (3rd)
-  const silverHtml = renderPodiumStep(sorted[1], 2, 'silver', '🥈');
-  const goldHtml = renderPodiumStep(sorted[0], 1, 'gold', '👑');
-  const bronzeHtml = renderPodiumStep(sorted[2], 3, 'bronze', '🥉');
-  
-  podiumContainer.innerHTML = silverHtml + goldHtml + bronzeHtml;
-  
-  // Add click listeners to active steps
-  podiumContainer.querySelectorAll('.podium-step:not(.empty)').forEach(step => {
-    step.addEventListener('click', () => {
-      const lpId = step.dataset.lpId;
-      if (lpId) {
-        openDetailsDialog(lpId);
-      }
-    });
-  });
-  
-  // 2. Render full plays chart below the podium
-  listSection.style.display = 'block';
   renderPlaysChart();
+  setupPlaysHistoryFilters();
+  renderPlaysHistory();
 }
 
 function openWeeklyPlaysDialog(dayName, plays) {
@@ -3569,3 +3572,259 @@ window.downloadSecurityKey = function() {
   }
 };
 
+
+
+
+// ==================== PLAYS HISTORY TIMELINE ====================
+
+const MONTHS_PT = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+];
+
+function setupPlaysHistoryFilters() {
+  const startSelect = document.getElementById('plays-history-filter-start');
+  const endSelect = document.getElementById('plays-history-filter-end');
+  if (!startSelect || !endSelect) return;
+
+  // Extract all listen dates to find the oldest
+  let oldestDate = new Date();
+  state.lps.forEach(lp => {
+    if (lp.listen_dates && lp.listen_dates.length > 0) {
+      lp.listen_dates.forEach(dStr => {
+        const d = new Date(dStr);
+        if (!isNaN(d) && d < oldestDate) oldestDate = d;
+      });
+    }
+  });
+
+  const today = new Date();
+  const chronological = [];
+  let current = new Date(oldestDate.getFullYear(), oldestDate.getMonth(), 1);
+  const end = new Date(today.getFullYear(), today.getMonth(), 1);
+  
+  while (current <= end) {
+    chronological.push({
+      year: current.getFullYear(),
+      month: current.getMonth(),
+      label: `${MONTHS_PT[current.getMonth()].slice(0, 3)}/${String(current.getFullYear()).slice(-2)}`,
+    });
+    current.setMonth(current.getMonth() + 1);
+  }
+
+  // Populate
+  startSelect.innerHTML = '';
+  endSelect.innerHTML = '';
+
+  chronological.forEach(m => {
+    const val = `${m.year}-${String(m.month + 1).padStart(2, '0')}`;
+    const optS = document.createElement('option');
+    optS.value = val;
+    optS.textContent = m.label;
+    startSelect.appendChild(optS);
+
+    const optE = document.createElement('option');
+    optE.value = val;
+    optE.textContent = m.label;
+    endSelect.appendChild(optE);
+  });
+
+  // Default: last 12 months (or less if history is shorter)
+  const defaultStartIdx = Math.max(0, chronological.length - 12);
+  if (chronological.length > 0) {
+    const startM = chronological[defaultStartIdx];
+    const endM = chronological[chronological.length - 1];
+    startSelect.value = `${startM.year}-${String(startM.month + 1).padStart(2, '0')}`;
+    endSelect.value = `${endM.year}-${String(endM.month + 1).padStart(2, '0')}`;
+  }
+
+  startSelect.addEventListener('change', renderPlaysHistory);
+  endSelect.addEventListener('change', renderPlaysHistory);
+}
+
+function getWeekStartEnd(dateObj) {
+  const d = new Date(dateObj);
+  const day = d.getDay(); // 0 is Sunday
+  const diff = d.getDate() - day; // adjust to Sunday
+  
+  const start = new Date(d.setDate(diff));
+  start.setHours(0,0,0,0);
+  
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  end.setHours(23,59,59,999);
+  
+  return { start, end };
+}
+
+function formatWeekLabel(start, end) {
+  const sDay = String(start.getDate()).padStart(2, '0');
+  const sMo = String(start.getMonth() + 1).padStart(2, '0');
+  const eDay = String(end.getDate()).padStart(2, '0');
+  const eMo = String(end.getMonth() + 1).padStart(2, '0');
+  return `SEMANA DE ${sDay}/${sMo} A ${eDay}/${eMo}`;
+}
+
+function renderPlaysHistory() {
+  const container = document.getElementById('plays-history-container');
+  if (!container) return;
+
+  const startSelect = document.getElementById('plays-history-filter-start');
+  const endSelect = document.getElementById('plays-history-filter-end');
+  
+  // Extract all listen dates from all LPs
+  const allPlays = [];
+  state.lps.forEach(lp => {
+    if (lp.listen_dates && lp.listen_dates.length > 0) {
+      lp.listen_dates.forEach(dStr => {
+        const d = new Date(dStr);
+        if (!isNaN(d)) {
+          allPlays.push({
+            dateObj: d,
+            lp: lp
+          });
+        }
+      });
+    }
+  });
+
+  // Filter by date dropdowns
+  let startMonthStr = startSelect ? startSelect.value : null;
+  let endMonthStr = endSelect ? endSelect.value : null;
+
+  let filteredPlays = allPlays;
+  if (startMonthStr && endMonthStr) {
+    const [sY, sM] = startMonthStr.split('-').map(Number);
+    const [eY, eM] = endMonthStr.split('-').map(Number);
+    
+    const filterStart = new Date(sY, sM - 1, 1, 0, 0, 0);
+    const filterEnd = new Date(eY, eM, 0, 23, 59, 59); // last day of end month
+
+    filteredPlays = allPlays.filter(p => p.dateObj >= filterStart && p.dateObj <= filterEnd);
+  }
+
+  // Sort descending
+  filteredPlays.sort((a, b) => b.dateObj - a.dateObj);
+
+  if (filteredPlays.length === 0) {
+    container.innerHTML = '<div class="text-muted" style="text-align: center; padding: 40px 0;">Nenhuma audição no período selecionado.</div>';
+    return;
+  }
+
+  // Group by Month -> Week
+  // Structure: { "2026-06": { label: "JUNHO DE 2026", totalPlays: 0, weeks: { "weekKey": { label: "SEMANA...", plays: [], totalPlays: 0 } } } }
+  
+  const grouped = {};
+  const monthOrder = []; // maintain descending order
+
+  filteredPlays.forEach(play => {
+    const d = play.dateObj;
+    const mKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    
+    if (!grouped[mKey]) {
+      grouped[mKey] = {
+        label: `${MONTHS_PT[d.getMonth()].toUpperCase()} DE ${d.getFullYear()}`,
+        totalPlays: 0,
+        weeks: {},
+        weekOrder: []
+      };
+      monthOrder.push(mKey);
+    }
+    
+    grouped[mKey].totalPlays++;
+    
+    const { start, end } = getWeekStartEnd(d);
+    const wKey = `${start.getFullYear()}-${String(start.getMonth()+1).padStart(2,'0')}-${String(start.getDate()).padStart(2,'0')}`;
+    
+    if (!grouped[mKey].weeks[wKey]) {
+      grouped[mKey].weeks[wKey] = {
+        label: formatWeekLabel(start, end),
+        totalPlays: 0,
+        plays: []
+      };
+      grouped[mKey].weekOrder.push(wKey);
+    }
+    
+    grouped[mKey].weeks[wKey].totalPlays++;
+    grouped[mKey].weeks[wKey].plays.push(play);
+  });
+
+  container.innerHTML = '';
+  const defaultCover = 'https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=200&auto=format&fit=crop';
+  const weekdays = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
+
+  let isFirstMonth = true;
+
+  monthOrder.forEach(mKey => {
+    const monthData = grouped[mKey];
+    
+    const monthDetails = document.createElement('details');
+    monthDetails.className = 'history-month-group';
+    if (isFirstMonth) {
+      monthDetails.open = true;
+    }
+
+    const monthSummary = document.createElement('summary');
+    monthSummary.className = 'history-month-summary';
+    monthSummary.innerHTML = `${monthData.label} - ${monthData.totalPlays} AUDIÇÕES`;
+    monthDetails.appendChild(monthSummary);
+
+    let isFirstWeek = true;
+
+    monthData.weekOrder.forEach(wKey => {
+      const weekData = monthData.weeks[wKey];
+      
+      const weekDetails = document.createElement('details');
+      weekDetails.className = 'history-week-group';
+      // Open the most recent week of the most recent month
+      if (isFirstMonth && isFirstWeek) {
+        weekDetails.open = true;
+      }
+
+      const weekSummary = document.createElement('summary');
+      weekSummary.className = 'history-week-summary';
+      weekSummary.innerHTML = `${weekData.label} - ${weekData.totalPlays} AUDIÇÕES`;
+      weekDetails.appendChild(weekSummary);
+
+      const playsList = document.createElement('div');
+      playsList.className = 'history-plays-list';
+
+      const defaultCover = 'https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=200&auto=format&fit=crop';
+      const weekdays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+
+      weekData.plays.forEach(play => {
+        const lp = play.lp;
+        const d = play.dateObj;
+        
+        const playItem = document.createElement('div');
+        playItem.className = 'history-play-item';
+        
+        const wDay = weekdays[d.getDay()];
+        const hrs = String(d.getHours()).padStart(2, '0');
+        const mins = String(d.getMinutes()).padStart(2, '0');
+
+        playItem.innerHTML = `
+          <img class="history-play-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.src='${defaultCover}'">
+          <div class="history-play-details">
+            <div style="display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap;">
+              <span class="history-play-title">${lp.title}</span>
+              <span class="history-play-artist">- ${lp.artist}</span>
+            </div>
+            <div class="history-play-meta">— ouvido na ${wDay} às ${hrs}:${mins}</div>
+          </div>
+          <div class="history-play-count">1 audição</div>
+        `;
+
+        playsList.appendChild(playItem);
+      });
+
+      weekDetails.appendChild(playsList);
+      monthDetails.appendChild(weekDetails);
+
+      isFirstWeek = false;
+    });
+
+    container.appendChild(monthDetails);
+    isFirstMonth = false;
+  });
+}

@@ -105,6 +105,14 @@
               Escuta da Semana
             </button>
           </li>
+          <li>
+            <button class="nav-btn" data-view="favorites">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+              </svg>
+              Favoritos
+            </button>
+          </li>
         </ul>
       </nav>
 
@@ -243,56 +251,23 @@
       <!-- VIEW 4: RANKING DE AUDIÇÕES -->
       <section id="view-ranking" class="content-view">
         <div class="ranking-container">
-          <!-- Top 3 Podium -->
-          <div id="ranking-podium" class="ranking-podium">
-            <!-- Dynamically populated podium elements -->
+          <!-- Filtros de Período -->
+          <div class="plays-history-filter-row" style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 24px; flex-wrap: wrap;">
+            <label style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">Filtrar Período:</label>
+            <select id="plays-history-filter-start" class="history-select"></select>
+            <span style="font-size: 0.85rem; color: var(--text-muted);">até</span>
+            <select id="plays-history-filter-end" class="history-select"></select>
           </div>
 
-          <!-- Rest of the Ranking (positions 4+) -->
-          <div class="ranking-list-section" id="ranking-list-section">
-            <div class="ranking-header-flex">
-              <h3 class="ranking-section-title">LPs por Audição</h3>
-              <div class="ranking-stats-summary" id="ranking-stats-summary">
-                <span class="ranking-stats-prefix">Discos ouvidos:</span>
-                <div class="stat-mini-card">
-                  <div class="mini-card-label">Semana</div>
-                  <div class="mini-card-value" id="ranking-stat-week">0</div>
-                </div>
-                <div class="stat-mini-card">
-                  <div class="mini-card-label">Mês</div>
-                  <div class="mini-card-value" id="ranking-stat-month">0</div>
-                </div>
-                <div class="stat-mini-card">
-                  <div class="mini-card-label">Total</div>
-                  <div class="mini-card-value" id="ranking-stat-total">0</div>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Weekly Activity Section -->
-            <div class="weekly-activity-section">
-              <h4 class="weekly-activity-title">Audições por Dia da Semana (Esta Semana)</h4>
-              <div id="weekly-activity-grid" class="weekly-activity-grid">
-                <!-- Dynamically populated 7 days -->
-              </div>
-            </div>
-
-            <div id="plays-chart-container" class="ranking-grid custom-chart-list">
-              <!-- Dynamically generated bars -->
-            </div>
+          <!-- Novo Histórico de Audições (Timeline) -->
+          <div id="plays-history-container" class="plays-history-timeline">
+            <!-- Dynamically populated timeline elements -->
           </div>
 
-          <!-- Empty State -->
-          <div id="ranking-empty-state" class="empty-state" style="display: none;">
-            <svg viewBox="0 0 24 24" width="64" height="64" stroke="currentColor" stroke-width="1.5" fill="none">
-              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
-              <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
-              <path d="M4 22h16"></path>
-              <path d="M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34"></path>
-              <path d="M12 2a4 4 0 0 1 4 4v7a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4Z"></path>
-            </svg>
-            <h3>Nenhum disco ouvido ainda</h3>
-            <p>Escute discos através da agenda da semana ou marque-os na sua coleção para iniciar o ranking!</p>
+          <!-- Mantido oculto por compatibilidade de testes ou fallback -->
+          <div style="display: none;">
+            <h3 class="ranking-section-title">LPs por Audição</h3>
+            <div id="plays-chart-container"></div>
           </div>
         </div>
       </section>
@@ -387,6 +362,53 @@
           <h3>Nenhum disco encontrado</h3>
           <p>Tente ajustar os termos de busca ou remover os filtros ativos.</p>
           <button id="empty-reset-btn" class="btn btn-primary">Limpar Todos os Filtros</button>
+        </div>
+      </section>
+
+      <!-- VIEW: FAVORITES (Discos Favoritos) -->
+      <section id="view-favorites" class="content-view">
+        <div class="catalog-toolbar">
+          <div class="toolbar-left">
+            <span class="results-text">Exibindo <span id="favorites-filtered-count">0</span> favoritos</span>
+          </div>
+          
+          <div class="toolbar-search">
+            <div class="search-box">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="search-icon">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" id="favorites-search-input" placeholder="Buscar nos favoritos..." autocomplete="off">
+              <button id="clear-favorites-search-btn" class="clear-search-btn" title="Limpar busca" style="display: none;">&times;</button>
+            </div>
+          </div>
+
+          <div class="toolbar-right">
+            <label for="favorites-sort-select">Ordenar por:</label>
+            <select id="favorites-sort-select">
+              <option value="added_desc">Adicionado recentemente</option>
+              <option value="added_asc">Mais antigo na coleção</option>
+              <option value="year_desc">Ano de Lançamento (Novo-Antigo)</option>
+              <option value="year_asc">Ano de Lançamento (Antigo-Novo)</option>
+              <option value="title_asc">Título (A-Z)</option>
+              <option value="artist_asc">Artista (A-Z)</option>
+              <option value="rating_desc">Avaliação (Maior-Menor)</option>
+              <option value="plays_desc">Audições (Maior-Menor)</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="favorites-grid" class="lp-grid">
+          <!-- Cards dynamically populated -->
+        </div>
+
+        <!-- Empty state -->
+        <div id="favorites-empty-state" class="empty-state" style="display: none;">
+          <svg viewBox="0 0 24 24" width="64" height="64" stroke="var(--star-gold)" stroke-width="1.5" fill="none">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" stroke-dasharray="4,4"></polygon>
+          </svg>
+          <h3>Nenhum disco favoritado</h3>
+          <p>Você ainda não favoritou nenhum disco. Clique na estrela dos discos na coleção para adicioná-los aqui!</p>
         </div>
       </section>
 
@@ -700,6 +722,10 @@
               <div class="details-label">Lançamento</div>
               <div id="details-year" class="details-value">0000</div>
             </div>
+            <div class="details-item" id="details-edition-year-container">
+              <div class="details-label">Ano da Edição</div>
+              <div id="details-edition-year" class="details-value">0000</div>
+            </div>
             <div class="details-item">
               <div class="details-label">Gravadora / Selo</div>
               <div id="details-label-name" class="details-value">-</div>
@@ -822,6 +848,10 @@
               <div class="form-group flex-1">
                 <label for="form-year">Ano de Lançamento</label>
                 <input type="number" id="form-year" min="1900" max="2100" placeholder="Ex: 1984">
+              </div>
+              <div class="form-group flex-1">
+                <label for="form-edition-year">Ano da Edição</label>
+                <input type="number" id="form-edition-year" min="1900" max="2100" placeholder="Ex: 2016">
               </div>
             </div>
 

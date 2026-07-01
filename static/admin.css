@@ -1706,22 +1706,55 @@ body {
   transform: scale(1.06);
 }
 
-.lp-card-starred-badge {
+.lp-card-fav-btn {
   position: absolute;
   top: 8px;
   right: 8px;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.65);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 50%;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--star-gold);
+  color: var(--text-secondary);
   box-shadow: var(--shadow-sm);
-  z-index: 2;
+  z-index: 3;
+  cursor: pointer;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity var(--transition-fast), transform var(--transition-fast), background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.lp-card:hover .lp-card-fav-btn,
+.lp-card-fav-btn.active {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.lp-card-fav-btn.active {
+  color: var(--star-gold);
+  border-color: rgba(255, 204, 0, 0.3);
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.lp-card-fav-btn:hover {
+  background: rgba(0, 0, 0, 0.95);
+  transform: scale(1.1) !important;
+}
+
+.lp-card-fav-btn:active {
+  transform: scale(0.9) !important;
+}
+
+.lp-card.fade-out {
+  opacity: 0;
+  transform: scale(0.8) translateY(10px);
+  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+  pointer-events: none;
 }
 
 .lp-card-info {
@@ -3339,4 +3372,196 @@ dialog::backdrop {
 .ranking-stats-summary .mini-card-value {
   font-size: 1.4rem;
   line-height: 1.2;
+}
+
+/* Plays History Timeline */
+.plays-history-timeline {
+  padding-left: 10px;
+  margin-top: 10px;
+}
+
+.history-month-group {
+  margin-bottom: 16px;
+  border-left: 2px solid var(--primary-dark);
+  padding-left: 20px;
+  position: relative;
+}
+
+.history-month-summary {
+  list-style: none;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  user-select: none;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  transition: background 0.2s;
+  margin-left: -10px;
+}
+
+.history-month-summary::-webkit-details-marker {
+  display: none;
+}
+
+.history-month-summary::before {
+  content: '';
+  position: absolute;
+  left: -7px;
+  top: 15px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 2px solid var(--primary);
+  z-index: 1;
+}
+
+.history-month-group[open] > .history-month-summary::before {
+  background: var(--primary);
+  box-shadow: 0 0 8px var(--primary);
+}
+
+.history-month-summary:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.history-month-summary::after {
+  content: '▼';
+  font-size: 0.6rem;
+  margin-left: 8px;
+  opacity: 0.5;
+  transition: transform 0.2s;
+}
+
+.history-month-group[open] > .history-month-summary::after {
+  transform: rotate(-180deg);
+}
+
+.history-week-group {
+  margin-top: 12px;
+  margin-left: 4px;
+  border-left: 2px solid rgba(255, 255, 255, 0.1);
+  padding-left: 16px;
+  position: relative;
+}
+
+.history-week-summary {
+  list-style: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  user-select: none;
+  padding: 6px 0;
+}
+
+.history-week-summary::-webkit-details-marker {
+  display: none;
+}
+
+.history-week-summary::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 10px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.history-week-group[open] > .history-week-summary::before {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.history-week-summary:hover {
+  color: #fff;
+}
+
+.history-week-summary::after {
+  content: '▼';
+  font-size: 0.55rem;
+  margin-left: 6px;
+  opacity: 0.5;
+  transition: transform 0.2s;
+}
+
+.history-week-group[open] > .history-week-summary::after {
+  transform: rotate(-180deg);
+}
+
+.history-plays-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  margin-bottom: 8px;
+}
+
+.history-play-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.history-play-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.history-play-cover {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.history-play-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.history-play-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.history-play-artist {
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.history-play-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.history-play-count {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  font-weight: 500;
 }
