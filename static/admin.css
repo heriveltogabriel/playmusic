@@ -3376,7 +3376,7 @@ dialog::backdrop {
 
 /* Plays History Timeline */
 .plays-history-timeline {
-  padding-left: 10px;
+  padding-left: 24px;
   margin-top: 10px;
 }
 
@@ -3392,13 +3392,13 @@ dialog::backdrop {
   box-sizing: border-box;
 }
 
-/* Bola do mês posicionada em relação ao history-month-group (alinhamento absoluto garantido) */
+/* Bola do mês — ancoragem no mesmo X da linha (left: 1px), autocentrada com translate(-50%, -50%) */
 .history-month-group::before {
   content: '';
   position: absolute;
-  left: -9px; /* Centralizado com a linha a left: 0 (largura total 20px, centro em 1px) */
-  top: 18px; /* Alinhado ao centro vertical do summary do mês */
-  transform: translateY(-50%);
+  left: 1px;
+  top: 18px;
+  transform: translate(-50%, -50%);
   width: 14px;
   height: 14px;
   border-radius: 50%;
@@ -3408,13 +3408,13 @@ dialog::backdrop {
   z-index: 2;
 }
 
-/* Linha do mês */
+/* Linha do mês — centro em left: 1px (width 2px, left 0) */
 .history-month-group::after {
   content: '';
   position: absolute;
   left: 0;
-  top: 18px; /* Alinhado ao centro vertical do summary (18px) */
-  bottom: -34px; /* Conecta com o próximo mês (margin 16px + top do próximo 18px = 34px) */
+  top: 18px;
+  bottom: -34px;
   width: 2px;
   background: var(--primary);
   z-index: 0;
@@ -3477,13 +3477,13 @@ dialog::backdrop {
   box-sizing: border-box;
 }
 
-/* Bola da semana posicionada em relação ao history-week-group (alinhamento absoluto garantido) */
+/* Bola da semana — ancoragem no mesmo X da linha (left: 1px), autocentrada com translate(-50%, -50%) */
 .history-week-group::before {
   content: '';
   position: absolute;
-  left: -7px; /* Centralizado com a linha a left: 0 (largura total 16px, centro em 1px) */
-  top: 13px; /* Alinhado ao centro vertical do summary da semana */
-  transform: translateY(-50%);
+  left: 1px;
+  top: 13px;
+  transform: translate(-50%, -50%);
   width: 10px;
   height: 10px;
   border-radius: 50%;
@@ -3493,12 +3493,12 @@ dialog::backdrop {
   z-index: 2;
 }
 
-/* Linha da semana - Aparece apenas quando aberta e desvanece no final! */
+/* Linha da semana — centro em left: 1px (width 2px, left 0). Desvanece no fim. */
 .history-week-group[open]::after {
   content: '';
   position: absolute;
   left: 0;
-  top: 13px; /* Alinhado ao centro vertical do summary da semana */
+  top: 13px;
   bottom: 0;
   width: 2px;
   background: linear-gradient(to bottom, var(--primary) 0%, var(--primary) 70%, transparent 100%);
