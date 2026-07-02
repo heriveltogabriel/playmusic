@@ -3392,20 +3392,23 @@ dialog::backdrop {
   box-sizing: border-box;
 }
 
-/* Bola do mês — ancoragem no mesmo X da linha (left: 1px), autocentrada com translate(-50%, -50%) */
+/* Bola do mês — estilo: laranja sólido → anel preto → glow laranja externo */
 .history-month-group::before {
   content: '';
   position: absolute;
   left: 1px;
   top: 18px;
   transform: translate(-50%, -50%);
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
   background: var(--primary);
-  border: 3px solid var(--bg);
-  box-shadow: 0 0 12px rgba(230, 92, 0, 0.6);
-  z-index: 2;
+  border: 4px solid #0a0a0a;
+  box-shadow:
+    0 0 0 2px var(--primary),
+    0 0 18px 4px rgba(230, 92, 0, 0.7),
+    0 0 36px 8px rgba(230, 92, 0, 0.25);
+  z-index: 3;
 }
 
 /* Linha do mês — centro em left: 1px (width 2px, left 0) */
@@ -3477,20 +3480,23 @@ dialog::backdrop {
   box-sizing: border-box;
 }
 
-/* Bola da semana — ancoragem no mesmo X da linha (left: 1px), autocentrada com translate(-50%, -50%) */
+/* Bola da semana — estilo: laranja sólido → anel preto → glow laranja externo */
 .history-week-group::before {
   content: '';
   position: absolute;
   left: 1px;
   top: 13px;
   transform: translate(-50%, -50%);
-  width: 10px;
-  height: 10px;
+  width: 11px;
+  height: 11px;
   border-radius: 50%;
   background: var(--primary);
-  border: 3px solid var(--bg);
-  box-shadow: 0 0 8px rgba(230, 92, 0, 0.5);
-  z-index: 2;
+  border: 3px solid #0a0a0a;
+  box-shadow:
+    0 0 0 1.5px var(--primary),
+    0 0 12px 3px rgba(230, 92, 0, 0.6),
+    0 0 24px 6px rgba(230, 92, 0, 0.2);
+  z-index: 3;
 }
 
 /* Linha da semana — centro em left: 1px (width 2px, left 0). Desvanece no fim. */
