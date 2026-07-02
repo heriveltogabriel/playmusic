@@ -3391,8 +3391,8 @@ dialog::backdrop {
   content: '';
   position: absolute;
   left: 0;
-  top: 22px;
-  bottom: -38px; /* Conecta com o próximo mês cobrindo o margin-bottom (16px) e alcançando a bola seguinte (22px) */
+  top: 18px; /* Alinhado ao centro vertical do summary (18px) */
+  bottom: -34px; /* Conecta com o próximo mês (margin 16px + top do próximo 18px = 34px) */
   width: 2px;
   background: var(--primary);
   z-index: 0;
@@ -3402,21 +3402,6 @@ dialog::backdrop {
 .history-month-group:last-child::after {
   bottom: 0;
   background: linear-gradient(to bottom, var(--primary) 0%, transparent 100%);
-}
-
-/* Bola do mês */
-.history-month-group::before {
-  content: '';
-  position: absolute;
-  left: -9px;
-  top: 15px;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--primary);
-  border: 3px solid var(--bg);
-  box-shadow: 0 0 12px rgba(230, 92, 0, 0.6);
-  z-index: 2;
 }
 
 .history-month-summary {
@@ -3435,6 +3420,22 @@ dialog::backdrop {
   border-radius: 8px;
   transition: background 0.2s;
   position: relative;
+  z-index: 2;
+}
+
+/* Bola do mês posicionada em relação ao summary (alinhamento garantido) */
+.history-month-summary::before {
+  content: '';
+  position: absolute;
+  left: -37px; /* Centralizado na linha (padding 28px + 10px metade da largura da bola) */
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 3px solid var(--bg);
+  box-shadow: 0 0 12px rgba(230, 92, 0, 0.6);
   z-index: 2;
 }
 
@@ -3469,26 +3470,11 @@ dialog::backdrop {
   content: '';
   position: absolute;
   left: 0;
-  top: 14px;
+  top: 13px; /* Alinhado ao centro vertical do summary da semana */
   bottom: 0;
   width: 2px;
   background: linear-gradient(to bottom, var(--primary) 0%, var(--primary) 70%, transparent 100%);
   z-index: 0;
-}
-
-/* Bola da semana */
-.history-week-group::before {
-  content: '';
-  position: absolute;
-  left: -7px;
-  top: 10px;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--primary);
-  border: 3px solid var(--bg);
-  box-shadow: 0 0 8px rgba(230, 92, 0, 0.5);
-  z-index: 2;
 }
 
 .history-week-summary {
@@ -3504,6 +3490,22 @@ dialog::backdrop {
   user-select: none;
   padding: 6px 0;
   position: relative;
+  z-index: 2;
+}
+
+/* Bola da semana posicionada em relação ao summary (alinhamento garantido) */
+.history-week-summary::before {
+  content: '';
+  position: absolute;
+  left: -31px; /* Centralizado na linha (padding 24px + 8px metade da largura da bola) */
+  top: 50%;
+  transform: translateY(-50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 3px solid var(--bg);
+  box-shadow: 0 0 8px rgba(230, 92, 0, 0.5);
   z-index: 2;
 }
 
