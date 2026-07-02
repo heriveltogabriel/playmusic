@@ -3382,9 +3382,35 @@ dialog::backdrop {
 
 .history-month-group {
   margin-bottom: 16px;
-  border-left: 2px solid var(--primary-dark);
-  padding-left: 20px;
+  padding-left: 28px;
   position: relative;
+}
+
+/* Linha do mês */
+.history-month-group::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 22px;
+  bottom: 0;
+  width: 2px;
+  background: var(--primary);
+  z-index: 0;
+}
+
+/* Bola do mês */
+.history-month-group::before {
+  content: '';
+  position: absolute;
+  left: -7px;
+  top: 15px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 10px var(--primary);
+  z-index: 2;
 }
 
 .history-month-summary {
@@ -3402,29 +3428,12 @@ dialog::backdrop {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
   transition: background 0.2s;
-  margin-left: -10px;
+  position: relative;
+  z-index: 2;
 }
 
 .history-month-summary::-webkit-details-marker {
   display: none;
-}
-
-.history-month-summary::before {
-  content: '';
-  position: absolute;
-  left: -7px;
-  top: 15px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--bg);
-  border: 2px solid var(--primary);
-  z-index: 1;
-}
-
-.history-month-group[open] > .history-month-summary::before {
-  background: var(--primary);
-  box-shadow: 0 0 8px var(--primary);
 }
 
 .history-month-summary:hover {
@@ -3445,10 +3454,35 @@ dialog::backdrop {
 
 .history-week-group {
   margin-top: 12px;
-  margin-left: 4px;
-  border-left: 2px solid rgba(255, 255, 255, 0.1);
-  padding-left: 16px;
+  padding-left: 24px;
   position: relative;
+}
+
+/* Linha da semana */
+.history-week-group::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 0;
+  width: 2px;
+  background: var(--primary);
+  z-index: 0;
+}
+
+/* Bola da semana */
+.history-week-group::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 10px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 6px rgba(255, 115, 0, 0.5);
+  z-index: 2;
 }
 
 .history-week-summary {
@@ -3463,27 +3497,12 @@ dialog::backdrop {
   align-items: center;
   user-select: none;
   padding: 6px 0;
+  position: relative;
+  z-index: 2;
 }
 
 .history-week-summary::-webkit-details-marker {
   display: none;
-}
-
-.history-week-summary::before {
-  content: '';
-  position: absolute;
-  left: -5px;
-  top: 10px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--bg);
-  border: 2px solid rgba(255, 255, 255, 0.3);
-}
-
-.history-week-group[open] > .history-week-summary::before {
-  background: var(--primary);
-  border-color: var(--primary);
 }
 
 .history-week-summary:hover {
@@ -3519,6 +3538,22 @@ dialog::backdrop {
   padding: 8px 12px;
   border-radius: 8px;
   transition: background 0.2s;
+  position: relative;
+}
+
+/* Bola do LP */
+.history-play-item::before {
+  content: '';
+  position: absolute;
+  left: -28px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #666;
+  border: 2px solid var(--bg);
+  z-index: 2;
 }
 
 .history-play-item:hover {
