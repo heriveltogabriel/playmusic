@@ -3392,10 +3392,16 @@ dialog::backdrop {
   position: absolute;
   left: 0;
   top: 22px;
-  bottom: 0;
+  bottom: -16px; /* Conecta com o próximo mês cobrindo o margin-bottom */
   width: 2px;
   background: var(--primary);
   z-index: 0;
+}
+
+/* O último mês não precisa conectar com nada abaixo, então a linha desvanece */
+.history-month-group:last-child::after {
+  bottom: 0;
+  background: linear-gradient(to bottom, var(--primary) 0%, transparent 100%);
 }
 
 /* Bola do mês */
@@ -3404,12 +3410,12 @@ dialog::backdrop {
   position: absolute;
   left: -7px;
   top: 15px;
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  background: var(--primary);
-  border: 2px solid var(--bg);
-  box-shadow: 0 0 10px var(--primary);
+  background: var(--bg);
+  border: 3px solid var(--primary);
+  box-shadow: 0 0 12px rgba(230, 92, 0, 0.6);
   z-index: 2;
 }
 
@@ -3458,15 +3464,15 @@ dialog::backdrop {
   position: relative;
 }
 
-/* Linha da semana */
-.history-week-group::after {
+/* Linha da semana - Aparece apenas quando aberta e desvanece no final! */
+.history-week-group[open]::after {
   content: '';
   position: absolute;
   left: 0;
   top: 14px;
   bottom: 0;
   width: 2px;
-  background: var(--primary);
+  background: linear-gradient(to bottom, var(--primary) 0%, var(--primary) 70%, transparent 100%);
   z-index: 0;
 }
 
@@ -3476,12 +3482,12 @@ dialog::backdrop {
   position: absolute;
   left: -5px;
   top: 10px;
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: var(--primary);
-  border: 2px solid var(--bg);
-  box-shadow: 0 0 6px rgba(255, 115, 0, 0.5);
+  border: 3px solid var(--bg);
+  box-shadow: 0 0 8px rgba(230, 92, 0, 0.5);
   z-index: 2;
 }
 
