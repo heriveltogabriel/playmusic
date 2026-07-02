@@ -69,6 +69,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderSelectedAgendaLp();
   renderHistoryRanking();
   renderPlaysRankingPage();
+  renderWeeklyHistory();
   
   // Initial render
   applyFiltersAndRender();
@@ -176,6 +177,7 @@ function initializeViews() {
       } else if (targetView === 'ranking') {
         viewTitle.textContent = 'Ranking de Audições';
         renderPlaysRankingPage();
+  renderWeeklyHistory();
       } else if (targetView === 'timeline') {
         viewTitle.textContent = 'Linha do Tempo';
         renderTimeline();
@@ -194,6 +196,7 @@ function initializeViews() {
         renderFavoritesGrid();
       } else if (targetView === 'ranking') {
         renderPlaysRankingPage();
+  renderWeeklyHistory();
       } else if (targetView === 'timeline') {
         renderTimeline();
       }
@@ -794,6 +797,7 @@ async function markAsListened(id) {
       // Rerender history ranking and plays ranking page
       renderHistoryRanking();
       renderPlaysRankingPage();
+  renderWeeklyHistory();
       
       if (state.currentView === 'catalog') {
         renderGrid();
@@ -848,6 +852,7 @@ async function unmarkAsListened(id) {
     updateDetailsAuditionControls(lp);
     renderHistoryRanking();
     renderPlaysRankingPage();
+  renderWeeklyHistory();
 
     if (state.currentView === 'catalog') {
       renderGrid();
@@ -4141,3 +4146,153 @@ function renderPlaysHistory() {
     body: container.outerHTML
   }).catch(e => console.error("Erro ao enviar DOM de debug:", e));
 }
+
+// ==================== HISTÓRICO SEMANAL (GRÁFICO) ====================
+function renderWeeklyHistory() {
+  const chartContainer = document.getElementById('weekly-history-chart');
+  const listContainer = document.getElementById('weekly-history-list');
+  if (!chartContainer || !listContainer) return;
+  
+  if (state.lps.length === 0) {
+    chartContainer.innerHTML = '';
+    listContainer.innerHTML = '';
+    return;
+  }
+
+  // 1. Agrupar audições por semana (iniciando no domingo)
+  const weeksMap = {};
+  
+  state.lps.forEach(lp => {
+    if (lp.listen_dates && Array.isArray(lp.listen_dates)) {
+      lp.listen_dates.forEach(ds => {
+        try {
+          const d = new Date(ds);
+          if (isNaN(d.getTime())) return;
+          
+          const startOfWeek = new Date(d);
+          startOfWeek.setDate(d.getDate() - d.getDay());
+          startOfWeek.setHours(0, 0, 0, 0);
+          
+          const weekKey = startOfWeek.getTime();
+          if (!weeksMap[weekKey]) {
+            weeksMap[weekKey] = {
+              startDate: startOfWeek,
+              plays: []
+            };
+          }
+          weeksMap[weekKey].plays.push({ lp, dateObj: d });
+        } catch (e) {}
+      });
+    }
+  });
+
+  // 2. Extrair e ordenar chaves (do mais antigo para o mais novo)
+  const sortedWeekKeys = Object.keys(weeksMap).map(Number).sort((a, b) => a - b);
+  
+  // Pegar as últimas 5 semanas com audições
+  const recentWeekKeys = sortedWeekKeys.slice(-5);
+  if (recentWeekKeys.length === 0) {
+    chartContainer.innerHTML = '<p class="text-muted">Nenhum histórico disponível.</p>';
+    listContainer.innerHTML = '';
+    return;
+  }
+
+  // 3. Montar o Gráfico de Barras
+  const maxPlays = Math.max(...recentWeekKeys.map(k => weeksMap[k].plays.length), 1);
+  
+  chartContainer.innerHTML = '';
+  
+  const now = new Date();
+  const currentWeekStart = new Date(now);
+  currentWeekStart.setDate(now.getDate() - now.getDay());
+  currentWeekStart.setHours(0, 0, 0, 0);
+  const currentWeekKey = currentWeekStart.getTime();
+
+  recentWeekKeys.forEach(k => {
+    const weekData = weeksMap[k];
+    const count = weekData.plays.length;
+    const heightPercent = Math.max((count / maxPlays) * 100, 10);
+    const isCurrentWeek = k === currentWeekKey;
+    
+    // Format label like "01/07"
+    const startDay = weekData.startDate.getDate().toString().padStart(2, '0');
+    const startMonth = (weekData.startDate.getMonth() + 1).toString().padStart(2, '0');
+    const label = `${startDay}/${startMonth}`;
+    
+    const barHtml = `
+      <div class="weekly-chart-col">
+        <div class="weekly-chart-val">${count}</div>
+        <div class="weekly-chart-bar ${isCurrentWeek ? 'weekly-chart-bar--current' : ''}" style="height: ${heightPercent}%" title="Semana de ${label}"></div>
+        <div class="weekly-chart-label ${isCurrentWeek ? 'weekly-chart-label--current' : ''}">${label}</div>
+      </div>
+    `;
+    chartContainer.insertAdjacentHTML('beforeend', barHtml);
+  });
+
+  // 4. Montar a lista de cards (do mais novo para o mais antigo)
+  listContainer.innerHTML = '';
+  const reversedKeys = [...recentWeekKeys].reverse();
+  
+  reversedKeys.forEach(k => {
+    const weekData = weeksMap[k];
+    const isCurrentWeek = k === currentWeekKey;
+    
+    // Sort plays in the week descending
+    weekData.plays.sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime());
+    
+    // Format full date range for summary
+    const d1 = weekData.startDate;
+    const d2 = new Date(d1);
+    d2.setDate(d1.getDate() + 6);
+    
+    const fmt = d => `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+    const rangeText = `${fmt(d1)} a ${fmt(d2)}`;
+    
+    const titleText = isCurrentWeek ? `Esta Semana (${rangeText})` : `Semana de ${rangeText}`;
+    
+    const details = document.createElement('details');
+    details.className = 'weekly-history-details';
+    if (isCurrentWeek) details.open = true;
+    
+    const summary = document.createElement('summary');
+    summary.className = 'weekly-history-summary';
+    summary.innerHTML = `
+      <div class="weekly-history-summary-left">
+        <span class="weekly-history-summary-title">${titleText}</span>
+      </div>
+      <div class="weekly-history-summary-right">
+        <span class="weekly-history-summary-count">${weekData.plays.length} audições</span>
+      </div>
+    `;
+    details.appendChild(summary);
+    
+    const playsList = document.createElement('div');
+    playsList.className = 'weekly-history-plays-list';
+    
+    weekData.plays.forEach(item => {
+      const lp = item.lp;
+      const dayName = AGENDA_DAYS[item.dateObj.getDay()];
+      const hm = `${item.dateObj.getHours().toString().padStart(2,'0')}:${item.dateObj.getMinutes().toString().padStart(2,'0')}`;
+      const defaultCover = 'https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=200&auto=format&fit=crop';
+      
+      const playHtml = `
+        <div class="history-play-item weekly-history-play-item">
+          <img class="history-play-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.src='${defaultCover}'">
+          <div class="history-play-details">
+            <div class="history-play-title" title="${lp.title}">${lp.title}</div>
+            <div class="history-play-artist" title="${lp.artist}">${lp.artist}</div>
+            <div class="history-play-meta">
+              <svg viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+              ouvido na ${dayName} às ${hm}
+            </div>
+          </div>
+        </div>
+      `;
+      playsList.insertAdjacentHTML('beforeend', playHtml);
+    });
+    
+    details.appendChild(playsList);
+    listContainer.appendChild(details);
+  });
+}
+
