@@ -3431,7 +3431,7 @@ dialog::backdrop {
 }
 /* Hover no summary do mês → bola laranja cresce com bounce */
 .history-month-group:has(.history-month-summary:hover)::before {
-  transform: translate(-50%, -50%) scale(1.45);
+  transform: translate(-50%, -50%) scale(1.2);
   box-shadow:
     0 0 0 2px var(--primary),
     0 0 24px 8px rgba(230, 92, 0, 0.9),
@@ -3522,7 +3522,7 @@ dialog::backdrop {
 }
 /* Hover no summary da semana → bola laranja cresce com bounce */
 .history-week-group:has(.history-week-summary:hover)::before {
-  transform: translate(-50%, -50%) scale(1.5);
+  transform: translate(-50%, -50%) scale(1.2);
   box-shadow:
     0 0 0 1.5px var(--primary),
     0 0 16px 5px rgba(230, 92, 0, 0.85),
@@ -3611,7 +3611,7 @@ dialog::backdrop {
 
 /* Hover no card do LP → bola cinza cresce e ilumina */
 .history-play-item:hover::before {
-  transform: translate(-50%, -50%) scale(1.7);
+  transform: translate(-50%, -50%) scale(1.25);
   background: #bbb;
   box-shadow:
     0 0 0 1.5px #999,
