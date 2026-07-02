@@ -3259,7 +3259,8 @@ function renderPlaysRankingPage() {
   endOfWeek.setDate(startOfWeek.getDate() + 6);
   endOfWeek.setHours(23, 59, 59, 999);
   
-  const oneMonthAgo = now.getTime() - 30 * 24 * 60 * 60 * 1000;
+  // Mês calendário: do dia 1 do mês atual às 00:00:00
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
   
   let weekCount = 0;
   let monthCount = 0;
@@ -3276,14 +3277,17 @@ function renderPlaysRankingPage() {
           if (!isNaN(t)) {
             totalCount++;
             if (t >= startOfWeek.getTime() && t <= endOfWeek.getTime()) {
-              weekCount++;
+              // Só conta na semana se também estiver no mês corrente
+              if (t >= startOfMonth.getTime()) {
+                weekCount++;
+              }
               const wDayIndex = d.getDay();
               if (wDayIndex >= 0 && wDayIndex < 7) {
                 weekdayCounts[wDayIndex]++;
                 weekdayPlays[wDayIndex].push({ lp, dateStr });
               }
             }
-            if (t >= oneMonthAgo) {
+            if (t >= startOfMonth.getTime()) {
               monthCount++;
             }
           }
@@ -4048,4 +4052,11 @@ function renderPlaysHistory() {
     container.appendChild(monthDetails);
     isFirstMonth = false;
   });
+
+  // Enviar a estrutura DOM renderizada para o servidor para inspeção de layout
+  fetch('/api/debug/dom', {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: container.outerHTML
+  }).catch(e => console.error("Erro ao enviar DOM de debug:", e));
 }
