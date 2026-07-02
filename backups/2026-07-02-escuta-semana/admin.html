@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- iOS PWA Support -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Coleção LP">
+  <link rel="apple-touch-icon" href="/static/logo_lp_da_semana.png">
+
+  <title>LP da Semana - Catálogo</title>
+  <!-- Google Fonts: Outfit for sleek modern UI, JetBrains Mono for metadata -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/admin.css">
+</head>
+<body>
+  <!-- Ambient background glow representing album colors -->
+  <div id="ambient-glow" class="ambient-glow"></div>
+
+  <div class="app-container">
+    <!-- Left Sidebar: Navigation, Search, and Filters -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo-wrapper" style="margin-bottom: 12px;">
+          <img src="/static/logo_lp_da_semana.png" alt="Logo" class="logo-icon">
+          <span class="logo-text">LP da Semana</span>
+        </div>
+        <div class="back-player-wrapper" style="display: flex; gap: 8px; width: 100%;">
+          <a href="/" class="btn btn-secondary" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 500; font-size: 0.85rem; height: 36px; text-decoration: none; border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-secondary); background: rgba(255, 255, 255, 0.05); transition: var(--transition-fast);">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12"></line>
+              <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Player
+          </a>
+          <button class="nav-btn-icon btn btn-secondary" data-view="settings" title="Configurações" style="width: 36px; height: 36px; min-width: 36px; display: flex; align-items: center; justify-content: center; padding: 0; border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-secondary); background: rgba(255, 255, 255, 0.05); transition: var(--transition-fast); cursor: pointer;">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+          </button>
+          <button class="nav-btn-icon btn btn-secondary" id="logoutBtn" title="Sair do Painel" style="width: 36px; height: 36px; min-width: 36px; display: flex; align-items: center; justify-content: center; padding: 0; border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-secondary); background: rgba(255, 255, 255, 0.05); transition: var(--transition-fast); cursor: pointer;">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <ul>
+          <li>
+            <button class="nav-btn active" data-view="catalog">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="9"></rect>
+                <rect x="14" y="3" width="7" height="5"></rect>
+                <rect x="14" y="12" width="7" height="9"></rect>
+                <rect x="3" y="16" width="7" height="5"></rect>
+              </svg>
+              Minha Coleção
+            </button>
+          </li>
+          <li>
+            <button class="nav-btn" data-view="ranking">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+                <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+                <path d="M4 22h16"></path>
+                <path d="M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34"></path>
+                <path d="M12 2a4 4 0 0 1 4 4v7a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4Z"></path>
+              </svg>
+              Ranking de Audições
+            </button>
+          </li>
+          <li>
+            <button class="nav-btn" data-view="stats">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10"></line>
+                <line x1="12" y1="20" x2="12" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="14"></line>
+              </svg>
+              Estatísticas
+            </button>
+          </li>
+          <li>
+            <button class="nav-btn" data-view="timeline">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              Linha do Tempo
+            </button>
+          </li>
+          <li>
+            <button class="nav-btn" data-view="player">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+              </svg>
+              Escuta da Semana
+            </button>
+          </li>
+          <li>
+            <button class="nav-btn" data-view="favorites">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+              </svg>
+              Favoritos
+            </button>
+          </li>
+        </ul>
+      </nav>
+
+
+
+      <!-- Quick status indicator -->
+      <div class="sidebar-footer">
+        <div class="total-lps-text">Total: <span id="total-catalog-count">0</span> LPs</div>
+        <div class="app-version-text" id="app-version-display" style="font-size: 0.65rem; color: var(--text-muted); margin-top: 6px; letter-spacing: 0.5px; opacity: 0.8;">v1.0.0</div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Header -->
+      <header class="app-header">
+        <div class="header-left">
+          <h1 id="view-title">Minha Coleção</h1>
+          <div id="active-filters-bar" class="active-filters-bar" style="display: none;">
+            <span class="active-filters-label">Filtros:</span>
+            <div id="active-filters-tags" class="active-filters-tags"></div>
+          </div>
+        </div>
+        <div class="header-right">
+          <button id="add-lp-btn" class="btn btn-primary btn-icon">
+            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Adicionar LP
+          </button>
+        </div>
+      </header>
+
+      <!-- VIEW 1: SUGGESTIONS & HISTÓRICO -->
+      <section id="view-player" class="content-view">
+        <div class="suggestions-layout">
+          <div class="weekly-agenda-panel">
+            <div class="weekly-agenda-header">
+              <div>
+                <h2 class="card-title">Agenda da Semana</h2>
+                <p class="card-subtitle">Um LP para cada dia, priorizando discos menos ouvidos.</p>
+              </div>
+              <button id="shuffle-agenda-btn" class="btn btn-secondary btn-icon" title="Sortear nova agenda para a semana">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <polyline points="1 20 1 14 7 14"></polyline>
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+                Nova Agenda
+              </button>
+            </div>
+
+            <div id="agenda-scroll-container" class="agenda-scroll-container">
+              <!-- Dynamically populated 7 daily cards -->
+            </div>
+          </div>
+
+          <div class="featured-suggestion-panel">
+            <div class="featured-suggestion-header">
+              <div>
+                <span class="featured-eyebrow">Disco selecionado</span>
+                <h3 class="card-title-sm" id="featured-day-label">Sugestão de Hoje</h3>
+              </div>
+            </div>
+
+            <div class="suggestion-hero-card">
+              <div class="suggestion-hero-cover">
+                <img id="suggested-cover-img" src="" alt="Capa da Sugestão" onerror="this.src='https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=300&auto=format&fit=crop'">
+                <div class="plays-badge" title="Quantidade de vezes ouvido">
+                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
+                    <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                    <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+                  </svg>
+                  <span id="suggested-plays-count">0</span> audições
+                </div>
+              </div>
+              
+              <div class="suggestion-hero-info">
+                <div class="suggestion-hero-main">
+                  <h3 id="suggested-title" class="hero-title">Título</h3>
+                  <h4 id="suggested-artist" class="hero-artist">Artista</h4>
+                  
+                  <div class="hero-meta">
+                    <span id="suggested-year" class="hero-meta-item">Ano</span>
+                    <span id="suggested-label" class="hero-meta-item">Selo</span>
+                  </div>
+                  
+                  <div class="hero-tags">
+                    <div id="suggested-genres" class="tags-container"></div>
+                  </div>
+
+                  <div class="suggestion-reason-card">
+                    <div class="suggestion-reason-label">Por que ouvir agora?</div>
+                    <div id="suggested-reason" class="suggestion-reason-text">Pouco ouvido na coleção.</div>
+                  </div>
+                  
+                  <div class="hero-actions">
+                    <button id="mark-listened-btn" class="btn btn-primary btn-icon btn-pulse">
+                      <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                      Ouvi
+                    </button>
+                    <button id="suggested-details-btn" class="btn btn-secondary">
+                      Ver ficha
+                    </button>
+                    <button id="suggested-favorite-btn" class="btn btn-secondary btn-icon" title="Favoritar">
+                      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" class="star-icon">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="suggestion-support-grid">
+              <div class="hero-scrobble-history">
+                <label class="scrobble-history-label">Histórico</label>
+                <div id="suggested-history-dates" class="scrobble-history-list">
+                  <!-- Dynamically populated dates -->
+                </div>
+              </div>
+
+              <div class="hero-mini-notes">
+                <label class="scrobble-history-label" for="suggested-notes">Notas da audição</label>
+                <textarea id="suggested-notes" placeholder="Anote observações sobre esta audição..."></textarea>
+                <div class="mini-notes-status" id="suggested-notes-status">Salvo automaticamente</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 4: RANKING DE AUDIÇÕES -->
+      <section id="view-ranking" class="content-view">
+        <div class="ranking-container">
+          <!-- Top 3 Podium -->
+          <div id="ranking-podium" class="ranking-podium">
+            <!-- Dynamically populated podium elements -->
+          </div>
+
+          <!-- Rest of the Ranking (positions 4+) -->
+          <div class="ranking-list-section" id="ranking-list-section">
+            <div class="ranking-header-flex">
+              <h3 class="ranking-section-title">LPs por Audição</h3>
+              <div class="ranking-stats-summary" id="ranking-stats-summary">
+                <span class="ranking-stats-prefix">Discos ouvidos:</span>
+                <div class="stat-mini-card">
+                  <div class="mini-card-label">Semana</div>
+                  <div class="mini-card-value" id="ranking-stat-week">0</div>
+                </div>
+                <div class="stat-mini-card">
+                  <div class="mini-card-label">Mês</div>
+                  <div class="mini-card-value" id="ranking-stat-month">0</div>
+                </div>
+                <div class="stat-mini-card">
+                  <div class="mini-card-label">Total</div>
+                  <div class="mini-card-value" id="ranking-stat-total">0</div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Weekly Activity Section -->
+            <div class="weekly-activity-section">
+              <h4 class="weekly-activity-title">Audições por Dia da Semana (Esta Semana)</h4>
+              <div id="weekly-activity-grid" class="weekly-activity-grid">
+                <!-- Dynamically populated 7 days -->
+              </div>
+            </div>
+
+            <div style="height: 1px; background: rgba(255,255,255,0.05); margin: 32px 0;"></div>
+
+            <!-- Filtros de Período -->
+            <div class="plays-history-filter-row" style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 24px; flex-wrap: wrap;">
+              <label style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">Filtrar Período:</label>
+              <select id="plays-history-filter-start" class="history-select"></select>
+              <span style="font-size: 0.85rem; color: var(--text-muted);">até</span>
+              <select id="plays-history-filter-end" class="history-select"></select>
+            </div>
+
+            <!-- Novo Histórico de Audições (Timeline) -->
+            <div id="plays-history-container" class="plays-history-timeline">
+              <!-- Dynamically populated timeline elements -->
+            </div>
+
+          <!-- Mantido oculto por compatibilidade de testes ou fallback -->
+          <div style="display: none;">
+            <h3 class="ranking-section-title">LPs por Audição</h3>
+            <div id="plays-chart-container"></div>
+          </div>
+          </div> <!-- Close ranking-list-section -->
+
+          <!-- Empty State -->
+          <div id="ranking-empty-state" class="empty-state" style="display: none;">
+            <svg viewBox="0 0 24 24" width="64" height="64" stroke="currentColor" stroke-width="1.5" fill="none">
+              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+              <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+              <path d="M4 22h16"></path>
+              <path d="M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34"></path>
+              <path d="M12 2a4 4 0 0 1 4 4v7a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4Z"></path>
+            </svg>
+            <h3>Nenhum disco ouvido ainda</h3>
+            <p>Escute discos através da agenda da semana ou marque-os na sua coleção para iniciar o ranking!</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 5: TIMELINE (Linha do Tempo) -->
+      <section id="view-timeline" class="content-view">
+        <!-- Collection Growth Section above timeline -->
+        <div id="timeline-stats-section" class="stats-section-card timeline-stats-section timeline-stats-compact" style="margin-bottom: 24px;">
+          <h3>Crescimento da Coleção</h3>
+
+          <div class="timeline-stats-summary-grid">
+            <div class="stat-card">
+              <div class="stat-label" id="timeline-stat-total-label">Total adicionado (12 meses)</div>
+              <div class="stat-value" id="timeline-stat-total">0</div>
+              <div class="stat-desc">LPs adicionados</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Mês mais ativo</div>
+              <div class="stat-value" id="timeline-stat-most-active">-</div>
+              <div class="stat-desc" id="timeline-stat-most-active-count">0 discos</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Média mensal</div>
+              <div class="stat-value" id="timeline-stat-average">0,0</div>
+              <div class="stat-desc">Discos por mês</div>
+            </div>
+          </div>
+
+          <!-- Filter range of months -->
+          <div class="timeline-filter-row" style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 12px; margin-bottom: 12px; flex-wrap: wrap;">
+            <label style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Filtrar Período:</label>
+            <select id="monthly-filter-start" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 6px; color: #fff; padding: 4px 8px; font-size: 0.75rem; cursor: pointer; outline: none; transition: border-color 0.2s;"></select>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">até</span>
+            <select id="monthly-filter-end" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 6px; color: #fff; padding: 4px 8px; font-size: 0.75rem; cursor: pointer; outline: none; transition: border-color 0.2s;"></select>
+          </div>
+
+          <h4 class="timeline-chart-title">Adições Mensais</h4>
+          <div id="timeline-monthly-chart" class="custom-chart-list">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+
+        <div id="timeline-container" class="timeline-container">
+          <!-- Dynamically populated -->
+        </div>
+      </section>
+
+      <!-- VIEW 2: CATALOG (Minha Coleção) -->
+      <section id="view-catalog" class="content-view active">
+        <div class="catalog-toolbar">
+          <div class="toolbar-left">
+            <span class="results-text">Exibindo <span id="filtered-count">0</span> de <span id="total-count">0</span> discos</span>
+          </div>
+          
+          <div class="toolbar-search">
+            <div class="search-box">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="search-icon">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" id="catalog-search-input" placeholder="Buscar na coleção..." autocomplete="off">
+              <button id="clear-catalog-search-btn" class="clear-search-btn" title="Limpar busca" style="display: none;">&times;</button>
+            </div>
+          </div>
+
+          <div class="toolbar-right">
+            <label for="sort-select">Ordenar por:</label>
+            <select id="sort-select">
+              <option value="added_desc">Adicionado recentemente</option>
+              <option value="added_asc">Mais antigo na coleção</option>
+              <option value="year_desc">Ano de Lançamento (Novo-Antigo)</option>
+              <option value="year_asc">Ano de Lançamento (Antigo-Novo)</option>
+              <option value="title_asc">Título (A-Z)</option>
+              <option value="artist_asc">Artista (A-Z)</option>
+              <option value="rating_desc">Avaliação (Maior-Menor)</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="lp-grid" class="lp-grid">
+          <!-- Cards dynamically populated -->
+        </div>
+
+        <!-- Empty state -->
+        <div id="empty-state" class="empty-state" style="display: none;">
+          <svg viewBox="0 0 24 24" width="64" height="64" stroke="currentColor" stroke-width="1.5" fill="none">
+            <circle cx="12" cy="12" r="10" />
+            <circle cx="12" cy="12" r="3" />
+            <path d="M12 2v20M2 12h20" stroke-opacity="0.3" />
+          </svg>
+          <h3>Nenhum disco encontrado</h3>
+          <p>Tente ajustar os termos de busca ou remover os filtros ativos.</p>
+          <button id="empty-reset-btn" class="btn btn-primary">Limpar Todos os Filtros</button>
+        </div>
+      </section>
+
+      <!-- VIEW: FAVORITES (Discos Favoritos) -->
+      <section id="view-favorites" class="content-view">
+        <div class="catalog-toolbar">
+          <div class="toolbar-left">
+            <span class="results-text">Exibindo <span id="favorites-filtered-count">0</span> favoritos</span>
+          </div>
+          
+          <div class="toolbar-search">
+            <div class="search-box">
+              <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="search-icon">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <input type="text" id="favorites-search-input" placeholder="Buscar nos favoritos..." autocomplete="off">
+              <button id="clear-favorites-search-btn" class="clear-search-btn" title="Limpar busca" style="display: none;">&times;</button>
+            </div>
+          </div>
+
+          <div class="toolbar-right">
+            <label for="favorites-sort-select">Ordenar por:</label>
+            <select id="favorites-sort-select">
+              <option value="added_desc">Adicionado recentemente</option>
+              <option value="added_asc">Mais antigo na coleção</option>
+              <option value="year_desc">Ano de Lançamento (Novo-Antigo)</option>
+              <option value="year_asc">Ano de Lançamento (Antigo-Novo)</option>
+              <option value="title_asc">Título (A-Z)</option>
+              <option value="artist_asc">Artista (A-Z)</option>
+              <option value="rating_desc">Avaliação (Maior-Menor)</option>
+              <option value="plays_desc">Audições (Maior-Menor)</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="favorites-grid" class="lp-grid">
+          <!-- Cards dynamically populated -->
+        </div>
+
+        <!-- Empty state -->
+        <div id="favorites-empty-state" class="empty-state" style="display: none;">
+          <svg viewBox="0 0 24 24" width="64" height="64" stroke="var(--star-gold)" stroke-width="1.5" fill="none">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" stroke-dasharray="4,4"></polygon>
+          </svg>
+          <h3>Nenhum disco favoritado</h3>
+          <p>Você ainda não favoritou nenhum disco. Clique na estrela dos discos na coleção para adicioná-los aqui!</p>
+        </div>
+      </section>
+
+      <!-- VIEW 3: STATS (Estatísticas) -->
+      <section id="view-stats" class="content-view">
+        <div class="stats-grid">
+          <!-- Quick Cards -->
+          <div class="stats-card-row">
+            <div class="stat-mini-card">
+              <div class="mini-card-label">Total de LPs</div>
+              <div id="stat-total-lps" class="mini-card-value">0</div>
+            </div>
+            <div class="stat-mini-card">
+              <div class="mini-card-label">Artistas Diferentes</div>
+              <div id="stat-total-artists" class="mini-card-value">0</div>
+            </div>
+            <div class="stat-mini-card">
+              <div class="mini-card-label">Coleção Ouvida</div>
+              <div id="stat-listened-percent" class="mini-card-value">0%</div>
+            </div>
+            <div class="stat-mini-card">
+              <div class="mini-card-label">Total de Audições</div>
+              <div id="stat-total-plays" class="mini-card-value">0</div>
+            </div>
+          </div>
+
+          <div class="stats-row">
+            <!-- Left: Top Artists -->
+            <div class="stats-section-card">
+              <h3>Artistas Mais Colecionados</h3>
+              <div id="artists-ranking-container" class="custom-ranking-list">
+                <!-- Dynamically generated list -->
+              </div>
+            </div>
+
+            <!-- Right: Recent additions list -->
+            <div class="stats-section-card">
+              <h3>Últimos Adicionados</h3>
+              <div id="recent-additions-container" class="custom-ranking-list">
+                <!-- Dynamically generated list -->
+              </div>
+            </div>
+          </div>
+
+
+
+          <!-- NEW: Audition statistics grouped in a card -->
+          <div class="stats-row">
+            <div class="stats-section-card span-full">
+              <h3>Destaques de Audição</h3>
+
+              <!-- Mini cards -->
+              <div class="stats-card-row" style="margin: 20px 0 24px 0;">
+                <div class="stat-mini-card" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05);">
+                  <div class="mini-card-label">Ouvidos esta Semana</div>
+                  <div id="stat-weekly-lps" class="mini-card-value">0</div>
+                </div>
+                <div class="stat-mini-card" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05);">
+                  <div class="mini-card-label">Total Audições (Semana)</div>
+                  <div id="stat-weekly-plays" class="mini-card-value">0</div>
+                </div>
+                <div class="stat-mini-card" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05);">
+                  <div class="mini-card-label">Ouvidos este Mês</div>
+                  <div id="stat-monthly-lps" class="mini-card-value">0</div>
+                </div>
+                <div class="stat-mini-card" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05);">
+                  <div class="mini-card-label">Total Audições (Mês)</div>
+                  <div id="stat-monthly-plays" class="mini-card-value">0</div>
+                </div>
+              </div>
+
+              <!-- Two columns for Top LPs -->
+              <div class="stats-row">
+                <div class="stats-section-card" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05); padding: 20px;">
+                  <h4 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 16px; color: var(--text-primary);">🔥 Top LPs da Semana</h4>
+                  <div id="weekly-ranking-container" class="custom-ranking-list">
+                    <!-- Dynamically generated list -->
+                  </div>
+                </div>
+                <div class="stats-section-card" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05); padding: 20px;">
+                  <h4 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 16px; color: var(--text-primary);">📅 Top LPs do Mês</h4>
+                  <div id="monthly-ranking-container" class="custom-ranking-list">
+                    <!-- Dynamically generated list -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="stats-row">
+            <div id="listening-stats-section" class="stats-section-card span-full timeline-stats-section">
+              <h3>Histórico de Audições</h3>
+              <h4 class="timeline-chart-title">Audições nos Últimos 6 Meses</h4>
+              <div id="listening-monthly-chart" class="custom-chart-list">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 6: SETTINGS (Configurações) -->
+      <section id="view-settings" class="content-view">
+        <div class="settings-container">
+          
+          <!-- Standalone Sync Collection Bar -->
+          <div class="settings-card sync-collection-bar" style="display: flex; flex-direction: column; gap: 15px; padding: 20px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 12px; margin-bottom: 24px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 15px; width: 100%;">
+              <div style="flex: 1;">
+                <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">Sincronizar Coleção</h3>
+                <p style="margin: 4px 0 0; font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4;">Importe e atualize os seus LPs a partir do Discogs.</p>
+              </div>
+              <button type="button" id="admin-sync-btn" class="btn btn-primary" style="height: 38px; padding: 0 16px; display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; border-radius: 8px;">
+                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" class="sync-icon-svg" style="transition: transform 0.3s ease;">
+                  <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                </svg>
+                <span>Sincronizar Agora</span>
+              </button>
+            </div>
+            
+            <!-- Last Sync Status Info -->
+            <div id="last-sync-status-container" style="display: none; padding-top: 12px; border-top: 1px dashed rgba(255,255,255,0.08); font-size: 0.82rem; color: var(--text-secondary); width: 100%;">
+              <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;">
+                <div>
+                  <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px; margin-right: 4px; color: var(--accent);">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  <span>Última sincronização: </span><b id="last-sync-time" style="color: var(--text-primary);">--/--/---- --:--:--</b>
+                </div>
+                <div style="display: flex; gap: 12px; background: rgba(255,255,255,0.02); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.04);">
+                  <span>Total: <b id="last-sync-total" style="color: var(--text-primary);">0</b></span>
+                  <span style="color: rgba(255,255,255,0.15);">|</span>
+                  <span style="color: var(--success-dim, #2ec4b6);">Add: <b id="last-sync-added" style="color: var(--success, #2ec4b6);">0</b></span>
+                  <span style="color: rgba(255,255,255,0.15);">|</span>
+                  <span style="color: var(--accent);">Act: <b id="last-sync-updated" style="color: var(--text-primary);">0</b></span>
+                  <span style="color: rgba(255,255,255,0.15);">|</span>
+                  <span style="color: var(--danger, #e71d36);">Del: <b id="last-sync-deleted" style="color: var(--danger, #e71d36);">0</b></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <form id="settings-form" class="settings-form">
+            
+            <!-- Discogs Settings Card -->
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                  <path d="M2 12h20"></path>
+                </svg>
+                <h3>Integração com o Discogs</h3>
+              </div>
+              <p class="settings-card-desc">Configuração do catálogo, busca de lançamentos e importação de coleções.</p>
+              <div class="form-group">
+                <label for="setting-discogs-user">Nome de Usuário</label>
+                <input type="text" id="setting-discogs-user" placeholder="Ex: heriveltogabriel">
+              </div>
+              <div class="form-group" style="display: none;">
+                <label for="setting-discogs-user-agent">User Agent</label>
+                <input type="text" id="setting-discogs-user-agent" placeholder="Ex: VinylDisplayMVP/0.1">
+              </div>
+              <div class="form-group">
+                <label for="setting-discogs-token">Developer Token</label>
+                <input type="password" id="setting-discogs-token" placeholder="Insira seu token pessoal do Discogs...">
+              </div>
+              
+              <!-- Help Info: Discogs Token -->
+              <div style="margin-top: 15px; padding: 12px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 8px; font-size: 0.78rem; line-height: 1.4; color: var(--text-muted);">
+                <b style="color: var(--text-primary); display: block; margin-bottom: 4px;">Como obter o Token do Discogs:</b>
+                <ol style="margin: 0; padding-left: 16px;">
+                  <li>Faça login no <a href="https://www.discogs.com" target="_blank" style="color: var(--primary); text-decoration: none;">Discogs</a>.</li>
+                  <li>Acesse a página de <a href="https://www.discogs.com/settings/developers" target="_blank" style="color: var(--primary); text-decoration: none; font-weight: 500;">Configurações de Desenvolvedor</a>.</li>
+                  <li>Clique no botão <b>"Generate new token"</b>, copie o token gerado e cole no campo acima.</li>
+                </ol>
+              </div>
+            </div>
+
+            <!-- RapidAPI Shazam Settings Card -->
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
+                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+                <h3>Reconhecimento Shazam (RapidAPI)</h3>
+              </div>
+              <p class="settings-card-desc">Opção alternativa / de backup para reconhecimento de áudio usando a API do Shazam via RapidAPI.</p>
+              <div class="form-group">
+                <label for="setting-shazam-key">Chave da RapidAPI (Key)</label>
+                <input type="password" id="setting-shazam-key" placeholder="Insira sua chave do RapidAPI Shazam...">
+              </div>
+              <div class="form-group" style="display: none;">
+                <label for="setting-shazam-host">Host da RapidAPI (Host)</label>
+                <input type="text" id="setting-shazam-host" placeholder="Ex: shazam-core.p.rapidapi.com">
+              </div>
+              
+              <!-- Help Info: RapidAPI Shazam Key -->
+              <div style="margin-top: 15px; padding: 12px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 8px; font-size: 0.78rem; line-height: 1.4; color: var(--text-muted);">
+                <b style="color: var(--text-primary); display: block; margin-bottom: 4px;">Como obter a Chave da RapidAPI:</b>
+                <ol style="margin: 0; padding-left: 16px;">
+                  <li>Faça login na <a href="https://rapidapi.com" target="_blank" style="color: var(--primary); text-decoration: none;">RapidAPI</a>.</li>
+                  <li>Inscreva-se na API <a href="https://rapidapi.com/apidojo/api/shazam" target="_blank" style="color: var(--primary); text-decoration: none; font-weight: 500;">Shazam</a> ou <a href="https://rapidapi.com/apidojo/api/shazam-core" target="_blank" style="color: var(--primary); text-decoration: none; font-weight: 500;">Shazam Core</a>.</li>
+                  <li>Na aba <b>Endpoints</b> de teste, copie o valor do campo <b>X-RapidAPI-Key</b> e cole no campo acima.</li>
+                </ol>
+              </div>
+            </div>
+
+            <!-- Lyrics Settings Card -->
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <h3>Sincronização de Letras</h3>
+              </div>
+              <p class="settings-card-desc">Ajuste da sincronização de tempo para as legendas em relação ao áudio reproduzido.</p>
+              <div class="form-group">
+                <label for="setting-lyrics-latency">Compensação de Latência (segundos)</label>
+                <input type="number" id="setting-lyrics-latency" step="0.1" min="0.0" max="60.0" placeholder="Ex: 1.3">
+                <p class="help-text" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">
+                  O padrão recomendado é **1.3** segundos. Aumente o valor para adiantar as letras (ex: 5.0 ou 10.0) ou diminua para atrasá-las.
+                </p>
+              </div>
+            </div>
+
+            <!-- Action Footer -->
+            <div class="settings-submit-footer">
+              <button type="submit" id="save-settings-btn" class="btn btn-primary btn-pulse">
+                Salvar Configurações
+              </button>
+            </div>
+            
+          </form>
+
+          <!-- Security settings card (Change Password) -->
+          <div class="settings-card" style="margin-top: 24px;">
+            <div class="settings-card-header">
+              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+              <h3>Segurança do Painel</h3>
+            </div>
+            <p class="settings-card-desc">Altere sua senha de acesso administrativa. Uma nova chave de recuperação será gerada automaticamente ao alterar.</p>
+            
+            <form id="change-password-form" style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px;">
+              <div class="form-group">
+                <label for="change-pwd-current">Senha Atual</label>
+                <input type="password" id="change-pwd-current" placeholder="Digite sua senha atual..." required>
+              </div>
+              <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group" style="margin: 0;">
+                  <label for="change-pwd-new">Nova Senha</label>
+                  <input type="password" id="change-pwd-new" placeholder="Mínimo 6 caracteres..." required minlength="6">
+                </div>
+                <div class="form-group" style="margin: 0;">
+                  <label for="change-pwd-confirm">Confirmar Nova Senha</label>
+                  <input type="password" id="change-pwd-confirm" placeholder="Confirme a nova senha..." required minlength="6">
+                </div>
+              </div>
+              <button type="submit" id="change-password-btn" class="btn btn-secondary" style="align-self: flex-end; padding: 0 16px; height: 38px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; border-radius: 8px;">
+                Alterar Senha
+              </button>
+            </form>
+          </div>
+
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ==================== DIALOGS & MODALS ==================== -->
+
+  <!-- 1. DIALOG: LP Details -->
+  <dialog id="lp-details-dialog" class="dialog-glass">
+    <div class="dialog-content details-dialog-content">
+      <button class="dialog-close-btn" data-dialog-close>&times;</button>
+      
+      <div class="details-dialog-layout">
+        <!-- Left: Large Cover Artwork -->
+        <div class="details-cover-column">
+          <div class="details-cover-container">
+            <img id="details-cover" src="" alt="Album Cover Large">
+          </div>
+          <div class="details-audition-stepper" aria-label="Ajustar audições">
+            <button id="details-unlisten-btn" class="btn btn-secondary btn-icon audition-stepper-btn" type="button" title="Remover audição" aria-label="Remover audição">
+              <span class="audition-stepper-symbol" aria-hidden="true">-</span>
+            </button>
+            <div class="details-audition-count">
+              <span id="details-plays-count">0</span>
+              <span>Audições</span>
+            </div>
+            <button id="details-mark-listened" class="btn btn-primary btn-icon audition-stepper-btn" type="button" title="Adicionar audição" aria-label="Adicionar audição">
+              <span class="audition-stepper-symbol" aria-hidden="true">+</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: Info Sheets -->
+        <div class="details-info-container">
+          <h2 id="details-title" class="details-title">Título</h2>
+          <h3 id="details-artist" class="details-artist">Artista</h3>
+
+          <hr class="dialog-separator">
+
+          <div class="details-grid">
+            <div class="details-item">
+              <div class="details-label">Lançamento</div>
+              <div id="details-year" class="details-value">0000</div>
+            </div>
+            <div class="details-item" id="details-edition-year-container">
+              <div class="details-label">Ano da Edição</div>
+              <div id="details-edition-year" class="details-value">0000</div>
+            </div>
+            <div class="details-item">
+              <div class="details-label">Gravadora / Selo</div>
+              <div id="details-label-name" class="details-value">-</div>
+            </div>
+            <div class="details-item">
+              <div class="details-label">Nº de Catálogo</div>
+              <div id="details-catno" class="details-value">-</div>
+            </div>
+            <div class="details-item">
+              <div class="details-label">Adicionado em</div>
+              <div id="details-date" class="details-value">-</div>
+            </div>
+          </div>
+
+          <div class="details-tags-row">
+            <div class="tag-category">
+              <span>Gêneros:</span>
+              <div id="details-genres" class="tags-container"></div>
+            </div>
+            <div class="tag-category">
+              <span>Estilos:</span>
+              <div id="details-styles" class="tags-container"></div>
+            </div>
+          </div>
+
+          <div class="details-rating-block">
+            <span>Avaliação do Colecionador:</span>
+            <div id="details-rating-stars" class="rating-stars clickable-stars" data-lp-id="">
+              <!-- Dynamically populated clickable stars -->
+            </div>
+          </div>
+
+          <div class="details-notes-block">
+            <label>Notas Privadas:</label>
+            <div id="details-notes-text" class="details-notes-text"></div>
+          </div>
+
+          <div class="details-history-block" style="margin-top: 15px;">
+            <label style="display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">Histórico de Audições</label>
+            <div id="details-auditions-history" style="max-height: 100px; overflow-y: auto; background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 8px; padding: 8px; font-size: 0.82rem; display: flex; flex-direction: column; gap: 5px;">
+              <!-- Dynamically populated dates -->
+            </div>
+          </div>
+
+          <!-- Actions Footer -->
+          <div class="dialog-actions-footer">
+            <button id="details-favorite-btn" class="btn btn-secondary btn-icon" type="button">
+              <svg class="star-icon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+              <span id="details-favorite-label">Favoritar</span>
+            </button>
+            <button id="details-edit-btn" class="btn btn-secondary btn-icon" type="button">
+              <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20h9"></path>
+                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path>
+              </svg>
+              Editar
+            </button>
+            <button id="details-delete-btn" class="btn btn-danger-text btn-icon" type="button">
+              <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h18"></path>
+                <path d="M8 6V4h8v2"></path>
+                <path d="M19 6l-1 14H6L5 6"></path>
+                <path d="M10 11v6"></path>
+                <path d="M14 11v6"></path>
+              </svg>
+              Excluir
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 2. DIALOG: LP Form (Add / Edit) -->
+  <dialog id="lp-form-dialog" class="dialog-glass">
+    <div class="dialog-content form-dialog-content">
+      <button class="dialog-close-btn" data-dialog-close>&times;</button>
+      <h2 id="form-dialog-title">Adicionar Novo LP</h2>
+      
+      <!-- Discogs Search Section (Only shown when adding a new LP) -->
+      <div id="discogs-search-section" class="discogs-search-section">
+        <div class="search-input-group">
+          <input type="text" id="discogs-search-input" placeholder="Buscar no Discogs (ex: Artista, Álbum, Gravadora)...">
+          <button type="button" id="discogs-search-btn" class="btn btn-primary">Buscar</button>
+        </div>
+
+        <!-- Search Results list -->
+        <div id="discogs-search-results" class="discogs-search-results" style="display: none;">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+      
+      <div class="form-divider" id="form-divider-text">selecione um resultado para preencher e editar os dados</div>
+      
+      <form id="lp-entry-form" method="dialog">
+        <input type="hidden" id="form-lp-id">
+        
+        <div class="form-layout">
+          <!-- Left: Cover preview URL -->
+          <div class="form-cover-preview-panel">
+            <div class="cover-preview-box">
+              <img id="form-cover-preview" src="placeholder.png" alt="Cover Preview" onerror="this.src='https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=300&auto=format&fit=crop'">
+              <div id="form-preview-placeholder" class="preview-placeholder">Pré-visualização da Capa</div>
+            </div>
+            <div class="form-group">
+              <label for="form-cover-url">URL da Imagem da Capa</label>
+              <input type="url" id="form-cover-url" placeholder="https://exemplo.com/capa.jpg">
+            </div>
+          </div>
+
+          <!-- Right: Text inputs -->
+          <div class="form-fields-panel">
+            <div class="form-row">
+              <div class="form-group flex-2">
+                <label for="form-title">Título do Álbum *</label>
+                <input type="text" id="form-title" required placeholder="Ex: Seu Espião">
+              </div>
+              <div class="form-group flex-1">
+                <label for="form-year">Ano de Lançamento</label>
+                <input type="number" id="form-year" min="1900" max="2100" placeholder="Ex: 1984">
+              </div>
+              <div class="form-group flex-1">
+                <label for="form-edition-year">Ano da Edição</label>
+                <input type="number" id="form-edition-year" min="1900" max="2100" placeholder="Ex: 2016">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="form-artist">Artista / Banda *</label>
+              <input type="text" id="form-artist" required placeholder="Ex: Kid Abelha">
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="form-label">Selo / Gravadora</label>
+                <input type="text" id="form-label" placeholder="Ex: Elektra">
+              </div>
+              <div class="form-group">
+                <label for="form-catno">Nº de Catálogo</label>
+                <input type="text" id="form-catno" placeholder="Ex: BR 22.090">
+              </div>
+            </div>
+
+
+
+            <div class="form-group">
+              <label for="form-notes">Notas do Colecionador</label>
+              <textarea id="form-notes" rows="3" placeholder="Comentários sobre a edição, estado do vinil, etc."></textarea>
+            </div>
+            
+            <div class="form-group">
+              <label>Avaliação Inicial</label>
+              <div id="form-rating-stars" class="rating-stars clickable-stars form-stars">
+                <!-- Stars will be populated here -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-submit-footer">
+          <button type="button" class="btn btn-secondary" data-dialog-close>Cancelar</button>
+          <button type="submit" id="form-submit-btn" class="btn btn-primary">Salvar LP</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+  
+  <!-- Dialog 3: Artist Albums List -->
+  <dialog id="artist-albums-dialog" class="dialog-glass">
+    <div class="dialog-content artist-albums-dialog-content">
+      <button class="dialog-close-btn" id="artist-albums-close" data-dialog-close>&times;</button>
+      <h2 id="artist-albums-title">Álbuns de Artista</h2>
+      <div id="artist-albums-list" class="custom-ranking-list">
+        <!-- Dynamically populated list of albums -->
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 4. DIALOG: Weekly Plays List -->
+  <dialog id="weekly-plays-dialog" class="dialog-glass">
+    <div class="dialog-content weekly-plays-dialog-content">
+      <button class="dialog-close-btn" id="weekly-plays-close" data-dialog-close>&times;</button>
+      <h2 id="weekly-plays-title">Audições de Domingo</h2>
+      <div id="weekly-plays-list">
+        <!-- Dynamically populated list of albums listened to on this day -->
+      </div>
+    </div>
+  </dialog>
+
+  <!-- 5. DIALOG: Security Recovery Key -->
+  <dialog id="security-key-dialog" class="dialog-glass">
+    <div class="dialog-content" style="max-width: 400px; padding: 25px; text-align: center; position: relative;">
+      <button class="dialog-close-btn" onclick="document.getElementById('security-key-dialog').close()" style="position: absolute; right: 15px; top: 15px; background: none; border: none; font-size: 1.5rem; color: var(--text-secondary); cursor: pointer;">&times;</button>
+      <h3 style="margin: 0 0 10px 0; font-size: 1.3rem; color: var(--text-primary);">Nova Chave de Recuperação</h3>
+      <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; margin-bottom: 20px;">
+        Sua senha foi alterada com sucesso! Guarde a nova chave de recuperação gerada abaixo:
+      </p>
+      
+      <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+        <span id="security-new-key-val" style="font-family: monospace; font-size: 1.15rem; font-weight: 700; color: var(--primary); letter-spacing: 1px; user-select: all;">VINYL-RESTORE-XXXX-XXXX</span>
+      </div>
+      
+      <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <button type="button" class="btn btn-secondary" onclick="copySecurityKey()" style="flex: 1; font-size: 0.8rem; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 36px; cursor: pointer; border-radius: 8px;">
+          Copiar Chave
+        </button>
+        <button type="button" class="btn btn-secondary" onclick="downloadSecurityKey()" style="flex: 1; font-size: 0.8rem; display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 36px; cursor: pointer; border-radius: 8px;">
+          Baixar .txt
+        </button>
+      </div>
+      
+      <button type="button" class="btn btn-primary" onclick="document.getElementById('security-key-dialog').close()" style="width: 100%; height: 38px; font-weight: 600; border-radius: 8px;">
+        Concluir
+      </button>
+    </div>
+  </dialog>
+
+  <!-- Canvas for dynamic color extraction (hidden) -->
+  <canvas id="color-thief-canvas" style="display: none;" width="50" height="50"></canvas>
+
+  <!-- Toast Notifications Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Database & Logic Scripts -->
+  <script src="/static/admin.js" defer></script>
+</body>
+</html>
