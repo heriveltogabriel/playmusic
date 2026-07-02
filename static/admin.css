@@ -914,7 +914,7 @@ body {
 /* Suggestion Hero Card */
 .suggestion-hero-card {
   display: grid;
-  grid-template-columns: 200px minmax(0, 1fr);
+  grid-template-columns: 150px minmax(0, 1fr);
   gap: 20px;
   align-items: stretch;
 }
