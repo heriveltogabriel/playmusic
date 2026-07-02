@@ -3381,9 +3381,15 @@ dialog::backdrop {
 }
 
 .history-month-group {
+  display: block !important;
+  margin-top: 0;
   margin-bottom: 16px;
-  padding-left: 28px;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding-left: 28px !important;
   position: relative;
+  width: 100% !important;
+  box-sizing: border-box;
 }
 
 /* Linha do mês */
@@ -3460,9 +3466,15 @@ dialog::backdrop {
 }
 
 .history-week-group {
+  display: block !important;
   margin-top: 12px;
-  padding-left: 24px;
+  margin-bottom: 12px;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding-left: 24px !important;
   position: relative;
+  width: 100% !important;
+  box-sizing: border-box;
 }
 
 /* Linha da semana - Aparece apenas quando aberta e desvanece no final! */
