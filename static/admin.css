@@ -914,8 +914,8 @@ body {
 /* Suggestion Hero Card */
 .suggestion-hero-card {
   display: grid;
-  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
-  gap: 32px;
+  grid-template-columns: minmax(140px, 180px) minmax(0, 1fr);
+  gap: 20px;
   align-items: stretch;
 }
 
@@ -980,14 +980,14 @@ body {
 }
 
 .hero-title {
-  font-size: 2.15rem;
+  font-size: 1.6rem;
   font-weight: 800;
   line-height: 1.1;
   letter-spacing: -0.5px;
 }
 
 .hero-artist {
-  font-size: 1.2rem;
+  font-size: 1rem;
   color: var(--text-secondary);
   font-weight: 500;
 }
