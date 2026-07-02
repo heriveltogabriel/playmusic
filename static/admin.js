@@ -472,30 +472,68 @@ function generateWeeklyAgenda(forceNew = false) {
 function renderWeeklyAgenda() {
   const container = document.getElementById('agenda-scroll-container');
   if (!container) return;
-  
+
   container.innerHTML = '';
-  
+
   if (state.agenda.length === 0) {
     container.innerHTML = '<p class="text-muted">Nenhuma indicação disponível.</p>';
     return;
   }
-  
-  const todayIdx = getTodayAgendaIndex();
-  
+
+  const todayIdx = getTodayAgendaIndex(); // 0=Dom ... 6=Sáb
+
+  // Limites da semana atual (Dom 00:00 → Sáb 23:59)
+  const now = new Date();
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - now.getDay());
+  startOfWeek.setHours(0, 0, 0, 0);
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(startOfWeek.getDate() + 6);
+  endOfWeek.setHours(23, 59, 59, 999);
+
+  // Calcula o estado de cada slot da agenda
+  let completedCount = 0;
+  const cardStates = state.agenda.map((lp, index) => {
+    const listenedThisWeek = Array.isArray(lp.listen_dates) && lp.listen_dates.some(ds => {
+      const d = new Date(ds);
+      return d >= startOfWeek && d <= endOfWeek;
+    });
+    if (listenedThisWeek) { completedCount++; return 'done'; }
+    if (index < todayIdx) return 'missed';
+    return 'pending';
+  });
+
+  // Atualiza a barra de progresso
+  renderWeeklyProgressBar(completedCount, cardStates, todayIdx);
+
+  const defaultCover = 'https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=200&auto=format&fit=crop';
+
   state.agenda.forEach((lp, index) => {
     const card = document.createElement('div');
     card.classList.add('agenda-day-card');
-    if (index === todayIdx) {
-      card.classList.add('today');
-    }
-    if (index === state.selectedAgendaIndex) {
-      card.classList.add('active');
-    }
+    const st = cardStates[index];
+    if (st === 'done')   card.classList.add('agenda-done');
+    if (st === 'missed') card.classList.add('agenda-missed');
+    if (index === todayIdx) card.classList.add('today');
+    if (index === state.selectedAgendaIndex) card.classList.add('active');
     card.dataset.index = index;
-    
-    const defaultCover = 'https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=200&auto=format&fit=crop';
-    const hasBeenPlayed = lp.plays && lp.plays > 0;
-    
+
+    const stateIcon = st === 'done'
+      ? `<div class="agenda-state-icon agenda-state-done" title="Ouvido esta semana">
+           <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="3" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
+         </div>`
+      : st === 'missed'
+        ? `<div class="agenda-state-icon agenda-state-missed" title="Dia perdido">
+             <svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+           </div>`
+        : '';
+
+    const overlay = st === 'done'
+      ? `<div class="agenda-cover-overlay agenda-cover-overlay--done"></div>`
+      : st === 'missed'
+        ? `<div class="agenda-cover-overlay agenda-cover-overlay--missed"></div>`
+        : '';
+
     card.innerHTML = `
       <button class="agenda-day-change-btn" title="Mudar sugestão deste dia">
         <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -505,19 +543,21 @@ function renderWeeklyAgenda() {
         </svg>
       </button>
       <div class="agenda-day-name">${AGENDA_DAYS[index]}</div>
-      <img class="agenda-day-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.src='${defaultCover}'">
+      <div class="agenda-cover-wrap">
+        <img class="agenda-day-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.src='${defaultCover}'">
+        ${overlay}
+      </div>
       <div class="agenda-day-title" title="${lp.title}">${lp.title}</div>
       <div class="agenda-day-artist" title="${lp.artist}">${lp.artist}</div>
-      ${hasBeenPlayed ? `<div class="agenda-day-status-badge" title="Já escutado">✓</div>` : ''}
+      ${stateIcon}
     `;
-    
+
     card.addEventListener('click', () => {
       state.selectedAgendaIndex = index;
-      // Re-render agenda cards to update active styling
       renderWeeklyAgenda();
       renderSelectedAgendaLp();
     });
-    
+
     const changeBtn = card.querySelector('.agenda-day-change-btn');
     if (changeBtn) {
       changeBtn.addEventListener('click', (e) => {
@@ -525,10 +565,51 @@ function renderWeeklyAgenda() {
         changeSingleDayAgendaLp(index);
       });
     }
-    
+
     container.appendChild(card);
   });
 }
+
+function renderWeeklyProgressBar(completedCount, cardStates, todayIdx) {
+  const segmentsEl = document.getElementById('weekly-progress-segments');
+  const countEl    = document.getElementById('weekly-progress-count');
+  const messageEl  = document.getElementById('weekly-progress-message');
+  if (!segmentsEl || !countEl || !messageEl) return;
+
+  countEl.textContent = `${completedCount}/7`;
+
+  const shortDays = ['D','S','T','Q','Q','S','S'];
+  segmentsEl.innerHTML = '';
+  cardStates.forEach((st, i) => {
+    const seg = document.createElement('div');
+    seg.className = `weekly-seg weekly-seg--${st}${i === todayIdx ? ' weekly-seg--today' : ''}`;
+    seg.title = AGENDA_DAYS[i];
+    seg.textContent = shortDays[i];
+    segmentsEl.appendChild(seg);
+  });
+
+  const missedCount = cardStates.filter(s => s === 'missed').length;
+  const remaining   = 6 - todayIdx;
+  let msg = '', cls = '';
+
+  if (completedCount === 7) {
+    msg = '🎉 Semana perfeita! Todos os discos ouvidos!'; cls = 'msg--perfect';
+  } else if (completedCount > 0 && missedCount === 0 && completedCount === todayIdx + 1) {
+    msg = '🔥 Em dia! Você está acompanhando a semana!'; cls = 'msg--on-track';
+  } else if (completedCount > 0 && missedCount === 0) {
+    msg = `✨ ${completedCount} disco${completedCount > 1 ? 's' : ''} ouvido${completedCount > 1 ? 's' : ''}! Continue assim!`; cls = 'msg--good';
+  } else if (completedCount > 0 && missedCount > 0) {
+    msg = `${completedCount} ouvido${completedCount > 1 ? 's' : ''} · ${missedCount} perdido${missedCount > 1 ? 's' : ''}. Ainda há ${remaining} dia${remaining !== 1 ? 's' : ''} para recuperar!`; cls = 'msg--partial';
+  } else if (completedCount === 0 && missedCount > 0) {
+    msg = `Semana difícil? Ainda ${remaining} dia${remaining !== 1 ? 's' : ''} pela frente — comece hoje!`; cls = 'msg--behind';
+  } else {
+    msg = 'Ouça o disco de hoje e comece a semana com chave de ouro!'; cls = 'msg--start';
+  }
+
+  messageEl.textContent = msg;
+  messageEl.className   = `weekly-progress-message ${cls}`;
+}
+
 
 function changeSingleDayAgendaLp(dayIndex) {
   if (state.lps.length === 0) return;
