@@ -3392,6 +3392,22 @@ dialog::backdrop {
   box-sizing: border-box;
 }
 
+/* Bola do mês posicionada em relação ao history-month-group (alinhamento absoluto garantido) */
+.history-month-group::before {
+  content: '';
+  position: absolute;
+  left: -9px; /* Centralizado com a linha a left: 0 (largura total 20px, centro em 1px) */
+  top: 18px; /* Alinhado ao centro vertical do summary do mês */
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 3px solid var(--bg);
+  box-shadow: 0 0 12px rgba(230, 92, 0, 0.6);
+  z-index: 2;
+}
+
 /* Linha do mês */
 .history-month-group::after {
   content: '';
@@ -3429,22 +3445,6 @@ dialog::backdrop {
   z-index: 2;
 }
 
-/* Bola do mês posicionada em relação ao summary (alinhamento garantido) */
-.history-month-summary::before {
-  content: '';
-  position: absolute;
-  left: -37px; /* Centralizado na linha (padding 28px + 10px metade da largura da bola) */
-  top: 50%;
-  transform: translateY(-50%);
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--primary);
-  border: 3px solid var(--bg);
-  box-shadow: 0 0 12px rgba(230, 92, 0, 0.6);
-  z-index: 2;
-}
-
 .history-month-summary::-webkit-details-marker {
   display: none;
 }
@@ -3477,6 +3477,22 @@ dialog::backdrop {
   box-sizing: border-box;
 }
 
+/* Bola da semana posicionada em relação ao history-week-group (alinhamento absoluto garantido) */
+.history-week-group::before {
+  content: '';
+  position: absolute;
+  left: -7px; /* Centralizado com a linha a left: 0 (largura total 16px, centro em 1px) */
+  top: 13px; /* Alinhado ao centro vertical do summary da semana */
+  transform: translateY(-50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 3px solid var(--bg);
+  box-shadow: 0 0 8px rgba(230, 92, 0, 0.5);
+  z-index: 2;
+}
+
 /* Linha da semana - Aparece apenas quando aberta e desvanece no final! */
 .history-week-group[open]::after {
   content: '';
@@ -3502,22 +3518,6 @@ dialog::backdrop {
   user-select: none;
   padding: 6px 0;
   position: relative;
-  z-index: 2;
-}
-
-/* Bola da semana posicionada em relação ao summary (alinhamento garantido) */
-.history-week-summary::before {
-  content: '';
-  position: absolute;
-  left: -31px; /* Centralizado na linha (padding 24px + 8px metade da largura da bola) */
-  top: 50%;
-  transform: translateY(-50%);
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--primary);
-  border: 3px solid var(--bg);
-  box-shadow: 0 0 8px rgba(230, 92, 0, 0.5);
   z-index: 2;
 }
 
