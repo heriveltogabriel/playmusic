@@ -914,13 +914,14 @@ body {
 /* Suggestion Hero Card */
 .suggestion-hero-card {
   display: grid;
-  grid-template-columns: 150px minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr);
   gap: 20px;
   align-items: stretch;
 }
 
 .suggestion-hero-cover {
-  width: 100%;
+  height: 100%;
+  width: auto;
   aspect-ratio: 1;
   border-radius: 10px;
   overflow: hidden;
