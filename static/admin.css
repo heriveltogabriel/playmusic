@@ -3392,7 +3392,7 @@ dialog::backdrop {
   position: absolute;
   left: 0;
   top: 22px;
-  bottom: -16px; /* Conecta com o próximo mês cobrindo o margin-bottom */
+  bottom: -38px; /* Conecta com o próximo mês cobrindo o margin-bottom (16px) e alcançando a bola seguinte (22px) */
   width: 2px;
   background: var(--primary);
   z-index: 0;
