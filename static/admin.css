@@ -3600,3 +3600,25 @@ dialog::backdrop {
   white-space: nowrap;
   font-weight: 500;
 }
+
+.history-select {
+  background: var(--bg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  outline: none;
+  cursor: pointer;
+  appearance: auto;
+}
+
+.history-select:focus {
+  border-color: var(--primary);
+}
+
+.history-select option {
+  background: var(--bg);
+  color: #fff;
+}
