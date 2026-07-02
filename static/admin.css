@@ -1304,100 +1304,39 @@ body {
   transform: rotate(180deg);
 }
 
-/* ===== BARRA DE PROGRESSO SEMANAL ===== */
-.weekly-progress-wrap {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 12px;
-  padding: 12px 14px 10px;
-  margin-bottom: 12px;
-}
-
-.weekly-progress-top {
+/* ===== BARRA DE PROGRESSO SEMANAL (Simplificada) ===== */
+.weekly-progress-simplified {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-top: 16px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
 }
 
-.weekly-progress-label {
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
+.weekly-progress-message {
+  font-size: 0.72rem;
+  font-weight: 500;
+  flex: 1;
 }
 
 .weekly-progress-count {
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 800;
   color: var(--primary);
+  margin-left: 16px;
+  padding-left: 16px;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.weekly-progress-segments {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 8px;
-}
-
-.weekly-seg {
-  flex: 1;
-  height: 28px;
-  border-radius: 6px;
-  font-size: 0.6rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform 0.2s ease;
-  cursor: default;
-  user-select: none;
-}
-
-.weekly-seg--pending {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: var(--text-muted);
-}
-
-.weekly-seg--done {
-  background: rgba(46, 204, 113, 0.18);
-  border: 1px solid rgba(46, 204, 113, 0.35);
-  color: #2ecc71;
-}
-
-.weekly-seg--missed {
-  background: rgba(231, 76, 60, 0.12);
-  border: 1px solid rgba(231, 76, 60, 0.25);
-  color: rgba(231, 76, 60, 0.7);
-}
-
-.weekly-seg--today {
-  border-width: 1.5px;
-  border-color: var(--primary);
-  color: var(--primary);
-}
-
-.weekly-seg--today.weekly-seg--done {
-  border-color: #2ecc71;
-  color: #2ecc71;
-}
-
-.weekly-seg:hover { transform: scaleY(1.08); }
-
-.weekly-progress-message {
-  font-size: 0.7rem;
-  line-height: 1.4;
-  padding: 5px 8px;
-  border-radius: 6px;
-}
-
-.weekly-progress-message.msg--perfect  { color: #f1c40f; background: rgba(241,196,15,0.08); }
-.weekly-progress-message.msg--on-track { color: #e67e22; background: rgba(230,92,0,0.08); }
-.weekly-progress-message.msg--good     { color: #2ecc71; background: rgba(46,204,113,0.08); }
-.weekly-progress-message.msg--partial  { color: #e67e22; background: rgba(230,92,0,0.07); }
-.weekly-progress-message.msg--behind   { color: rgba(231,76,60,0.85); background: rgba(231,76,60,0.07); }
-.weekly-progress-message.msg--start    { color: var(--text-secondary); background: rgba(255,255,255,0.04); }
+.weekly-progress-message.msg--perfect  { color: #f1c40f; }
+.weekly-progress-message.msg--on-track { color: #e67e22; }
+.weekly-progress-message.msg--good     { color: #2ecc71; }
+.weekly-progress-message.msg--partial  { color: #e67e22; }
+.weekly-progress-message.msg--behind   { color: rgba(231,76,60,0.85); }
+.weekly-progress-message.msg--start    { color: var(--text-secondary); }
 
 /* ===== ESTADOS DOS CARDS DE AGENDA ===== */
 
@@ -4010,5 +3949,25 @@ dialog::backdrop {
 
 .weekly-history-play-item::before {
   display: none; /* Remover a bolinha da timeline do card copiado */
+}
+
+
+.play-item--missed {
+  border-color: rgba(231, 76, 60, 0.25);
+  background: rgba(231, 76, 60, 0.03);
+  opacity: 0.8;
+}
+
+.play-item--missed .history-play-cover {
+  filter: grayscale(80%);
+}
+
+.play-item--missed .history-play-title {
+  color: var(--text-muted);
+}
+
+.play-item--done {
+  border-color: rgba(46, 204, 113, 0.25);
+  background: rgba(46, 204, 113, 0.04);
 }
 

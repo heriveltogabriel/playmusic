@@ -574,22 +574,11 @@ function renderWeeklyAgenda() {
 }
 
 function renderWeeklyProgressBar(completedCount, cardStates, todayIdx) {
-  const segmentsEl = document.getElementById('weekly-progress-segments');
   const countEl    = document.getElementById('weekly-progress-count');
   const messageEl  = document.getElementById('weekly-progress-message');
-  if (!segmentsEl || !countEl || !messageEl) return;
+  if (!countEl || !messageEl) return;
 
   countEl.textContent = `${completedCount}/7`;
-
-  const shortDays = ['D','S','T','Q','Q','S','S'];
-  segmentsEl.innerHTML = '';
-  cardStates.forEach((st, i) => {
-    const seg = document.createElement('div');
-    seg.className = `weekly-seg weekly-seg--${st}${i === todayIdx ? ' weekly-seg--today' : ''}`;
-    seg.title = AGENDA_DAYS[i];
-    seg.textContent = shortDays[i];
-    segmentsEl.appendChild(seg);
-  });
 
   const missedCount = cardStates.filter(s => s === 'missed').length;
   const remaining   = 6 - todayIdx;
@@ -600,7 +589,7 @@ function renderWeeklyProgressBar(completedCount, cardStates, todayIdx) {
   } else if (completedCount > 0 && missedCount === 0 && completedCount === todayIdx + 1) {
     msg = '🔥 Em dia! Você está acompanhando a semana!'; cls = 'msg--on-track';
   } else if (completedCount > 0 && missedCount === 0) {
-    msg = `✨ ${completedCount} disco${completedCount > 1 ? 's' : ''} ouvido${completedCount > 1 ? 's' : ''}! Continue assim!`; cls = 'msg--good';
+    msg = `✨ ${completedCount} ouvido${completedCount > 1 ? 's' : ''}! Continue assim!`; cls = 'msg--good';
   } else if (completedCount > 0 && missedCount > 0) {
     msg = `${completedCount} ouvido${completedCount > 1 ? 's' : ''} · ${missedCount} perdido${missedCount > 1 ? 's' : ''}. Ainda há ${remaining} dia${remaining !== 1 ? 's' : ''} para recuperar!`; cls = 'msg--partial';
   } else if (completedCount === 0 && missedCount > 0) {
@@ -4148,7 +4137,9 @@ function renderPlaysHistory() {
 }
 
 // ==================== HISTÓRICO SEMANAL (GRÁFICO) ====================
-function renderWeeklyHistory() {
+
+// ==================== HISTÓRICO SEMANAL (AGENDAS) ====================
+async function renderWeeklyHistory() {
   const chartContainer = document.getElementById('weekly-history-chart');
   const listContainer = document.getElementById('weekly-history-list');
   if (!chartContainer || !listContainer) return;
@@ -4159,69 +4150,86 @@ function renderWeeklyHistory() {
     return;
   }
 
-  // 1. Agrupar audições por semana (iniciando no domingo)
-  const weeksMap = {};
-  
-  state.lps.forEach(lp => {
-    if (lp.listen_dates && Array.isArray(lp.listen_dates)) {
-      lp.listen_dates.forEach(ds => {
-        try {
-          const d = new Date(ds);
-          if (isNaN(d.getTime())) return;
-          
-          const startOfWeek = new Date(d);
-          startOfWeek.setDate(d.getDate() - d.getDay());
-          startOfWeek.setHours(0, 0, 0, 0);
-          
-          const weekKey = startOfWeek.getTime();
-          if (!weeksMap[weekKey]) {
-            weeksMap[weekKey] = {
-              startDate: startOfWeek,
-              plays: []
-            };
-          }
-          weeksMap[weekKey].plays.push({ lp, dateObj: d });
-        } catch (e) {}
-      });
+  // 1. Obter agendas históricas do backend
+  let historicalAgendas = {};
+  try {
+    const response = await fetch('/api/admin/historical_agendas');
+    if (response.ok) {
+      historicalAgendas = await response.json();
     }
-  });
+  } catch (e) {
+    console.error('Erro ao buscar histórico de agendas', e);
+  }
 
-  // 2. Extrair e ordenar chaves (do mais antigo para o mais novo)
-  const sortedWeekKeys = Object.keys(weeksMap).map(Number).sort((a, b) => a - b);
-  
-  // Pegar as últimas 5 semanas com audições
+  const sortedWeekKeys = Object.keys(historicalAgendas).map(Number).sort((a, b) => a - b);
   const recentWeekKeys = sortedWeekKeys.slice(-5);
+  
   if (recentWeekKeys.length === 0) {
-    chartContainer.innerHTML = '<p class="text-muted">Nenhum histórico disponível.</p>';
+    chartContainer.innerHTML = '<p class="text-muted" style="margin-left:10px;">O histórico será construído a partir das próximas semanas.</p>';
     listContainer.innerHTML = '';
     return;
   }
 
-  // 3. Montar o Gráfico de Barras
-  const maxPlays = Math.max(...recentWeekKeys.map(k => weeksMap[k].plays.length), 1);
-  
   chartContainer.innerHTML = '';
-  
+  listContainer.innerHTML = '';
+
   const now = new Date();
   const currentWeekStart = new Date(now);
   currentWeekStart.setDate(now.getDate() - now.getDay());
   currentWeekStart.setHours(0, 0, 0, 0);
   const currentWeekKey = currentWeekStart.getTime();
+  
+  // Array com dados processados para o gráfico e os cards
+  const weeksData = [];
 
-  recentWeekKeys.forEach(k => {
-    const weekData = weeksMap[k];
-    const count = weekData.plays.length;
-    const heightPercent = Math.max((count / maxPlays) * 100, 10);
-    const isCurrentWeek = k === currentWeekKey;
+  recentWeekKeys.forEach(weekKeyStr => {
+    const k = Number(weekKeyStr);
+    const startDate = new Date(k);
+    const endDate = new Date(k);
+    endDate.setDate(startDate.getDate() + 6);
+    endDate.setHours(23, 59, 59, 999);
     
-    // Format label like "01/07"
-    const startDay = weekData.startDate.getDate().toString().padStart(2, '0');
-    const startMonth = (weekData.startDate.getMonth() + 1).toString().padStart(2, '0');
+    const lpIds = historicalAgendas[weekKeyStr];
+    
+    // Associar os IDs aos LPs do state.lps e verificar quem foi ouvido na semana
+    let listenedCount = 0;
+    const lpsData = lpIds.map(id => {
+      const lp = state.lps.find(l => l.id == id);
+      if (!lp) return null;
+      
+      const wasListened = Array.isArray(lp.listen_dates) && lp.listen_dates.some(ds => {
+        const d = new Date(ds);
+        return d >= startDate && d <= endDate;
+      });
+      
+      if (wasListened) listenedCount++;
+      
+      return { lp, wasListened };
+    }).filter(Boolean);
+    
+    weeksData.push({
+      key: k,
+      startDate,
+      endDate,
+      lpsData,
+      listenedCount,
+      totalCount: lpIds.length // should be 7
+    });
+  });
+
+  // 2. Montar Gráfico de Barras (Sucesso da Agenda)
+  // O máximo sempre será 7 discos sugeridos
+  weeksData.forEach(wd => {
+    const heightPercent = Math.max((wd.listenedCount / 7) * 100, 10);
+    const isCurrentWeek = wd.key === currentWeekKey;
+    
+    const startDay = wd.startDate.getDate().toString().padStart(2, '0');
+    const startMonth = (wd.startDate.getMonth() + 1).toString().padStart(2, '0');
     const label = `${startDay}/${startMonth}`;
     
     const barHtml = `
       <div class="weekly-chart-col">
-        <div class="weekly-chart-val">${count}</div>
+        <div class="weekly-chart-val">${wd.listenedCount}/7</div>
         <div class="weekly-chart-bar ${isCurrentWeek ? 'weekly-chart-bar--current' : ''}" style="height: ${heightPercent}%" title="Semana de ${label}"></div>
         <div class="weekly-chart-label ${isCurrentWeek ? 'weekly-chart-label--current' : ''}">${label}</div>
       </div>
@@ -4229,25 +4237,13 @@ function renderWeeklyHistory() {
     chartContainer.insertAdjacentHTML('beforeend', barHtml);
   });
 
-  // 4. Montar a lista de cards (do mais novo para o mais antigo)
-  listContainer.innerHTML = '';
-  const reversedKeys = [...recentWeekKeys].reverse();
+  // 3. Montar a lista de cards (do mais novo para o mais antigo)
+  const reversedWeeks = [...weeksData].reverse();
   
-  reversedKeys.forEach(k => {
-    const weekData = weeksMap[k];
-    const isCurrentWeek = k === currentWeekKey;
-    
-    // Sort plays in the week descending
-    weekData.plays.sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime());
-    
-    // Format full date range for summary
-    const d1 = weekData.startDate;
-    const d2 = new Date(d1);
-    d2.setDate(d1.getDate() + 6);
-    
+  reversedWeeks.forEach(wd => {
+    const isCurrentWeek = wd.key === currentWeekKey;
     const fmt = d => `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`;
-    const rangeText = `${fmt(d1)} a ${fmt(d2)}`;
-    
+    const rangeText = `${fmt(wd.startDate)} a ${fmt(wd.endDate)}`;
     const titleText = isCurrentWeek ? `Esta Semana (${rangeText})` : `Semana de ${rangeText}`;
     
     const details = document.createElement('details');
@@ -4261,7 +4257,7 @@ function renderWeeklyHistory() {
         <span class="weekly-history-summary-title">${titleText}</span>
       </div>
       <div class="weekly-history-summary-right">
-        <span class="weekly-history-summary-count">${weekData.plays.length} audições</span>
+        <span class="weekly-history-summary-count">${wd.listenedCount} de 7 ouvidos</span>
       </div>
     `;
     details.appendChild(summary);
@@ -4269,21 +4265,27 @@ function renderWeeklyHistory() {
     const playsList = document.createElement('div');
     playsList.className = 'weekly-history-plays-list';
     
-    weekData.plays.forEach(item => {
+    wd.lpsData.forEach((item, dayIndex) => {
       const lp = item.lp;
-      const dayName = AGENDA_DAYS[item.dateObj.getDay()];
-      const hm = `${item.dateObj.getHours().toString().padStart(2,'0')}:${item.dateObj.getMinutes().toString().padStart(2,'0')}`;
+      const dayName = AGENDA_DAYS[dayIndex];
       const defaultCover = 'https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=200&auto=format&fit=crop';
       
+      const statusIcon = item.wasListened 
+        ? `<svg viewBox="0 0 24 24" width="12" height="12" stroke="#2ecc71" stroke-width="3" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>`
+        : `<svg viewBox="0 0 24 24" width="12" height="12" stroke="#e74c3c" stroke-width="2.5" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+        
+      const statusText = item.wasListened ? 'Ouvido' : 'Não ouvido';
+      const playClass = item.wasListened ? 'play-item--done' : 'play-item--missed';
+      
       const playHtml = `
-        <div class="history-play-item weekly-history-play-item">
+        <div class="history-play-item weekly-history-play-item ${playClass}">
           <img class="history-play-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.src='${defaultCover}'">
           <div class="history-play-details">
             <div class="history-play-title" title="${lp.title}">${lp.title}</div>
             <div class="history-play-artist" title="${lp.artist}">${lp.artist}</div>
             <div class="history-play-meta">
-              <svg viewBox="0 0 24 24" width="10" height="10" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-              ouvido na ${dayName} às ${hm}
+              ${statusIcon}
+              Sugerido na ${dayName} · ${statusText}
             </div>
           </div>
         </div>
@@ -4295,4 +4297,3 @@ function renderWeeklyHistory() {
     listContainer.appendChild(details);
   });
 }
-
