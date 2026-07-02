@@ -3796,9 +3796,15 @@ function setupPlaysHistoryFilters() {
   const endSelect = document.getElementById('plays-history-filter-end');
   if (!startSelect || !endSelect) return;
 
-  // Extract all listen dates to find the oldest
+  // Extract all listen dates and addition dates to find the absolute oldest date in the collection
   let oldestDate = new Date();
   state.lps.forEach(lp => {
+    // Check when it was added
+    if (lp.date_added) {
+      const added = new Date(lp.date_added);
+      if (!isNaN(added) && added < oldestDate) oldestDate = added;
+    }
+    // Check when it was listened to
     if (lp.listen_dates && lp.listen_dates.length > 0) {
       lp.listen_dates.forEach(dStr => {
         const d = new Date(dStr);
@@ -3816,7 +3822,7 @@ function setupPlaysHistoryFilters() {
     chronological.push({
       year: current.getFullYear(),
       month: current.getMonth(),
-      label: `${MONTHS_PT[current.getMonth()].slice(0, 3)}/${String(current.getFullYear()).slice(-2)}`,
+      label: `${MONTHS_PT[current.getMonth()]} de ${current.getFullYear()}`,
     });
     current.setMonth(current.getMonth() + 1);
   }
