@@ -914,7 +914,7 @@ body {
 /* Suggestion Hero Card */
 .suggestion-hero-card {
   display: grid;
-  grid-template-columns: minmax(140px, 180px) minmax(0, 1fr);
+  grid-template-columns: 200px minmax(0, 1fr);
   gap: 20px;
   align-items: stretch;
 }
@@ -994,6 +994,8 @@ body {
 
 .hero-meta {
   display: flex;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
   font-size: 0.75rem;
   color: var(--text-muted);
@@ -1016,9 +1018,17 @@ body {
   margin-top: 4px;
 }
 
-.suggestion-reason-card {
-  max-width: 720px;
+
+.hero-bottom-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   margin-top: 4px;
+}
+
+.suggestion-reason-card {
+  flex: 1;
   padding: 12px 14px;
   background: rgba(230, 92, 0, 0.06);
   border: 1px solid rgba(230, 92, 0, 0.18);
@@ -1044,7 +1054,6 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 2px;
   flex-wrap: wrap;
 }
 
