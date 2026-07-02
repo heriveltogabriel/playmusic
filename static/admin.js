@@ -4025,7 +4025,13 @@ function renderPlaysHistory() {
               <span class="history-play-title">${lp.title}</span>
               <span class="history-play-artist">- ${lp.artist}</span>
             </div>
-            <div class="history-play-meta">— ouvido na ${wDay} às ${hrs}:${mins}</div>
+            <div class="history-play-meta" style="display: flex; align-items: center; gap: 5px;">
+              <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2.5" fill="none" style="opacity: 0.7; flex-shrink: 0;">
+                <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
+                <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
+              </svg>
+              <span>ouvido na ${wDay} às ${hrs}:${mins}</span>
+            </div>
           </div>
           <div class="history-play-count">1 audição</div>
         `;

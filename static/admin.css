@@ -3408,13 +3408,13 @@ dialog::backdrop {
 .history-month-group::before {
   content: '';
   position: absolute;
-  left: -7px;
+  left: -9px;
   top: 15px;
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: var(--bg);
-  border: 3px solid var(--primary);
+  background: var(--primary);
+  border: 3px solid var(--bg);
   box-shadow: 0 0 12px rgba(230, 92, 0, 0.6);
   z-index: 2;
 }
@@ -3480,7 +3480,7 @@ dialog::backdrop {
 .history-week-group::before {
   content: '';
   position: absolute;
-  left: -5px;
+  left: -7px;
   top: 10px;
   width: 10px;
   height: 10px;
@@ -3551,11 +3551,11 @@ dialog::backdrop {
 .history-play-item::before {
   content: '';
   position: absolute;
-  left: -28px;
+  left: -29px;
   top: 50%;
   transform: translateY(-50%);
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: #666;
   border: 2px solid var(--bg);
