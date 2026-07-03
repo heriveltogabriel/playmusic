@@ -47,6 +47,8 @@ class Release:
     notes: str = ""
     favorite: bool = False
     listen_dates: list[str] = field(default_factory=list)
+    original_year: int | None = None
+    edition_year: int | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -69,15 +71,18 @@ class Release:
             "notes": self.notes,
             "favorite": self.favorite,
             "listen_dates": self.listen_dates,
+            "original_year": self.original_year,
+            "edition_year": self.edition_year,
         }
 
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> "Release":
+        year = payload.get("year")
         return cls(
             release_id=int(payload["release_id"]),
             title=str(payload.get("title", "")),
             artist=str(payload.get("artist", "")),
-            year=payload.get("year"),
+            year=year,
             cover_url=str(payload.get("cover_url", "")),
             country=str(payload.get("country", "")),
             labels=list(payload.get("labels", [])),
@@ -93,6 +98,8 @@ class Release:
             notes=str(payload.get("notes", "")),
             favorite=bool(payload.get("favorite", False)),
             listen_dates=list(payload.get("listen_dates", [])),
+            original_year=payload.get("original_year") or year,
+            edition_year=payload.get("edition_year") or year,
         )
 
 

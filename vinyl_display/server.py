@@ -115,8 +115,11 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
         if path == "/herivelto" or path == "/herivelto/":
             self._send_static("herivelto.html")
             return
-        if path in ("/apple-touch-icon.png", "/apple-touch-icon-precomposed.png", "/favicon.ico"):
+        if path in ("/apple-touch-icon.png", "/apple-touch-icon-precomposed.png"):
             self._send_static("logo_lp_da_semana.png")
+            return
+        if path == "/favicon.ico":
+            self._send_static("favicon.png")
             return
         if path == "/api/ouvir/releases":
             releases = self.app.list_admin_releases()
@@ -134,6 +137,18 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             ]
             self._json(clean_data)
             return
+
+        if path == "/api/admin/historical_agendas":
+            hist_str = self.app.store.get_metadata("historical_agendas")
+            historical = {}
+            if hist_str:
+                try:
+                    historical = json.loads(hist_str)
+                except:
+                    pass
+            self._json(historical)
+            return
+
         if path == "/api/ouvir/agenda":
             agenda_releases = self.app.get_weekly_agenda()
             clean_data = [
@@ -300,6 +315,14 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
     def do_POST(self) -> None:
         path = urlparse(self.path).path
         
+        if path == "/api/debug/dom":
+            length = int(self.headers.get("Content-Length", "0"))
+            body_bytes = self.rfile.read(length)
+            from pathlib import Path
+            Path("scratch/dom_dump.html").write_bytes(body_bytes)
+            self._json({"success": True})
+            return
+
         # Check authentication for protected POST routes
         if path.startswith("/api/admin/") or path == "/api/sync" or path == "/api/config" or path == "/api/auth/change_password":
             if not self._is_authenticated():
@@ -514,6 +537,21 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                     year = int(year)
                 except ValueError:
                     year = None
+            
+            original_year = payload.get("original_year")
+            if original_year is not None:
+                try:
+                    original_year = int(original_year)
+                except ValueError:
+                    original_year = None
+                    
+            edition_year = payload.get("edition_year")
+            if edition_year is not None:
+                try:
+                    edition_year = int(edition_year)
+                except ValueError:
+                    edition_year = None
+
             cover_url = payload.get("cover_url", "")
             labels = payload.get("labels")
             catalog_numbers = payload.get("catalog_numbers")
@@ -536,6 +574,8 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                     notes=notes,
                     rating=rating,
                     favorite=favorite,
+                    original_year=original_year,
+                    edition_year=edition_year,
                 )
             )
             return
@@ -554,6 +594,21 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                     year = int(year)
                 except ValueError:
                     year = None
+                    
+            original_year = payload.get("original_year")
+            if original_year is not None:
+                try:
+                    original_year = int(original_year)
+                except ValueError:
+                    original_year = None
+                    
+            edition_year = payload.get("edition_year")
+            if edition_year is not None:
+                try:
+                    edition_year = int(edition_year)
+                except ValueError:
+                    edition_year = None
+
             cover_url = payload.get("cover_url", "")
             labels = payload.get("labels")
             catalog_numbers = payload.get("catalog_numbers")
@@ -575,9 +630,12 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                     styles=styles,
                     notes=notes,
                     rating=rating,
+                    original_year=original_year,
+                    edition_year=edition_year,
                 )
             )
             return
+
         if path == "/api/admin/agenda":
             length = int(self.headers.get("Content-Length", "0"))
             body_bytes = self.rfile.read(length)
@@ -595,6 +653,24 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                 self.wfile.write(body)
                 return
             self.app.store.set_metadata("weekly_agenda_ids", json.dumps(ids))
+            
+            from datetime import datetime, timedelta
+            now = datetime.now()
+            # Início da semana (domingo)
+            days_since_sunday = (now.weekday() + 1) % 7
+            start_of_week = now - timedelta(days=days_since_sunday)
+            week_key = start_of_week.strftime("%Y-%m-%d")
+            
+            hist_str = self.app.store.get_metadata("historical_agendas")
+            historical = {}
+            if hist_str:
+                try:
+                    historical = json.loads(hist_str)
+                except:
+                    pass
+            historical[week_key] = ids
+            self.app.store.set_metadata("historical_agendas", json.dumps(historical))
+            
             self._json({"success": True})
             return
         if path.startswith("/api/admin/releases/") and path.endswith("/delete"):

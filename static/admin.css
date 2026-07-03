@@ -127,17 +127,63 @@ body {
   gap: 12px;
 }
 
-.logo-icon {
+.logo-vinyl {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  object-fit: cover;
+  background: radial-gradient(circle, #2a2a2a 12%, #0a0a0a 65%, #000000 100%);
+  border: 1px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
   animation: logo-spin 12s linear infinite;
   animation-play-state: paused;
-  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.logo-wrapper:hover .logo-icon {
+.logo-vinyl::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  bottom: 2px;
+  border: 0.5px dashed rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+}
+
+.logo-vinyl::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  right: 5px;
+  bottom: 5px;
+  border: 0.5px solid rgba(255, 255, 255, 0.03);
+  border-radius: 50%;
+}
+
+.logo-vinyl-label {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--primary);
+  box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.logo-vinyl-label::after {
+  content: '';
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background-color: #080808;
+}
+
+.logo-wrapper:hover .logo-vinyl {
   animation-play-state: running;
 }
 
@@ -1959,9 +2005,10 @@ body {
   background: var(--card-bg);
   border: var(--glass-border);
   border-radius: 16px;
-  padding: 20px;
+  padding: 12px 16px;
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
+  text-align: center;
 }
 
 .mini-card-label {
@@ -1978,6 +2025,21 @@ body {
   font-weight: 700;
   color: var(--primary);
   text-shadow: 0 0 10px rgba(230, 92, 0, 0.3);
+}
+
+/* Specific overrides to shrink the bottom stats mini cards (Destaques de Audição) */
+.span-full .stat-mini-card {
+  padding: 8px 12px;
+  border-radius: 12px;
+}
+
+.span-full .stat-mini-card .mini-card-label {
+  font-size: 0.65rem;
+  margin-bottom: 4px;
+}
+
+.span-full .stat-mini-card .mini-card-value {
+  font-size: 1.5rem;
 }
 
 .stats-row {
@@ -3093,6 +3155,14 @@ dialog::backdrop {
   display: flex;
   align-items: center;
   gap: 12px;
+  list-style: none; /* Hide default summary arrow in standard browsers */
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+}
+
+.timeline-group-header::-webkit-details-marker {
+  display: none; /* Hide default summary arrow in Safari/Chrome */
 }
 
 .timeline-group-header::before {
@@ -3119,17 +3189,38 @@ dialog::backdrop {
   text-transform: uppercase;
 }
 
+/* Custom chevron indicator */
+.timeline-group-title::after {
+  content: ' ▾';
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  display: inline-block;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-left: 6px;
+}
+
+.timeline-group-details[open] .timeline-group-title::after {
+  transform: rotate(-180deg);
+  color: var(--primary);
+}
+
+/* Hide scroll top button when group is collapsed */
+.timeline-group-details:not([open]) .timeline-scroll-top-btn {
+  display: none !important;
+}
+
 /* Timeline item block */
 .timeline-item {
   position: relative;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 
-/* Node indicator dot */
+/* Node indicator dot - vertically centered with the smaller card */
 .timeline-item::before {
   content: '';
   position: absolute;
-  top: 36px;
+  top: 50%;
+  transform: translateY(-50%);
   left: -32px;
   width: 10px;
   height: 10px;
@@ -3143,79 +3234,58 @@ dialog::backdrop {
 .timeline-item:hover::before {
   background: var(--primary);
   box-shadow: 0 0 8px var(--primary);
-  transform: scale(1.3);
+  transform: translateY(-50%) scale(1.3);
 }
 
-/* Timeline Card */
+/* Timeline Card styled identically to the ranking history list items */
 .timeline-card {
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 14px;
-  padding: 16px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 8px 12px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all var(--transition-normal);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  transition: background 0.2s;
   position: relative;
   overflow: hidden;
 }
 
 .timeline-card:hover {
-  background: var(--card-hover-bg);
-  border-color: rgba(255, 255, 255, 0.15);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.timeline-card::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 4px;
-  height: 100%;
-  background: transparent;
-  transition: background var(--transition-normal);
-}
-
-.timeline-card:hover::after {
-  background: var(--primary);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .timeline-cover {
-  width: 52px;
-  height: 52px;
-  border-radius: 6px;
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
   object-fit: cover;
-  box-shadow: var(--shadow-sm);
-  background: #111;
-  transition: transform var(--transition-normal);
+  transition: transform 0.2s;
 }
 
 .timeline-card:hover .timeline-cover {
-  transform: scale(1.05) rotate(1deg);
+  transform: scale(1.05);
 }
 
 .timeline-content-body {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-.timeline-date {
-  font-size: 0.65rem;
-  color: var(--text-muted);
-  font-weight: 600;
-  margin-bottom: 2px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+.timeline-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .timeline-title {
+  font-weight: 600;
   font-size: 0.9rem;
-  font-weight: 700;
   color: #fff;
   white-space: nowrap;
   overflow: hidden;
@@ -3223,30 +3293,23 @@ dialog::backdrop {
 }
 
 .timeline-artist {
+  color: var(--text-secondary);
+  font-weight: 400;
+  font-size: 0.75rem;
+}
+
+.timeline-date {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+  text-transform: uppercase;
+}
+
+.timeline-play-count {
   font-size: 0.75rem;
   color: var(--text-secondary);
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-top: 1px;
-}
-
-.timeline-meta {
-  font-size: 0.7rem;
-  color: var(--text-muted);
-  margin-top: 6px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.timeline-badge {
-  background: rgba(255, 255, 255, 0.05);
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-size: 0.65rem;
-  border: 1px solid rgba(255, 255, 255, 0.03);
-  color: var(--text-secondary);
+  font-weight: 500;
 }
 
 /* ==================== RESPONSIVE OVERRIDES ==================== */
@@ -3955,5 +4018,61 @@ dialog::backdrop {
 .play-item--done {
   border-color: rgba(46, 204, 113, 0.25);
   background: rgba(46, 204, 113, 0.04);
+}
+
+/* Hover-expanding Logout Button styling */
+.logout-btn {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  overflow: hidden;
+  position: relative;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  padding: 0;
+}
+
+.logout-btn-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 8px;
+  width: max-content;
+  height: 100%;
+}
+
+.logout-btn .user-icon {
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+.logout-btn:hover {
+  width: 80px;
+  background: rgba(255, 69, 58, 0.15);
+  color: var(--danger);
+  border-color: rgba(255, 69, 58, 0.3);
+}
+
+.logout-btn:hover .user-icon {
+  transform: scale(1.05);
+}
+
+.logout-text {
+  font-size: 0.85rem;
+  font-weight: 600;
+  opacity: 0;
+  transform: translateX(-5px);
+  transition: opacity 0.2s ease 0.1s, transform 0.2s ease 0.1s;
+}
+
+.logout-btn:hover .logout-text {
+  opacity: 1;
+  transform: translateX(0);
 }
 

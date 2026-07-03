@@ -146,6 +146,7 @@ function initializeViews() {
   navButtons.forEach(btn => {
     btn.addEventListener('click', () => {
       const targetView = btn.dataset.view;
+      if (!targetView) return;
       
       // Update sidebar active button
       navButtons.forEach(b => b.classList.remove('active'));
@@ -547,7 +548,7 @@ function renderWeeklyAgenda() {
       </button>
       <div class="agenda-day-name">${AGENDA_DAYS[index]}</div>
       <div class="agenda-cover-wrap">
-        <img class="agenda-day-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.src='${defaultCover}'">
+        <img class="agenda-day-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.onerror=null; this.src='${defaultCover}'">
         ${overlay}
       </div>
       <div class="agenda-day-title" title="${lp.title}">${lp.title}</div>
@@ -894,7 +895,7 @@ function renderHistoryRanking() {
     item.innerHTML = `
       <div class="history-item-left">
         <span class="history-rank-badge">#${index + 1}</span>
-        <img class="history-item-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.src='${defaultCover}'">
+        <img class="history-item-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.onerror=null; this.src='${defaultCover}'">
         <div class="history-item-details">
           <div class="history-item-title" title="${lp.title}">${lp.title}</div>
           <div class="history-item-artist" title="${lp.artist}">${lp.artist}</div>
@@ -1513,6 +1514,9 @@ function renderTimeline() {
   });
   
   let currentGroup = '';
+  let currentDetails = null;
+  let currentItemsContainer = null;
+  let isFirstGroup = true;
   const defaultCover = 'https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=200&auto=format&fit=crop';
   
   filtered.forEach(lp => {
@@ -1538,13 +1542,20 @@ function renderTimeline() {
     // Draw group header if it changed
     if (groupTitle !== currentGroup) {
       currentGroup = groupTitle;
-      const headerDiv = document.createElement('div');
-      headerDiv.className = 'timeline-group-header';
-      const groupId = 'timeline-group-' + groupTitle.replace(/\s+/g, '-').toLowerCase();
-      headerDiv.id = groupId;
+      
+      currentDetails = document.createElement('details');
+      currentDetails.className = 'timeline-group-details';
+      if (isFirstGroup) {
+        currentDetails.open = true;
+        isFirstGroup = false;
+      }
+      
+      const summary = document.createElement('summary');
+      summary.className = 'timeline-group-header';
+      
       const count = groupCounts[groupTitle] || 0;
       const countText = `${count} ${count === 1 ? 'Disco' : 'Discos'}`;
-      headerDiv.innerHTML = `
+      summary.innerHTML = `
         <span class="timeline-group-title">${groupTitle} - ${countText}</span>
         <button class="timeline-scroll-top-btn" title="Voltar ao topo" style="
           background: none;
@@ -1563,10 +1574,11 @@ function renderTimeline() {
         </button>
       `;
       
-      const scrollTopBtn = headerDiv.querySelector('.timeline-scroll-top-btn');
+      const scrollTopBtn = summary.querySelector('.timeline-scroll-top-btn');
       if (scrollTopBtn) {
         scrollTopBtn.addEventListener('click', (e) => {
           e.stopPropagation();
+          e.preventDefault();
           const topSection = document.getElementById('view-timeline');
           if (topSection) {
             topSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1582,7 +1594,13 @@ function renderTimeline() {
         });
       }
       
-      container.appendChild(headerDiv);
+      currentDetails.appendChild(summary);
+      
+      currentItemsContainer = document.createElement('div');
+      currentItemsContainer.className = 'timeline-group-items';
+      currentDetails.appendChild(currentItemsContainer);
+      
+      container.appendChild(currentDetails);
     }
     
     // Draw timeline item card
@@ -1594,25 +1612,23 @@ function renderTimeline() {
     if (lp.date_added) {
       const d = new Date(lp.date_added);
       const day = d.getDate();
-      const month = MONTHS_PT[d.getMonth()].toLowerCase();
+      const month = MONTHS_PT[d.getMonth()].toUpperCase();
       const hours = String(d.getHours()).padStart(2, '0');
       const minutes = String(d.getMinutes()).padStart(2, '0');
-      friendlyDate = `Adicionado em ${day} de ${month} às ${hours}:${minutes}`;
+      friendlyDate = `ADICIONADO EM ${day} DE ${month} ÀS ${hours}:${minutes}`;
     }
     
     itemDiv.innerHTML = `
       <div class="timeline-card" data-id="${lp.id}">
-        <img class="timeline-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.src='${defaultCover}'">
+        <img class="timeline-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.onerror=null; this.src='${defaultCover}'">
         <div class="timeline-content-body">
-          <div class="timeline-date">${friendlyDate}</div>
-          <div class="timeline-title">${lp.title}</div>
-          <div class="timeline-artist">${lp.artist}</div>
-          <div class="timeline-meta">
-            ${lp.year > 0 ? `<span class="timeline-badge">${lp.year}</span>` : ''}
-            ${lp.labels && lp.labels.length > 0 ? `<span class="timeline-badge">${lp.labels[0]}</span>` : ''}
-            <span class="timeline-badge">🎧 ${lp.plays || 0} audições</span>
+          <div class="timeline-title-row">
+            <span class="timeline-title">${lp.title}</span>
+            <span class="timeline-artist">- ${lp.artist}</span>
           </div>
+          <div class="timeline-date">${friendlyDate}</div>
         </div>
+        <div class="timeline-play-count">${lp.plays || 0} ${lp.plays === 1 ? 'audição' : 'audições'}</div>
       </div>
     `;
     
@@ -1622,7 +1638,9 @@ function renderTimeline() {
       openDetailsDialog(lp.id);
     });
     
-    container.appendChild(itemDiv);
+    if (currentItemsContainer) {
+      currentItemsContainer.appendChild(itemDiv);
+    }
   });
 
   renderTimelineStats();
@@ -1653,7 +1671,7 @@ function renderGrid() {
     
     card.innerHTML = `
       <div class="lp-card-cover-wrapper">
-        <img class="lp-card-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" loading="lazy" onerror="this.src='${defaultCover}'">
+        <img class="lp-card-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" loading="lazy" onerror="this.onerror=null; this.src='${defaultCover}'">
         <button class="lp-card-fav-btn ${lp.favorite ? 'active' : ''}" title="${lp.favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}" data-id="${lp.id}">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="${lp.favorite ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
@@ -1810,7 +1828,7 @@ function renderFavoritesGrid() {
     
     card.innerHTML = `
       <div class="lp-card-cover-wrapper">
-        <img class="lp-card-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" loading="lazy" onerror="this.src='${defaultCover}'">
+        <img class="lp-card-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" loading="lazy" onerror="this.onerror=null; this.src='${defaultCover}'">
         <button class="lp-card-fav-btn ${lp.favorite ? 'active' : ''}" title="${lp.favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}" data-id="${lp.id}">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="${lp.favorite ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
@@ -2159,7 +2177,7 @@ function renderStats() {
     const defaultCover = 'https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=200&auto=format&fit=crop';
     
     div.innerHTML = `
-      <img class="addition-thumb" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.src='${defaultCover}'">
+      <img class="addition-thumb" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.onerror=null; this.src='${defaultCover}'">
       <div class="addition-details">
         <div class="addition-title">${lp.title}</div>
         <div class="addition-artist">${lp.artist}</div>
@@ -2198,7 +2216,7 @@ function openArtistAlbumsDialog(artistName, lps) {
     
     item.innerHTML = `
       <div class="history-item-left">
-        <img class="history-item-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.src='${defaultCover}'">
+        <img class="history-item-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.onerror=null; this.src='${defaultCover}'">
         <div class="history-item-details">
           <div class="history-item-title" title="${lp.title}">${lp.title}</div>
           <div class="history-item-artist" title="${lp.artist}">${lp.artist}</div>
@@ -2256,9 +2274,9 @@ function renderTimelineStats() {
     current.setMonth(current.getMonth() + 1);
   }
 
-  // Define default values (last 12 months or less if history is shorter)
+  // Define default values (last 6 months or less if history is shorter)
   const newestMonth = chronological[chronological.length - 1];
-  const defaultStartIndex = Math.max(0, chronological.length - 12);
+  const defaultStartIndex = Math.max(0, chronological.length - 6);
   const defaultStartMonth = chronological[defaultStartIndex];
   
   const defaultStartVal = defaultStartMonth.year * 12 + defaultStartMonth.month;
@@ -2565,7 +2583,7 @@ function renderPlayPeriodStats() {
         div.innerHTML = `
           <div class="ranking-item-left" style="gap: 8px; flex: 1; min-width: 0; display: flex; align-items: center;">
             <span class="ranking-badge">#${index+1}</span>
-            <img class="addition-thumb" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.src='${defaultCover}'" style="width: 32px; height: 32px; border-radius: 4px; object-fit: cover;">
+            <img class="addition-thumb" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.onerror=null; this.src='${defaultCover}'" style="width: 32px; height: 32px; border-radius: 4px; object-fit: cover;">
             <div class="addition-details">
               <div class="addition-title" style="font-size: 0.85rem; font-weight: 600;">${lp.title}</div>
               <div class="addition-artist" style="font-size: 0.75rem;">${lp.artist}</div>
@@ -2600,7 +2618,7 @@ function renderPlayPeriodStats() {
         div.innerHTML = `
           <div class="ranking-item-left" style="gap: 8px; flex: 1; min-width: 0; display: flex; align-items: center;">
             <span class="ranking-badge">#${index+1}</span>
-            <img class="addition-thumb" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.src='${defaultCover}'" style="width: 32px; height: 32px; border-radius: 4px; object-fit: cover;">
+            <img class="addition-thumb" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.onerror=null; this.src='${defaultCover}'" style="width: 32px; height: 32px; border-radius: 4px; object-fit: cover;">
             <div class="addition-details">
               <div class="addition-title" style="font-size: 0.85rem; font-weight: 600;">${lp.title}</div>
               <div class="addition-artist" style="font-size: 0.75rem;">${lp.artist}</div>
@@ -2787,7 +2805,7 @@ function initializeDialogs() {
           const resultItem = document.createElement('div');
           resultItem.className = 'discogs-result-item';
           resultItem.innerHTML = `
-            <img class="discogs-result-thumb" src="${thumb}" alt="Capa" onerror="this.src='placeholder.png'">
+            <img class="discogs-result-thumb" src="${thumb}" alt="Capa" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=200&auto=format&fit=crop'">
             <div class="discogs-result-info">
               <div class="discogs-result-title" title="${title}">${title}</div>
               <div class="discogs-result-artist" title="${artist}">${artist}</div>
@@ -3495,7 +3513,7 @@ function renderPlaysRankingPage() {
       <div class="podium-step ${positionClass}" data-lp-id="${lp.id}">
         <div class="podium-cover-wrapper">
           <div class="podium-crown">${crownEmoji}</div>
-          <img class="podium-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.src='${defaultCover}'">
+          <img class="podium-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.onerror=null; this.src='${defaultCover}'">
           <span class="podium-badge">#${rank}</span>
         </div>
         <div class="podium-column">
@@ -3576,7 +3594,7 @@ function openWeeklyPlaysDialog(dayName, plays) {
     });
     
     item.innerHTML = `
-      <img src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.src='${defaultCover}'" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover; border: 1px solid rgba(255,255,255,0.1);">
+      <img src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.onerror=null; this.src='${defaultCover}'" style="width: 44px; height: 44px; border-radius: 6px; object-fit: cover; border: 1px solid rgba(255,255,255,0.1);">
       <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;">
         <span style="font-weight: 600; font-size: 0.9rem; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${lp.title}">${lp.title}</span>
         <span style="font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${lp.artist}">${lp.artist}</span>
@@ -4098,7 +4116,7 @@ function renderPlaysHistory() {
         const mins = String(d.getMinutes()).padStart(2, '0');
 
         playItem.innerHTML = `
-          <img class="history-play-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.src='${defaultCover}'">
+          <img class="history-play-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.onerror=null; this.src='${defaultCover}'">
           <div class="history-play-details">
             <div style="display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap;">
               <span class="history-play-title">${lp.title}</span>
@@ -4279,7 +4297,7 @@ async function renderWeeklyHistory() {
       
       const playHtml = `
         <div class="history-play-item weekly-history-play-item ${playClass}">
-          <img class="history-play-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.src='${defaultCover}'">
+          <img class="history-play-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.onerror=null; this.src='${defaultCover}'">
           <div class="history-play-details">
             <div class="history-play-title" title="${lp.title}">${lp.title}</div>
             <div class="history-play-artist" title="${lp.artist}">${lp.artist}</div>

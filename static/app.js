@@ -38,6 +38,7 @@ let currentRelease = null;
 let trackChangeCount = 0;
 let consecutiveFailedListens = 0;
 let micSuspended = false;
+let consecutiveLoudSeconds = 0;
 
 let mediaStream = null;
 let recording = false;
@@ -162,18 +163,8 @@ function renderState(state) {
 
     const trackKey = `${track.title}-${release.artist}`;
     if (trackKey !== currentTrackKey) {
-      if (currentTrackKey !== null) {
-        trackChangeCount++;
-        if (trackChangeCount >= 2) {
-          trackChangeCount = 0;
-          setTimeout(() => {
-            if (currentRelease !== null && mediaStream && !recording) {
-              console.log("[AUTO-LISTEN] Executando identificação silenciosa em background após 2 faixas.");
-              recordClip(true);
-            }
-          }, 10000);
-        }
-      }
+      // Automatic background verification on track changes is disabled to save Shazam API tokens.
+      // Re-verification is now only done manually when the user clicks the "Identify" button.
       currentTrackKey = trackKey;
       fetchLyrics(track, release);
       setLyricsVisibility(false);
@@ -209,7 +200,7 @@ function renderState(state) {
         window.nextAutoListenAt = Date.now() + (remaining * 1000);
       } else {
         if (!window.nextAutoListenAt || window.nextAutoListenAt < Date.now()) {
-          window.nextAutoListenAt = lastRecognitionAt + 45000;
+          window.nextAutoListenAt = lastRecognitionAt + 90000;
         }
       }
 
@@ -394,19 +385,14 @@ async function startMicrophone() {
       elements.micDebug.textContent = "Microfone: ativado com sucesso.";
     }
 
-    const updateDebug = () => {
+    const updateDebug = (rmsValue) => {
       if (elements.micDebug) {
         if (recording) return;
         const state = micAudioContext.state;
         const status = state === "suspended" ? "pausado (toque na tela para ativar)" : "ouvindo";
-        const samples = new Uint8Array(micAnalyserNode.fftSize);
-        micAnalyserNode.getByteTimeDomainData(samples);
-        const rms = Math.sqrt(samples.reduce((sum, value) => {
-          const normalized = (value - 128) / 128;
-          return sum + normalized * normalized;
-        }, 0) / samples.length);
-        const volPct = Math.round(rms * 100);
-        elements.micDebug.textContent = `Microfone: ${status} | Vol: ${volPct}% | Limiar: 3.5%`;
+        const currentRms = rmsValue !== undefined ? rmsValue : 0;
+        const volPct = Math.round(currentRms * 100);
+        elements.micDebug.textContent = `Microfone: ${status} | Vol: ${volPct}% | Limiar: 3.8% (${consecutiveLoudSeconds}/2s)`;
       }
     };
 
@@ -414,7 +400,7 @@ async function startMicrophone() {
     setInterval(() => {
       if (!micAudioContext || micAudioContext.state === "suspended") {
         if (elements.micDebug && !recording) {
-          elements.micDebug.textContent = "Microfone: pausado (toque na tela para ativar) | Vol: 0% | Limiar: 3.5%";
+          elements.micDebug.textContent = "Microfone: pausado (toque na tela para ativar) | Vol: 0% | Limiar: 3.8%";
         }
         return;
       }
@@ -443,9 +429,16 @@ async function startMicrophone() {
         return sum + normalized * normalized;
       }, 0) / samples.length);
 
-      updateDebug();
+      if (rms > 0.038) {
+        consecutiveLoudSeconds++;
+      } else {
+        consecutiveLoudSeconds = 0;
+      }
 
-      if (rms > 0.035 && !recording) {
+      updateDebug(rms);
+
+      if (consecutiveLoudSeconds >= 2 && !recording) {
+        consecutiveLoudSeconds = 0;
         recordClip();
       }
     }, 1000);
@@ -569,12 +562,12 @@ function recordClip(isAutomatic = false) {
           if (elements.micDebug && !micSuspended) {
             elements.micDebug.textContent = "Shazam: serviço indisponível (" + (response.message || "limite/erro") + ")";
           }
-          window.nextAutoListenAt = Date.now() + 45000;
+          window.nextAutoListenAt = Date.now() + 90000;
         } else {
           if (elements.micDebug && !micSuspended) {
             elements.micDebug.textContent = "Shazam: música não identificada na coleção";
           }
-          window.nextAutoListenAt = Date.now() + 45000;
+          window.nextAutoListenAt = Date.now() + 90000;
         }
       }
       await pollState();
@@ -596,7 +589,7 @@ function recordClip(isAutomatic = false) {
       if (elements.micDebug && !micSuspended) {
         elements.micDebug.textContent = `Erro do servidor: ${error.message}`;
       }
-      window.nextAutoListenAt = Date.now() + 45000;
+      window.nextAutoListenAt = Date.now() + 90000;
     } finally {
       recording = false;
       if (elements.retryButton) {
@@ -663,8 +656,7 @@ if (elements.syncButton) {
 }
 
 async function handleFirstGesture() {
-  micSuspended = false;
-  consecutiveFailedListens = 0;
+  if (micSuspended) return;
   if (!micAudioContext && !isInitializingMic) {
     await startMicrophone();
   } else if (micAudioContext && micAudioContext.state === "suspended") {

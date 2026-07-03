@@ -54,15 +54,20 @@ class CatalogStore:
             )
 
     def upsert_release(self, release: Release) -> None:
-        synced_time = release.synced_at or time.time()
-        if release.synced_at == 0.0:
-            import dataclasses
-            release = dataclasses.replace(release, synced_at=synced_time)
-            
         # Merge with existing local fields if they exist to prevent sync overwrite
         existing = self.get_release(release.release_id)
+        
+        synced_at = release.synced_at
+        if synced_at == 0.0:
+            if existing and existing.synced_at > 0.0:
+                synced_at = existing.synced_at
+            else:
+                synced_at = time.time()
+                
+        import dataclasses
+        release = dataclasses.replace(release, synced_at=synced_at)
+            
         if existing:
-            import dataclasses
             # Keep existing local edits if the incoming release does not specify them
             notes = release.notes if release.notes else existing.notes
             favorite = release.favorite if release.favorite else existing.favorite
@@ -101,7 +106,7 @@ class CatalogStore:
                     release.year,
                     release.cover_url,
                     payload_json,
-                    synced_time,
+                    synced_at,
                 ),
             )
             # Ensure rating and auditions are synced in release_stats table too
@@ -300,6 +305,8 @@ class CatalogStore:
         notes: str = "",
         rating: int = 0,
         favorite: bool = False,
+        original_year: int | None = None,
+        edition_year: int | None = None,
     ) -> Release:
         with self._connect() as connection:
             # Generate next local ID (negative values to prevent overlap with Discogs positive IDs)
@@ -307,11 +314,16 @@ class CatalogStore:
             min_id = row[0] if row[0] is not None else 0
             new_id = min_id - 1 if min_id < 0 else -1
             
+            if original_year is None:
+                original_year = year
+            if edition_year is None:
+                edition_year = year
+
             release = Release(
                 release_id=new_id,
                 title=title,
                 artist=artist,
-                year=year,
+                year=original_year,
                 cover_url=cover_url or "/static/logo_lp_da_semana.png",
                 country="Local",
                 labels=labels if labels is not None else ["Self-Released"],
@@ -325,7 +337,9 @@ class CatalogStore:
                 styles=styles if styles is not None else [],
                 notes=notes,
                 favorite=favorite,
-                listen_dates=[]
+                listen_dates=[],
+                original_year=original_year,
+                edition_year=edition_year,
             )
             
             # Save using standard upsert
@@ -345,15 +359,22 @@ class CatalogStore:
         catalog_numbers: list[str],
         notes: str,
         rating: int,
+        original_year: int | None = None,
+        edition_year: int | None = None,
     ) -> None:
         release = self.get_release(release_id)
         if release:
+            if original_year is None:
+                original_year = year
+            if edition_year is None:
+                edition_year = year
+
             import dataclasses
             updated_release = dataclasses.replace(
                 release,
                 title=title,
                 artist=artist,
-                year=year,
+                year=original_year,
                 cover_url=cover_url,
                 genres=genres,
                 styles=styles,
@@ -361,6 +382,8 @@ class CatalogStore:
                 catalog_numbers=catalog_numbers,
                 notes=notes,
                 rating=rating,
+                original_year=original_year,
+                edition_year=edition_year,
             )
             self.upsert_release(updated_release)
 

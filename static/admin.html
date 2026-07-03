@@ -8,6 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Coleção LP">
   <link rel="apple-touch-icon" href="/static/logo_lp_da_semana.png">
+  <link rel="icon" href="/static/favicon.png" type="image/png">
 
   <title>LP da Semana - Catálogo</title>
   <!-- Google Fonts: Outfit for sleek modern UI, JetBrains Mono for metadata -->
@@ -25,7 +26,9 @@
     <aside class="sidebar">
       <div class="sidebar-header">
         <div class="logo-wrapper" style="margin-bottom: 12px;">
-          <img src="/static/logo_lp_da_semana.png" alt="Logo" class="logo-icon">
+          <div class="logo-vinyl">
+            <div class="logo-vinyl-label"></div>
+          </div>
           <span class="logo-text">LP da Semana</span>
         </div>
         <div class="back-player-wrapper" style="display: flex; gap: 8px; width: 100%;">
@@ -36,18 +39,14 @@
             </svg>
             Player
           </a>
-          <button class="nav-btn-icon btn btn-secondary" data-view="settings" title="Configurações" style="width: 36px; height: 36px; min-width: 36px; display: flex; align-items: center; justify-content: center; padding: 0; border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-secondary); background: rgba(255, 255, 255, 0.05); transition: var(--transition-fast); cursor: pointer;">
-            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="3"></circle>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-            </svg>
-          </button>
-          <button class="nav-btn-icon btn btn-secondary" id="logoutBtn" title="Sair do Painel" style="width: 36px; height: 36px; min-width: 36px; display: flex; align-items: center; justify-content: center; padding: 0; border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-secondary); background: rgba(255, 255, 255, 0.05); transition: var(--transition-fast); cursor: pointer;">
-            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-              <polyline points="16 17 21 12 16 7"></polyline>
-              <line x1="21" y1="12" x2="9" y2="12"></line>
-            </svg>
+          <button class="logout-btn" id="logoutBtn" title="Sair do Painel">
+            <div class="logout-btn-content">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="user-icon">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              <span class="logout-text">Sair</span>
+            </div>
           </button>
         </div>
       </div>
@@ -113,6 +112,16 @@
               Favoritos
             </button>
           </li>
+          <li class="menu-divider" style="height: 1px; background: var(--border-color); margin: 12px 10px; opacity: 0.5;"></li>
+          <li>
+            <button class="nav-btn" data-view="settings">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+              Configurações
+            </button>
+          </li>
         </ul>
       </nav>
 
@@ -121,7 +130,7 @@
       <!-- Quick status indicator -->
       <div class="sidebar-footer">
         <div class="total-lps-text">Total: <span id="total-catalog-count">0</span> LPs</div>
-        <div class="app-version-text" id="app-version-display" style="font-size: 0.65rem; color: var(--text-muted); margin-top: 6px; letter-spacing: 0.5px; opacity: 0.8;">v1.0.0</div>
+        <div class="app-version-text" id="app-version-display" style="font-size: 0.65rem; color: var(--text-muted); margin-top: 6px; letter-spacing: 0.5px; opacity: 0.8;">v3.1.0</div>
       </div>
     </aside>
 
@@ -187,7 +196,7 @@
 
             <div class="suggestion-hero-card">
               <div class="suggestion-hero-cover">
-                <img id="suggested-cover-img" src="" alt="Capa da Sugestão" onerror="this.src='https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=300&auto=format&fit=crop'">
+                <img id="suggested-cover-img" src="" alt="Capa da Sugestão" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=300&auto=format&fit=crop'">
                 <div class="plays-badge" title="Quantidade de vezes ouvido">
                   <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
                     <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
@@ -249,21 +258,6 @@
           </div>
         </div>
 
-        <!-- HISTÓRICO SEMANAL (Abaixo do Layout Principal) -->
-        <div class="weekly-history-section">
-          <div class="weekly-history-header">
-            <h3 class="card-title-sm">Histórico Recente</h3>
-            <p class="card-subtitle">Volume de audições nas últimas semanas</p>
-          </div>
-          
-          <div class="weekly-history-chart" id="weekly-history-chart">
-            <!-- Barras do gráfico inseridas via JS -->
-          </div>
-
-          <div class="weekly-history-list" id="weekly-history-list">
-            <!-- Cards expansíveis inseridos via JS -->
-          </div>
-        </div>
       </section>
 
       <!-- VIEW 4: RANKING DE AUDIÇÕES -->
@@ -897,7 +891,7 @@
           <!-- Left: Cover preview URL -->
           <div class="form-cover-preview-panel">
             <div class="cover-preview-box">
-              <img id="form-cover-preview" src="placeholder.png" alt="Cover Preview" onerror="this.src='https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=300&auto=format&fit=crop'">
+              <img id="form-cover-preview" src="placeholder.png" alt="Cover Preview" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=300&auto=format&fit=crop'">
               <div id="form-preview-placeholder" class="preview-placeholder">Pré-visualização da Capa</div>
             </div>
             <div class="form-group">

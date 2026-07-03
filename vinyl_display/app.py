@@ -104,6 +104,10 @@ class VinylDisplayApp:
             except Exception as e:
                 print(f"[RECOGNIZE] Error calculating RMS: {e}")
         print(f"[RECOGNIZE] Received audio data: {len(audio_bytes)} bytes, filename: {filename}, RMS Volume: {rms:.5f}")
+        if rms < 0.015:
+            self.playback.set_listening()
+            print("[RECOGNIZE] Audio volume is too low, skipping recognition.")
+            return {"status": "no_result", "message": "Áudio muito silencioso"}
         try:
             recognition = self.shazam_client.recognize(audio_bytes, filename=filename)
         except Exception as error:
@@ -242,6 +246,8 @@ class VinylDisplayApp:
         notes: str = "",
         rating: int = 0,
         favorite: bool = False,
+        original_year: int | None = None,
+        edition_year: int | None = None,
     ) -> dict[str, Any]:
         release = self.store.add_manual_release(
             title=title,
@@ -255,6 +261,8 @@ class VinylDisplayApp:
             notes=notes,
             rating=rating,
             favorite=favorite,
+            original_year=original_year,
+            edition_year=edition_year,
         )
         return {"status": "ok", "release": release.to_dict()}
 
@@ -283,6 +291,8 @@ class VinylDisplayApp:
         catalog_numbers: list[str],
         notes: str,
         rating: int,
+        original_year: int | None = None,
+        edition_year: int | None = None,
     ) -> dict[str, Any]:
         self.store.update_release_details(
             release_id=release_id,
@@ -296,6 +306,8 @@ class VinylDisplayApp:
             catalog_numbers=catalog_numbers,
             notes=notes,
             rating=rating,
+            original_year=original_year,
+            edition_year=edition_year,
         )
         return {"status": "ok"}
 

@@ -124,6 +124,19 @@ class AppServiceTests(unittest.TestCase):
             self.assertEqual(state["status"], "listening")
             self.assertIn("RAPIDAPI_SHAZAM_KEY", response["message"])
 
+    def test_recognize_audio_too_quiet_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = CatalogStore(Path(tmp) / "catalog.sqlite3")
+            app = VinylDisplayApp(store, FakeDiscogsClient(), FakeShazamClient())
+            app.sync_collection()
+
+            response = app.recognize_audio(b"\x00\x00\x00\x00\x00\x00\x00\x00", filename="clip.webm")
+            state = app.state()
+
+            self.assertEqual(response["status"], "no_result")
+            self.assertEqual(response["message"], "Áudio muito silencioso")
+            self.assertEqual(state["status"], "listening")
+
     def test_increment_and_decrement_release_auditions(self):
         with tempfile.TemporaryDirectory() as tmp:
             store = CatalogStore(Path(tmp) / "catalog.sqlite3")

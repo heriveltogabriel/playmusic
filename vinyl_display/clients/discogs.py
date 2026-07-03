@@ -107,11 +107,18 @@ def release_from_discogs(payload: dict[str, Any]) -> Release:
             )
         )
 
+    edition_year = payload.get("year")
+    try:
+        edition_year = int(edition_year) if edition_year else None
+    except ValueError:
+        edition_year = None
+    original_year = edition_year
+
     return Release(
         release_id=int(payload["id"]),
         title=str(payload.get("title") or "").strip(),
         artist=_artist_name(payload),
-        year=payload.get("year"),
+        year=original_year,
         cover_url=_cover_url(payload),
         country=str(payload.get("country") or "").strip(),
         labels=labels,
@@ -121,6 +128,8 @@ def release_from_discogs(payload: dict[str, Any]) -> Release:
         discogs_url=str(payload.get("uri") or ""),
         genres=list(payload.get("genres") or []),
         styles=list(payload.get("styles") or []),
+        original_year=original_year,
+        edition_year=edition_year,
     )
 
 
@@ -209,7 +218,12 @@ class DiscogsClient:
                 master_year = master_payload.get("year")
                 if master_year:
                     import dataclasses
-                    release = dataclasses.replace(release, year=int(master_year))
+                    orig_yr = int(master_year)
+                    release = dataclasses.replace(
+                        release,
+                        year=orig_yr,
+                        original_year=orig_yr
+                    )
             except Exception as e:
                 print(f"[DISCOGS] Error fetching master {master_id} for release {release_id}: {e}")
                 
