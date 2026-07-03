@@ -196,7 +196,7 @@ sudo setsebool -P httpd_can_network_connect 1
 ## 5. Fluxo de Implantação (Deployment)
 
 Para atualizar o código do **Vinyl Display**, utilizamos o script local `deploy.sh`. Ele executa o seguinte fluxo:
-1. Compacta localmente o código do projeto ignorando pastas de desenvolvimento, cache, repositórios locais e a base de dados local (`collection.db`), garantindo a preservação do banco de dados remoto da produção.
+1. Compacta localmente o código do projeto ignorando pastas de desenvolvimento, cache, repositórios locais, a base de dados local (`collection.db`) e o arquivo de ambiente local (`.env`), garantindo a preservação do banco de dados e das configurações de produção do servidor remoto.
 2. Transmite via SSH para o diretório `/home/opc/vinyl_display` no servidor de produção.
 3. Remove arquivos ocultos de metadados do macOS (`._*`).
 4. Reinicia o serviço `vinyl-display` no systemd (`sudo systemctl restart vinyl-display`).
