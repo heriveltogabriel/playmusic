@@ -22,6 +22,7 @@ const elements = {
   lyricsContainer: document.querySelector(".lyrics-container"),
   coverPanel: document.querySelector(".cover-panel"),
   fullscreenButton: document.querySelector("#fullscreen-button"),
+  appVersionDisplay: document.querySelector("#app-version-display"),
 };
 
 let currentTrackKey = null;
@@ -140,6 +141,10 @@ function setCover(release) {
 function renderState(state) {
   if (state.lyrics_latency_offset !== undefined) {
     lyricsLatencyOffset = parseFloat(state.lyrics_latency_offset);
+  }
+
+  if (state.version && elements.appVersionDisplay) {
+    elements.appVersionDisplay.textContent = state.version;
   }
 
   const hasNextTrack = !!state.next_track;
