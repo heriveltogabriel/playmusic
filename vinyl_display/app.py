@@ -244,6 +244,94 @@ class VinylDisplayApp:
                 
         return agenda_releases
 
+    def get_listening_history(self) -> list[dict[str, Any]]:
+        """Build a visual history of past weekly agendas with listening progress."""
+        import json
+        from datetime import datetime, timedelta
+        
+        hist_str = self.store.get_metadata("historical_agendas")
+        if not hist_str:
+            return []
+        
+        try:
+            historical = json.loads(hist_str)
+        except Exception:
+            return []
+        
+        if not historical:
+            return []
+        
+        all_releases = {r.release_id: r for r in self.store.list_releases_with_stats()}
+        
+        # Current week key (to tag the active week)
+        now = datetime.now()
+        days_since_sunday = (now.weekday() + 1) % 7
+        current_week_start = now - timedelta(days=days_since_sunday)
+        current_week_key = current_week_start.strftime("%Y-%m-%d")
+        
+        result = []
+        for week_key, ids in sorted(historical.items(), reverse=True):
+            try:
+                week_start = datetime.strptime(week_key, "%Y-%m-%d")
+            except ValueError:
+                continue
+            
+            week_end = week_start + timedelta(days=6)
+            week_start_str = week_start.strftime("%Y-%m-%d")
+            week_end_str = week_end.strftime("%Y-%m-%d")
+            
+            releases_data = []
+            listened_count = 0
+            
+            for rid in ids:
+                release = all_releases.get(rid)
+                if not release:
+                    releases_data.append({
+                        "id": rid,
+                        "title": "Removido",
+                        "artist": "",
+                        "cover_url": "",
+                        "listened": False,
+                    })
+                    continue
+                
+                # Check if any listen_date falls within this week's range
+                listened = False
+                if release.listen_dates:
+                    for ld in release.listen_dates:
+                        try:
+                            # listen_dates are ISO format: "2026-07-01T12:34:56.789Z"
+                            listen_date = ld[:10]  # extract YYYY-MM-DD
+                            if week_start_str <= listen_date <= week_end_str:
+                                listened = True
+                                break
+                        except (ValueError, IndexError):
+                            continue
+                
+                if listened:
+                    listened_count += 1
+                
+                releases_data.append({
+                    "id": release.release_id,
+                    "title": release.title,
+                    "artist": release.artist,
+                    "cover_url": release.cover_url,
+                    "listened": listened,
+                })
+            
+            result.append({
+                "week_key": week_key,
+                "week_start": week_start.strftime("%d %b"),
+                "week_end": week_end.strftime("%d %b"),
+                "is_current": week_key == current_week_key,
+                "releases": releases_data,
+                "listened_count": listened_count,
+                "total": len(ids),
+            })
+        
+        return result
+
+
 
     def add_manual_release(
         self,

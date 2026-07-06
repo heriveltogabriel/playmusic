@@ -9,6 +9,7 @@ const AGENDA_DAYS = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira',
 // ==================== INITIALIZATION ====================
 document.addEventListener('DOMContentLoaded', () => {
   loadAgendaData();
+  loadHistory();
 });
 
 // ==================== DATA LOADING ====================
@@ -253,4 +254,154 @@ function showToast(message, type = 'success') {
       toast.remove();
     });
   }, 3000);
+}
+
+// ==================== LISTENING HISTORY ====================
+async function loadHistory() {
+  try {
+    const response = await fetch('/api/ouvir/history');
+    if (!response.ok) throw new Error('Falha ao obter histórico');
+    
+    const history = await response.json();
+    renderHistory(history);
+    
+  } catch (error) {
+    console.error('Error loading listening history:', error);
+    // Silently fail — history is not critical
+  }
+}
+
+function renderHistory(history) {
+  const section = document.getElementById('history-section');
+  const timeline = document.getElementById('history-timeline');
+  const statsContainer = document.getElementById('history-stats');
+  
+  if (!section || !timeline || !history || history.length === 0) return;
+  
+  timeline.replaceChildren();
+  statsContainer.replaceChildren();
+  
+  const defaultCover = 'https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=100&auto=format&fit=crop';
+  const fragment = document.createDocumentFragment();
+  
+  let totalListened = 0;
+  let totalPossible = 0;
+  
+  history.forEach(week => {
+    const card = document.createElement('div');
+    card.className = 'history-week-card';
+    if (week.is_current) card.classList.add('current-week');
+    
+    // Date range header
+    const dateEl = document.createElement('div');
+    dateEl.className = 'history-week-date';
+    dateEl.textContent = `${week.week_start} – ${week.week_end}`;
+    
+    if (week.is_current) {
+      const badge = document.createElement('span');
+      badge.className = 'history-current-badge';
+      badge.textContent = 'ATUAL';
+      dateEl.appendChild(badge);
+    }
+    card.appendChild(dateEl);
+    
+    // Album covers grid
+    const coversGrid = document.createElement('div');
+    coversGrid.className = 'history-covers';
+    
+    (week.releases || []).forEach(rel => {
+      const img = document.createElement('img');
+      img.className = 'history-cover-thumb';
+      if (!rel.listened) img.classList.add('not-listened');
+      img.src = rel.cover_url || defaultCover;
+      img.alt = rel.title || '';
+      img.loading = 'lazy';
+      img.title = `${rel.title} – ${rel.artist}${rel.listened ? ' ✓' : ''}`;
+      img.addEventListener('error', () => { img.src = defaultCover; });
+      coversGrid.appendChild(img);
+    });
+    card.appendChild(coversGrid);
+    
+    // Progress bar
+    const progressWrapper = document.createElement('div');
+    progressWrapper.className = 'history-progress-wrapper';
+    
+    const progressLabel = document.createElement('div');
+    progressLabel.className = 'history-progress-label';
+    
+    const labelText = document.createElement('span');
+    labelText.textContent = 'ouvidos';
+    
+    const countText = document.createElement('span');
+    countText.className = 'history-progress-count';
+    countText.textContent = `${week.listened_count}/${week.total}`;
+    
+    progressLabel.appendChild(labelText);
+    progressLabel.appendChild(countText);
+    progressWrapper.appendChild(progressLabel);
+    
+    const progressBar = document.createElement('div');
+    progressBar.className = 'history-progress-bar';
+    
+    const progressFill = document.createElement('div');
+    progressFill.className = 'history-progress-fill';
+    if (week.listened_count === week.total && week.total > 0) {
+      progressFill.classList.add('complete');
+    }
+    const pct = week.total > 0 ? (week.listened_count / week.total) * 100 : 0;
+    // Animate after render
+    progressFill.style.width = '0%';
+    setTimeout(() => { progressFill.style.width = `${pct}%`; }, 100);
+    
+    progressBar.appendChild(progressFill);
+    progressWrapper.appendChild(progressBar);
+    card.appendChild(progressWrapper);
+    
+    fragment.appendChild(card);
+    
+    // Accumulate stats
+    totalListened += week.listened_count;
+    totalPossible += week.total;
+  });
+  
+  timeline.appendChild(fragment);
+  
+  // Calculate consecutive weeks streak (from most recent backwards)
+  let streak = 0;
+  for (const week of history) {
+    if (week.listened_count > 0) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+  
+  // Stats badges
+  const statListens = document.createElement('div');
+  statListens.className = 'history-stat-badge';
+  statListens.innerHTML = `
+    <div class="history-stat-icon listens">🎧</div>
+    <div class="history-stat-info">
+      <div class="history-stat-value">${totalListened}</div>
+      <div class="history-stat-label">Total de audições</div>
+    </div>
+  `;
+  statsContainer.appendChild(statListens);
+  
+  const statStreak = document.createElement('div');
+  statStreak.className = 'history-stat-badge';
+  statStreak.innerHTML = `
+    <div class="history-stat-icon streak">🔥</div>
+    <div class="history-stat-info">
+      <div class="history-stat-value">${streak}</div>
+      <div class="history-stat-label">${streak === 1 ? 'Semana consecutiva' : 'Semanas consecutivas'}</div>
+    </div>
+  `;
+  statsContainer.appendChild(statStreak);
+  
+  // Show the section with animation
+  section.style.display = '';
+  requestAnimationFrame(() => {
+    section.classList.add('visible');
+  });
 }

@@ -165,6 +165,10 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             ]
             self._json(clean_data)
             return
+        if path == "/api/ouvir/history":
+            history = self.app.get_listening_history()
+            self._json(history)
+            return
         if path == "/api/admin/releases":
             self._json(self.app.list_admin_releases())
             return

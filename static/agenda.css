@@ -334,6 +334,233 @@ body {
   to { transform: rotate(360deg); }
 }
 
+/* ==================== LISTENING HISTORY SECTION ==================== */
+.history-section {
+  margin-top: 36px;
+  padding-top: 28px;
+  border-top: 1px solid rgba(234, 229, 217, 0.06);
+}
+
+.history-header {
+  margin-bottom: 16px;
+}
+
+.history-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  background: linear-gradient(90deg, #fff 30%, var(--primary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 0;
+}
+
+/* Horizontal scrollable timeline */
+.history-timeline {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.history-timeline::-webkit-scrollbar {
+  display: none;
+}
+
+/* Individual week card */
+.history-week-card {
+  flex-shrink: 0;
+  width: 200px;
+  background: var(--card-bg);
+  border: var(--glass-border);
+  border-radius: 14px;
+  padding: 14px;
+  scroll-snap-align: start;
+  transition: var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.history-week-card.current-week {
+  background: rgba(230, 92, 0, 0.05);
+  border-color: var(--border-color-active);
+  box-shadow: 0 0 20px rgba(230, 92, 0, 0.08);
+}
+
+/* Week date range header */
+.history-week-date {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.history-week-card.current-week .history-week-date {
+  color: var(--primary);
+}
+
+.history-current-badge {
+  font-size: 0.55rem;
+  font-weight: 800;
+  background: var(--primary);
+  color: #fff;
+  padding: 1px 5px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+}
+
+/* Album covers grid (2 rows of ~4) */
+.history-covers {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.history-cover-thumb {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 4px;
+  background: #1a1a1a;
+  transition: var(--transition-fast);
+}
+
+.history-cover-thumb.not-listened {
+  opacity: 0.35;
+  filter: grayscale(0.7);
+}
+
+/* Progress bar */
+.history-progress-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.history-progress-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.history-progress-count {
+  color: var(--text-secondary);
+}
+
+.history-progress-bar {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.history-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--primary-hover));
+  border-radius: 4px;
+  transition: width 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.history-progress-fill.complete {
+  background: linear-gradient(90deg, var(--success), #34d98c);
+}
+
+/* Stats footer */
+.history-stats {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.history-stat-badge {
+  flex: 1;
+  min-width: 130px;
+  background: var(--card-bg);
+  border: var(--glass-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.history-stat-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.history-stat-icon.listens {
+  background: rgba(230, 92, 0, 0.12);
+}
+
+.history-stat-icon.streak {
+  background: rgba(255, 159, 10, 0.12);
+}
+
+.history-stat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.history-stat-value {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.history-stat-label {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0.3px;
+}
+
+/* Empty history state */
+.history-empty {
+  text-align: center;
+  padding: 24px 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+/* Fade-in animation for history section */
+@keyframes history-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.history-section.visible {
+  display: block;
+  animation: history-fade-in 0.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
 /* ==================== TOAST SYSTEM ==================== */
 .toast-container {
   position: fixed;
