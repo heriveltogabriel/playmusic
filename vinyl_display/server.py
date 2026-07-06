@@ -349,7 +349,7 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                     self.send_response(HTTPStatus.OK)
                     self.send_header("Content-Type", "application/json; charset=utf-8")
                     self.send_header("Content-Length", str(len(body)))
-                    self.send_header("Set-Cookie", f"session_token={token}; Path=/; HttpOnly; SameSite=Strict")
+                    self.send_header("Set-Cookie", f"session_token={token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=2592000")
                     self.end_headers()
                     self.wfile.write(body)
             else:
@@ -395,7 +395,7 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
-            self.send_header("Set-Cookie", f"session_token={token}; Path=/; HttpOnly; SameSite=Strict")
+            self.send_header("Set-Cookie", f"session_token={token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=2592000")
             self.end_headers()
             self.wfile.write(body)
             return
@@ -426,7 +426,7 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                 self.send_response(HTTPStatus.OK)
                 self.send_header("Content-Type", "application/json; charset=utf-8")
                 self.send_header("Content-Length", str(len(body)))
-                self.send_header("Set-Cookie", f"session_token={token}; Path=/; HttpOnly; SameSite=Strict")
+                self.send_header("Set-Cookie", f"session_token={token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=2592000")
                 self.end_headers()
                 self.wfile.write(body)
             else:
