@@ -667,6 +667,8 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             start_of_week = now - timedelta(days=days_since_sunday)
             week_key = start_of_week.strftime("%Y-%m-%d")
             
+            self.app.store.set_metadata("weekly_agenda_week_key", week_key)
+            
             hist_str = self.app.store.get_metadata("historical_agendas")
             historical = {}
             if hist_str:

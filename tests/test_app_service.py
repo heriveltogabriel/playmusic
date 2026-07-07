@@ -180,6 +180,42 @@ class AppServiceTests(unittest.TestCase):
             self.assertEqual(len(agenda3), 7)
             self.assertNotIn(deleted_id, [r["release_id"] for r in agenda3])
 
+    def test_weekly_agenda_auto_renew_on_new_week(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = CatalogStore(Path(tmp) / "catalog.sqlite3")
+            app = VinylDisplayApp(store, FakeDiscogsClient(), FakeShazamClient())
+            
+            # Populate with 10 releases
+            for i in range(10):
+                store.add_manual_release(
+                    title=f"LP {i}",
+                    artist="Artist",
+                    year=2020 + i,
+                    cover_url=""
+                )
+                
+            # Set metadata to a week in the past
+            past_week_key = "2000-01-01"
+            store.set_metadata("weekly_agenda_week_key", past_week_key)
+            # Store some dummy IDs for the past week agenda
+            past_ids = [1, 2, 3, 4, 5, 6, 7]
+            import json
+            store.set_metadata("weekly_agenda_ids", json.dumps(past_ids))
+            
+            agenda = app.get_weekly_agenda()
+            self.assertEqual(len(agenda), 7)
+            
+            # The saved week key should now be updated to the current week
+            current_saved_week_key = store.get_metadata("weekly_agenda_week_key")
+            self.assertNotEqual(current_saved_week_key, past_week_key)
+            self.assertIsNotNone(current_saved_week_key)
+            
+            # Check that it got added to historical_agendas
+            hist_str = store.get_metadata("historical_agendas")
+            self.assertIsNotNone(hist_str)
+            historical = json.loads(hist_str)
+            self.assertIn(current_saved_week_key, historical)
+            self.assertEqual(len(historical[current_saved_week_key]), 7)
 
 
 if __name__ == "__main__":

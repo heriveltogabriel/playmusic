@@ -219,24 +219,57 @@ class VinylDisplayApp:
         return agenda_ids
 
     def get_weekly_agenda(self) -> list[dict[str, Any]]:
+        from datetime import datetime, timedelta
+        import json
+        
+        now = datetime.now()
+        # Sunday is the start of the week: (weekday + 1) % 7 calculates days since Sunday
+        days_since_sunday = (now.weekday() + 1) % 7
+        start_of_week = now - timedelta(days=days_since_sunday)
+        current_week_key = start_of_week.strftime("%Y-%m-%d")
+
+        saved_week_key = self.store.get_metadata("weekly_agenda_week_key")
         saved_ids_str = self.store.get_metadata("weekly_agenda_ids")
+        
         agenda_ids = []
         if saved_ids_str:
             try:
-                import json
                 agenda_ids = json.loads(saved_ids_str)
             except Exception:
                 pass
                 
-        # If not exactly 7 IDs, generate a new one
-        if not agenda_ids or len(agenda_ids) != 7 or not isinstance(agenda_ids, list):
+        # If the week changed, or if there's no valid agenda, generate a new one
+        if saved_week_key != current_week_key or not agenda_ids or len(agenda_ids) != 7 or not isinstance(agenda_ids, list):
             agenda_ids = self._generate_and_save_weekly_agenda()
+            self.store.set_metadata("weekly_agenda_week_key", current_week_key)
+            
+            # Save the automatically generated agenda to historical_agendas so it shows in history
+            hist_str = self.store.get_metadata("historical_agendas")
+            historical = {}
+            if hist_str:
+                try:
+                    historical = json.loads(hist_str)
+                except Exception:
+                    pass
+            historical[current_week_key] = agenda_ids
+            self.store.set_metadata("historical_agendas", json.dumps(historical))
             
         all_releases = {r.release_id: r for r in self.store.list_releases_with_stats()}
         
         # If any of the IDs are not found in current releases (e.g. deleted), regenerate to keep it healthy
         if any(aid not in all_releases for aid in agenda_ids):
             agenda_ids = self._generate_and_save_weekly_agenda()
+            self.store.set_metadata("weekly_agenda_week_key", current_week_key)
+            
+            hist_str = self.store.get_metadata("historical_agendas")
+            historical = {}
+            if hist_str:
+                try:
+                    historical = json.loads(hist_str)
+                except Exception:
+                    pass
+            historical[current_week_key] = agenda_ids
+            self.store.set_metadata("historical_agendas", json.dumps(historical))
             
         agenda_releases = []
         for aid in agenda_ids:
