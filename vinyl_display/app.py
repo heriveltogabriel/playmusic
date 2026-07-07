@@ -18,6 +18,7 @@ class VinylDisplayApp:
         config: Any = None,
     ):
         self.store = store
+        self.store.favorite_threshold = config.favorite_threshold if config else 5
         self.discogs_client = discogs_client
         self.shazam_client = shazam_client
         self.config = config
@@ -49,6 +50,7 @@ class VinylDisplayApp:
         # Re-initialize clients
         self.discogs_client = DiscogsClient(self.config.discogs_user, self.config.discogs_user_agent)
         self.shazam_client = ShazamClient(self.config.rapidapi_shazam_key, self.config.rapidapi_shazam_host)
+        self.store.favorite_threshold = self.config.favorite_threshold
         print("[SERVER] Hot-swapped config to use Shazam for music recognition.")
 
     def state(self) -> dict[str, Any]:

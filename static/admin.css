@@ -1749,7 +1749,8 @@ body {
   margin: 0;
 }
 
-#catalog-search-input {
+#catalog-search-input,
+#favorites-search-input {
   width: 100%;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--border-color);
@@ -1762,7 +1763,8 @@ body {
   transition: var(--transition-fast);
 }
 
-#catalog-search-input:focus {
+#catalog-search-input:focus,
+#favorites-search-input:focus {
   background: rgba(234, 229, 217, 0.08);
   border-color: var(--border-color-active);
   box-shadow: 0 0 0 3px rgba(230, 92, 0, 0.15);
@@ -1781,7 +1783,8 @@ body {
   color: var(--text-secondary);
 }
 
-#sort-select {
+#sort-select,
+#favorites-sort-select {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid var(--border-color);
   border-radius: 6px;
@@ -1794,11 +1797,13 @@ body {
   transition: var(--transition-fast);
 }
 
-#sort-select:focus {
+#sort-select:focus,
+#favorites-sort-select:focus {
   border-color: var(--border-color-active);
 }
 
-#sort-select option {
+#sort-select option,
+#favorites-sort-select option {
   background: var(--bg-surface);
 }
 
@@ -1850,6 +1855,26 @@ body {
 
 .lp-card:hover .lp-card-cover {
   transform: scale(1.06);
+}
+
+.lp-card-fav-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 204, 0, 0.3);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--star-gold);
+  box-shadow: var(--shadow-sm);
+  z-index: 3;
+  pointer-events: none;
 }
 
 .lp-card-fav-btn {

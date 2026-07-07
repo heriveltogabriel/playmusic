@@ -42,7 +42,7 @@ const state = {
 
   // Favorites page state
   favoritesQuery: '',
-  favoritesSortBy: 'added_desc'
+  favoritesSortBy: 'plays_desc'
 };
 
 
@@ -1672,11 +1672,13 @@ function renderGrid() {
     card.innerHTML = `
       <div class="lp-card-cover-wrapper">
         <img class="lp-card-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" loading="lazy" onerror="this.onerror=null; this.src='${defaultCover}'">
-        <button class="lp-card-fav-btn ${lp.favorite ? 'active' : ''}" title="${lp.favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}" data-id="${lp.id}">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="${lp.favorite ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+        ${lp.favorite ? `
+        <div class="lp-card-fav-badge" title="Favorito (automático)">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="currentColor" stroke-width="2">
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
           </svg>
-        </button>
+        </div>
+        ` : ''}
       </div>
       <div class="lp-card-info">
         <h4 class="lp-card-title" title="${lp.title}">${lp.title}</h4>
@@ -1757,13 +1759,15 @@ function initializeFavoritesControls() {
 }
 
 function renderFavoritesGrid() {
-  const grid = document.getElementById('favorites-grid');
+  const podiumContainer = document.getElementById('favorites-podium');
+  const timelineContainer = document.getElementById('favorites-timeline');
   const emptyState = document.getElementById('favorites-empty-state');
   const filteredCountElem = document.getElementById('favorites-filtered-count');
   
-  if (!grid) return;
+  if (!podiumContainer || !timelineContainer) return;
   
-  grid.innerHTML = '';
+  podiumContainer.innerHTML = '';
+  timelineContainer.innerHTML = '';
   
   // Filter only favorites
   let favorites = state.lps.filter(lp => lp.favorite === true);
@@ -1777,107 +1781,289 @@ function renderFavoritesGrid() {
     );
   }
   
-  // Apply sorting
-  favorites.sort((a, b) => {
-    if (state.favoritesSortBy === 'added_desc') {
-      return new Date(b.date_added) - new Date(a.date_added);
-    }
-    if (state.favoritesSortBy === 'added_asc') {
-      return new Date(a.date_added) - new Date(b.date_added);
-    }
-    if (state.favoritesSortBy === 'year_desc') {
-      return (b.original_year || b.year) - (a.original_year || a.year);
-    }
-    if (state.favoritesSortBy === 'year_asc') {
-      return (a.original_year || a.year) - (b.original_year || b.year);
-    }
-    if (state.favoritesSortBy === 'title_asc') {
-      return (a.title || '').localeCompare(b.title || '');
-    }
-    if (state.favoritesSortBy === 'artist_asc') {
-      return (a.artist || '').localeCompare(b.artist || '');
-    }
-    if (state.favoritesSortBy === 'rating_desc') {
-      return (b.rating || 0) - (a.rating || 0);
-    }
-    if (state.favoritesSortBy === 'plays_desc') {
-      return (b.plays || 0) - (a.plays || 0);
-    }
-    return 0;
-  });
-  
   if (filteredCountElem) {
     filteredCountElem.textContent = favorites.length;
   }
   
   if (favorites.length === 0) {
-    grid.style.display = 'none';
+    podiumContainer.style.display = 'none';
+    timelineContainer.style.display = 'none';
     if (emptyState) emptyState.style.display = 'flex';
     return;
   }
   
-  grid.style.display = 'grid';
   if (emptyState) emptyState.style.display = 'none';
   
-  favorites.forEach(lp => {
-    const card = document.createElement('div');
-    card.classList.add('lp-card');
-    card.dataset.id = lp.id;
-    
+  // 1. Render Podium (Silver - Gold - Bronze) for Top 3 favorites
+  // Always sorted by play count descending for the podium
+  const podiumSorted = [...favorites].sort((a, b) => {
+    if (b.plays !== a.plays) {
+      return b.plays - a.plays;
+    }
+    return (a.title || '').localeCompare(b.title || '');
+  });
+  
+  podiumContainer.style.display = 'flex';
+  
+  const getLatestListenDate = (lp) => {
+    if (!lp.listen_dates || lp.listen_dates.length === 0) return "";
+    const dates = Array.isArray(lp.listen_dates) ? lp.listen_dates : [lp.listen_dates];
+    return dates[dates.length - 1] || "";
+  };
+
+  const renderFavoritesPodiumStep = (lp, rank, positionClass, crownEmoji) => {
     const defaultCover = 'https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=200&auto=format&fit=crop';
     
-    card.innerHTML = `
-      <div class="lp-card-cover-wrapper">
-        <img class="lp-card-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" loading="lazy" onerror="this.onerror=null; this.src='${defaultCover}'">
-        <button class="lp-card-fav-btn ${lp.favorite ? 'active' : ''}" title="${lp.favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}" data-id="${lp.id}">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="${lp.favorite ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-          </svg>
-        </button>
-      </div>
-      <div class="lp-card-info">
-        <h4 class="lp-card-title" title="${lp.title}">${lp.title}</h4>
-        <p class="lp-card-artist" title="${lp.artist}">${lp.artist}</p>
-        
-        <!-- Plays and Scrobble Row -->
-        <div class="lp-card-plays-row">
-          <span class="lp-card-plays-count">🎧 ${lp.plays || 0} ${lp.plays === 1 ? 'audição' : 'audições'}</span>
-          <button class="lp-card-scrobble-btn" title="Registrar audição agora" data-id="${lp.id}">
-            + Ouvir
-          </button>
+    if (!lp) {
+      return `
+        <div class="podium-step ${positionClass} empty">
+          <div class="podium-cover-wrapper">
+            <div class="podium-crown" style="opacity: 0.2;">👑</div>
+            <div class="podium-cover" style="background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; box-shadow: none;">
+              <svg viewBox="0 0 24 24" width="36" height="36" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" fill="none">
+                <circle cx="12" cy="12" r="10" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </div>
+            <span class="podium-badge">#${rank}</span>
+          </div>
+          <div class="podium-column">
+            <div class="podium-info">
+              <div class="podium-title" style="color: var(--text-muted); font-style: italic;">Espaço Vazio</div>
+              <div class="podium-artist" style="color: var(--text-muted);">-</div>
+              <div class="podium-plays" style="color: var(--text-muted);">0 audições</div>
+            </div>
+          </div>
         </div>
+      `;
+    }
+    
+    const latestDate = getLatestListenDate(lp);
+    let dateStr = "";
+    if (latestDate) {
+      const d = new Date(latestDate);
+      if (!isNaN(d.getTime())) {
+        const weekdays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+        const wDay = weekdays[d.getDay()];
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const hours = String(d.getHours()).padStart(2, '0');
+        const minutes = String(d.getMinutes()).padStart(2, '0');
+        dateStr = `${wDay} ${day}/${month} ${hours}:${minutes}`;
+      }
+    }
 
-        <div class="lp-card-footer">
-          <span class="lp-card-year">
-            ${lp.original_year > 0 ? (lp.edition_year > 0 && lp.edition_year !== lp.original_year ? `${lp.original_year} <span style="font-size: 0.8em; opacity: 0.75; font-weight: normal;">(Ed. ${lp.edition_year})</span>` : lp.original_year) : 'N/A'}
-          </span>
+    return `
+      <div class="podium-step ${positionClass}" data-lp-id="${lp.id}">
+        <div class="podium-cover-wrapper">
+          <div class="podium-crown">${crownEmoji}</div>
+          <img class="podium-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.onerror=null; this.src='${defaultCover}'">
+          <span class="podium-badge">#${rank}</span>
+        </div>
+        <div class="podium-column">
+          <div class="podium-info">
+            <div class="podium-title" title="${lp.title}">${lp.title}</div>
+            <div class="podium-artist" title="${lp.artist}">${lp.artist}</div>
+            <div class="podium-plays" style="display: flex; flex-direction: column; align-items: center; gap: 2px;">
+              <span style="font-weight: 600;">${lp.plays} ${lp.plays === 1 ? 'audição' : 'audições'}</span>
+              ${dateStr ? `<span style="font-size: 0.72rem; color: var(--text-muted); font-weight: normal; margin-top: 1px;">última: ${dateStr}</span>` : ''}
+            </div>
+          </div>
         </div>
       </div>
     `;
+  };
+  
+  const silverHtml = renderFavoritesPodiumStep(podiumSorted[1], 2, 'silver', '🥈');
+  const goldHtml = renderFavoritesPodiumStep(podiumSorted[0], 1, 'gold', '👑');
+  const bronzeHtml = renderFavoritesPodiumStep(podiumSorted[2], 3, 'bronze', '🥉');
+  
+  podiumContainer.innerHTML = silverHtml + goldHtml + bronzeHtml;
+  
+  podiumContainer.querySelectorAll('.podium-step:not(.empty)').forEach(step => {
+    step.addEventListener('click', () => {
+      const lpId = step.dataset.lpId;
+      if (lpId) openDetailsDialog(lpId);
+    });
+  });
+  
+  // 2. Sort favorites for the timeline below the podium
+  const sort = state.favoritesSortBy;
+  favorites.sort((a, b) => {
+    if (sort === 'plays_desc') {
+      return (b.plays || 0) - (a.plays || 0);
+    }
+    if (sort === 'added_desc') {
+      return new Date(b.date_added) - new Date(a.date_added);
+    }
+    if (sort === 'added_asc') {
+      return new Date(a.date_added) - new Date(b.date_added);
+    }
+    if (sort === 'year_desc') {
+      return (b.original_year || b.year) - (a.original_year || a.year);
+    }
+    if (sort === 'year_asc') {
+      return (a.original_year || a.year) - (b.original_year || b.year);
+    }
+    if (sort === 'title_asc') {
+      return (a.title || '').localeCompare(b.title || '');
+    }
+    if (sort === 'artist_asc') {
+      return (a.artist || '').localeCompare(b.artist || '');
+    }
+    if (sort === 'rating_desc') {
+      return (b.rating || 0) - (a.rating || 0);
+    }
+    return 0;
+  });
+  
+  timelineContainer.style.display = 'block';
+  
+  const MONTHS_PT = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+  
+  // Pre-calculate count of items in each group
+  const groupCounts = {};
+  favorites.forEach(lp => {
+    let groupTitle = '';
+    if (sort === 'plays_desc') {
+      groupTitle = `${lp.plays} ${lp.plays === 1 ? 'Audição' : 'Audições'}`;
+    } else if (sort.startsWith('added')) {
+      const date = new Date(lp.date_added || Date.now());
+      const monthName = MONTHS_PT[date.getMonth()];
+      const year = date.getFullYear();
+      groupTitle = `${monthName} de ${year}`;
+    } else if (sort.startsWith('year')) {
+      if (lp.year && lp.year > 0) {
+        const decade = Math.floor(lp.year / 10) * 10;
+        groupTitle = `Década de ${decade}`;
+      } else {
+        groupTitle = 'Lançamento Desconhecido';
+      }
+    } else {
+      groupTitle = 'Favoritos';
+    }
+    groupCounts[groupTitle] = (groupCounts[groupTitle] || 0) + 1;
+  });
+  
+  let currentGroup = '';
+  let currentDetails = null;
+  let currentItemsContainer = null;
+  let isFirstGroup = true;
+  const defaultCover = 'https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=200&auto=format&fit=crop';
+  
+  favorites.forEach(lp => {
+    let groupTitle = '';
+    if (sort === 'plays_desc') {
+      groupTitle = `${lp.plays} ${lp.plays === 1 ? 'Audição' : 'Audições'}`;
+    } else if (sort.startsWith('added')) {
+      const date = new Date(lp.date_added || Date.now());
+      const monthName = MONTHS_PT[date.getMonth()];
+      const year = date.getFullYear();
+      groupTitle = `${monthName} de ${year}`;
+    } else if (sort.startsWith('year')) {
+      if (lp.year && lp.year > 0) {
+        const decade = Math.floor(lp.year / 10) * 10;
+        groupTitle = `Década de ${decade}`;
+      } else {
+        groupTitle = 'Lançamento Desconhecido';
+      }
+    } else {
+      groupTitle = 'Favoritos';
+    }
     
-    card.addEventListener('click', () => {
+    if (groupTitle !== currentGroup) {
+      currentGroup = groupTitle;
+      
+      currentDetails = document.createElement('details');
+      currentDetails.className = 'timeline-group-details';
+      if (isFirstGroup) {
+        currentDetails.open = true;
+        isFirstGroup = false;
+      }
+      
+      const summary = document.createElement('summary');
+      summary.className = 'timeline-group-header';
+      
+      const count = groupCounts[groupTitle] || 0;
+      const countText = `${count} ${count === 1 ? 'Disco' : 'Discos'}`;
+      summary.innerHTML = `
+        <span class="timeline-group-title">${groupTitle} - ${countText}</span>
+        <button class="timeline-scroll-top-btn" title="Voltar ao topo" style="
+          background: none;
+          border: none;
+          color: var(--text-muted);
+          cursor: pointer;
+          font-size: 0.8rem;
+          margin-left: 8px;
+          padding: 2px 6px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          transition: color 0.2s ease, transform 0.2s ease;
+        ">
+          ▲
+        </button>
+      `;
+      
+      const scrollTopBtn = summary.querySelector('.timeline-scroll-top-btn');
+      if (scrollTopBtn) {
+        scrollTopBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          const topSection = document.getElementById('view-favorites');
+          if (topSection) {
+            topSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        });
+      }
+      
+      currentDetails.appendChild(summary);
+      
+      currentItemsContainer = document.createElement('div');
+      currentItemsContainer.className = 'timeline-group-items';
+      currentDetails.appendChild(currentItemsContainer);
+      
+      timelineContainer.appendChild(currentDetails);
+    }
+    
+    const itemDiv = document.createElement('div');
+    itemDiv.className = 'timeline-item';
+    
+    let subtitle = '';
+    if (lp.listen_dates && lp.listen_dates.length > 0) {
+      const lastDate = new Date(lp.listen_dates[lp.listen_dates.length - 1]);
+      if (!isNaN(lastDate.getTime())) {
+        subtitle = `Última audição em ${lastDate.toLocaleDateString('pt-BR')} às ${String(lastDate.getHours()).padStart(2, '0')}:${String(lastDate.getMinutes()).padStart(2, '0')}`;
+      }
+    } else {
+      subtitle = 'Sem audições registradas';
+    }
+    
+    itemDiv.innerHTML = `
+      <div class="timeline-card" data-id="${lp.id}">
+        <img class="timeline-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.onerror=null; this.src='${defaultCover}'">
+        <div class="timeline-content-body">
+          <div class="timeline-title-row">
+            <span class="timeline-title">${lp.title}</span>
+            <span class="timeline-artist">- ${lp.artist}</span>
+          </div>
+          <div class="timeline-date">${subtitle}</div>
+        </div>
+        <div class="timeline-play-count">${lp.plays || 0} ${lp.plays === 1 ? 'audição' : 'audições'}</div>
+      </div>
+    `;
+    
+    const cardEl = itemDiv.querySelector('.timeline-card');
+    cardEl.addEventListener('click', () => {
       openDetailsDialog(lp.id);
     });
-
-    // Bind click event to favorite button
-    const favBtn = card.querySelector('.lp-card-fav-btn');
-    if (favBtn) {
-      favBtn.addEventListener('click', (e) => {
-        e.stopPropagation(); // prevent opening details dialog
-        toggleFavoriteState(lp.id);
-      });
-    }
     
-    // Bind click event to scrobble button
-    const scrobbleBtn = card.querySelector('.lp-card-scrobble-btn');
-    if (scrobbleBtn) {
-      scrobbleBtn.addEventListener('click', (e) => {
-        e.stopPropagation(); // prevent opening details dialog
-        markAsListened(lp.id);
-      });
+    if (currentItemsContainer) {
+      currentItemsContainer.appendChild(itemDiv);
     }
-    
-    grid.appendChild(card);
   });
 }
 
@@ -3653,6 +3839,7 @@ async function loadSettingsFromServer() {
     document.getElementById('setting-shazam-host').value = config.rapidapi_shazam_host || '';
     
     document.getElementById('setting-lyrics-latency').value = config.lyrics_latency_offset !== undefined ? config.lyrics_latency_offset : 1.3;
+    document.getElementById('setting-favorite-threshold').value = config.favorite_threshold !== undefined ? config.favorite_threshold : 5;
     
     updateSyncStatusUI(config);
   } catch (error) {
@@ -3723,6 +3910,7 @@ function initializeSettingsForm() {
     const rapidapi_shazam_key = document.getElementById('setting-shazam-key').value.trim();
     const rapidapi_shazam_host = document.getElementById('setting-shazam-host').value.trim();
     const lyrics_latency_offset = parseFloat(document.getElementById('setting-lyrics-latency').value) || 1.3;
+    const favorite_threshold = parseInt(document.getElementById('setting-favorite-threshold').value) || 5;
     
     const payload = {
       discogs_user,
@@ -3730,7 +3918,8 @@ function initializeSettingsForm() {
       discogs_token,
       rapidapi_shazam_key,
       rapidapi_shazam_host,
-      lyrics_latency_offset
+      lyrics_latency_offset,
+      favorite_threshold
     };
     
     try {

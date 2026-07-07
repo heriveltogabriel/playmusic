@@ -85,12 +85,12 @@ class CatalogStoreTests(unittest.TestCase):
             releases = store.list_releases_with_stats()
             self.assertEqual(releases[0].auditions, 2)
 
-            # Test favorite toggle
+            # Test favorite toggle (now a no-op, returns dynamic favorite status based on threshold)
             self.assertFalse(releases[0].favorite)
             new_fav = store.toggle_favorite(manual.release_id)
-            self.assertTrue(new_fav)
+            self.assertFalse(new_fav)
             releases = store.list_releases_with_stats()
-            self.assertTrue(releases[0].favorite)
+            self.assertFalse(releases[0].favorite)
             
             # Test edit release details (notes, genres, styles, etc.)
             store.update_release_details(
@@ -142,6 +142,7 @@ class CatalogStoreTests(unittest.TestCase):
     def test_auto_favorite_on_20_auditions(self):
         with tempfile.TemporaryDirectory() as tmp:
             store = CatalogStore(Path(tmp) / "catalog.sqlite3")
+            store.favorite_threshold = 20
             store.initialize()
             
             manual = store.add_manual_release("Madonna", "Madonna", 1983, "http://madonna.png")

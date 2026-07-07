@@ -94,6 +94,7 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                 "last_sync_updated": self.app.store.get_metadata("discogs_last_sync_updated"),
                 "last_sync_deleted": self.app.store.get_metadata("discogs_last_sync_deleted"),
                 "lyrics_latency_offset": self.app.config.lyrics_latency_offset if self.app.config else 1.3,
+                "favorite_threshold": self.app.config.favorite_threshold if self.app.config else 5,
             }
             self._json(config_data)
             return
@@ -252,7 +253,7 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                 
             # Additional Aggregations
             different_artists = len(set(r.get("artist", "").strip() for r in releases if r.get("artist")))
-            favorited_count = sum(1 for r in releases if r.get("rating", 0) == 5)
+            favorited_count = sum(1 for r in releases if r.get("favorite", False))
             average_rating = round(sum(r.get("rating", 0) for r in rated_releases) / len(rated_releases), 1) if rated_releases else 0.0
             
             # Genre Distribution
@@ -502,6 +503,7 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                 "RAPIDAPI_SHAZAM_KEY": payload.get("rapidapi_shazam_key", "").strip(),
                 "RAPIDAPI_SHAZAM_HOST": payload.get("rapidapi_shazam_host", "").strip(),
                 "LYRICS_LATENCY_OFFSET": str(payload.get("lyrics_latency_offset", 1.3)).strip(),
+                "FAVORITE_THRESHOLD": str(payload.get("favorite_threshold", 5)).strip(),
             }
             
             try:

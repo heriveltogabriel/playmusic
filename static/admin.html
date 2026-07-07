@@ -130,7 +130,7 @@
       <!-- Quick status indicator -->
       <div class="sidebar-footer">
         <div class="total-lps-text">Total: <span id="total-catalog-count">0</span> LPs</div>
-        <div class="app-version-text" id="app-version-display" style="font-size: 0.65rem; color: var(--text-muted); margin-top: 6px; letter-spacing: 0.5px; opacity: 0.8;">v3.1.3</div>
+        <div class="app-version-text" id="app-version-display" style="font-size: 0.65rem; color: var(--text-muted); margin-top: 6px; letter-spacing: 0.5px; opacity: 0.8;">v3.2.1</div>
       </div>
     </aside>
 
@@ -230,7 +230,7 @@
                       <button id="suggested-details-btn" class="btn btn-secondary">
                         Ver ficha
                       </button>
-                      <button id="suggested-favorite-btn" class="btn btn-secondary btn-icon" title="Favoritar">
+                      <button id="suggested-favorite-btn" class="btn btn-secondary btn-icon" title="Favoritar" style="display: none;">
                         <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" class="star-icon">
                           <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                         </svg>
@@ -448,6 +448,7 @@
           <div class="toolbar-right">
             <label for="favorites-sort-select">Ordenar por:</label>
             <select id="favorites-sort-select">
+              <option value="plays_desc" selected>Audições (Maior-Menor)</option>
               <option value="added_desc">Adicionado recentemente</option>
               <option value="added_asc">Mais antigo na coleção</option>
               <option value="year_desc">Ano de Lançamento (Novo-Antigo)</option>
@@ -455,13 +456,18 @@
               <option value="title_asc">Título (A-Z)</option>
               <option value="artist_asc">Artista (A-Z)</option>
               <option value="rating_desc">Avaliação (Maior-Menor)</option>
-              <option value="plays_desc">Audições (Maior-Menor)</option>
             </select>
           </div>
         </div>
 
-        <div id="favorites-grid" class="lp-grid">
-          <!-- Cards dynamically populated -->
+        <!-- Podium -->
+        <div id="favorites-podium" class="ranking-podium" style="display: none; margin-bottom: 30px;">
+          <!-- Dynamically populated podium elements -->
+        </div>
+
+        <!-- Timeline container -->
+        <div id="favorites-timeline" class="timeline-container" style="display: none; margin-top: 20px;">
+          <!-- Dynamically populated timeline items -->
         </div>
 
         <!-- Empty state -->
@@ -469,8 +475,8 @@
           <svg viewBox="0 0 24 24" width="64" height="64" stroke="var(--star-gold)" stroke-width="1.5" fill="none">
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" stroke-dasharray="4,4"></polygon>
           </svg>
-          <h3>Nenhum disco favoritado</h3>
-          <p>Você ainda não favoritou nenhum disco. Clique na estrela dos discos na coleção para adicioná-los aqui!</p>
+          <h3>Nenhum disco nos favoritos</h3>
+          <p>Discos com audições acima do limite configurado entrarão automaticamente para os favoritos!</p>
         </div>
       </section>
 
@@ -680,6 +686,24 @@
               </div>
             </div>
 
+            <!-- Favorites Settings Card -->
+            <div class="settings-card">
+              <div class="settings-card-header">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+                <h3>Configuração dos Favoritos</h3>
+              </div>
+              <p class="settings-card-desc">Defina o limite de audições para que um disco entre automaticamente na lista de favoritos.</p>
+              <div class="form-group">
+                <label for="setting-favorite-threshold">Mínimo de Audições (Plays)</label>
+                <input type="number" id="setting-favorite-threshold" step="1" min="1" max="1000" placeholder="Ex: 5" required>
+                <p class="help-text" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">
+                  Discos que alcançarem este número de audições (escutas) serão marcados como favoritos automaticamente.
+                </p>
+              </div>
+            </div>
+
             <!-- Lyrics Settings Card -->
             <div class="settings-card">
               <div class="settings-card-header">
@@ -834,7 +858,7 @@
 
           <!-- Actions Footer -->
           <div class="dialog-actions-footer">
-            <button id="details-favorite-btn" class="btn btn-secondary btn-icon" type="button">
+            <button id="details-favorite-btn" class="btn btn-secondary btn-icon" type="button" style="display: none;">
               <svg class="star-icon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
               </svg>

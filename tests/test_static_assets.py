@@ -54,15 +54,10 @@ class StaticAssetTests(unittest.TestCase):
         self.assertIn("Escuta da Semana", js)
         self.assertIn('class="weekly-agenda-panel"', html)
         self.assertIn('class="featured-suggestion-panel"', html)
-        self.assertIn('id="suggested-reason"', html)
-        self.assertIn("Por que ouvir agora?", html)
         self.assertIn('class="suggestion-support-grid"', html)
-        self.assertIn("function getSuggestionReason(lp)", js)
-        self.assertIn("Ainda sem audições", js)
         self.assertIn(".weekly-agenda-panel", css)
         self.assertIn(".featured-suggestion-panel", css)
         self.assertIn("grid-template-columns: repeat(7, minmax(112px, 1fr));", css)
-        self.assertIn(".suggestion-reason-card", css)
         self.assertIn(".suggestion-support-grid", css)
 
     def test_plays_ranking_bars_use_absolute_progress(self):

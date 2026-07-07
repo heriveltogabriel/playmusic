@@ -12,6 +12,7 @@ from vinyl_display.models import Release, Track
 class CatalogStore:
     def __init__(self, database_path: Path):
         self.database_path = database_path
+        self.favorite_threshold = 5
 
     def _connect(self) -> sqlite3.Connection:
         self.database_path.parent.mkdir(parents=True, exist_ok=True)
@@ -65,23 +66,26 @@ class CatalogStore:
                 synced_at = time.time()
                 
         import dataclasses
-        release = dataclasses.replace(release, synced_at=synced_at)
-            
+        
         if existing:
             # Keep existing local edits if the incoming release does not specify them
             notes = release.notes if release.notes else existing.notes
-            favorite = release.favorite if release.favorite else existing.favorite
             listen_dates = release.listen_dates if release.listen_dates else existing.listen_dates
             rating = release.rating if release.rating else existing.rating
             auditions = release.auditions if release.auditions else existing.auditions
+            favorite = (auditions >= self.favorite_threshold)
             release = dataclasses.replace(
                 release,
                 notes=notes,
                 favorite=favorite,
                 listen_dates=listen_dates,
                 rating=rating,
-                auditions=auditions
+                auditions=auditions,
+                synced_at=synced_at
             )
+        else:
+            favorite = (release.auditions >= self.favorite_threshold)
+            release = dataclasses.replace(release, synced_at=synced_at, favorite=favorite)
             
         payload_json = json.dumps(release.to_dict(), ensure_ascii=False, sort_keys=True)
         with self._connect() as connection:
@@ -129,14 +133,21 @@ class CatalogStore:
             ).fetchone()
         if row is None:
             return None
-        return Release.from_dict(json.loads(row["payload_json"]))
+        release = Release.from_dict(json.loads(row["payload_json"]))
+        import dataclasses
+        return dataclasses.replace(release, favorite=(release.auditions >= self.favorite_threshold))
 
     def list_releases(self) -> list[Release]:
         with self._connect() as connection:
             rows = connection.execute(
                 "SELECT payload_json FROM releases ORDER BY artist, title"
             ).fetchall()
-        return [Release.from_dict(json.loads(row["payload_json"])) for row in rows]
+        releases = []
+        import dataclasses
+        for row in rows:
+            release = Release.from_dict(json.loads(row["payload_json"]))
+            releases.append(dataclasses.replace(release, favorite=(release.auditions >= self.favorite_threshold)))
+        return releases
 
     def iter_track_candidates(self) -> Iterator[tuple[Release, Track]]:
         for release in self.list_releases():
@@ -195,9 +206,7 @@ class CatalogStore:
             # Make sure listen_dates is a list (could be missing/None)
             listen_dates = list(release.listen_dates) if release.listen_dates is not None else []
             listen_dates.append(now_str)
-            favorite = release.favorite
-            if auditions >= 20:
-                favorite = True
+            favorite = (auditions >= self.favorite_threshold)
             updated_release = dataclasses.replace(
                 release,
                 auditions=auditions,
@@ -245,6 +254,7 @@ class CatalogStore:
                 release,
                 auditions=auditions,
                 listen_dates=listen_dates,
+                favorite=(auditions >= self.favorite_threshold)
             )
             payload_json = json.dumps(updated_release.to_dict(), ensure_ascii=False, sort_keys=True)
             with self._connect() as connection:
@@ -289,6 +299,7 @@ class CatalogStore:
             data["rating"] = row["rating"]
             data["auditions"] = row["auditions"]
             data["synced_at"] = row["synced_at"]
+            data["favorite"] = (row["auditions"] >= self.favorite_threshold)
             releases.append(Release.from_dict(data))
         return releases
 
@@ -396,8 +407,4 @@ class CatalogStore:
         release = self.get_release(release_id)
         if not release:
             raise ValueError(f"Release {release_id} not found")
-        import dataclasses
-        new_fav = not release.favorite
-        updated_release = dataclasses.replace(release, favorite=new_fav)
-        self.upsert_release(updated_release)
-        return new_fav
+        return release.favorite
