@@ -38,18 +38,19 @@ class PlaybackController:
         self.last_recognition: dict[str, Any] | None = None
         self.on_scrobble = on_scrobble
 
-    def handle_match(self, match: TrackMatch, offset: float = 0.0, now: float | None = None) -> None:
+    def handle_match(self, match: TrackMatch, offset: float = 0.0, now: float | None = None, latency: float = 0.0) -> None:
         now = now or time.time()
+        started_at = now - offset - latency
         if self.active is not None and self.active.match.release.release_id == match.release.release_id:
             self.active = replace(
                 self.active,
                 match=match,
-                started_at=now - offset
+                started_at=started_at
             )
         else:
             self.active = ActivePlayback(
                 match=match,
-                started_at=now - offset,
+                started_at=started_at,
                 played_tracks=set(),
                 scrobbled=False
             )

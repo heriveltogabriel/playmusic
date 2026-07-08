@@ -536,7 +536,8 @@ function recordClip(isAutomatic = false) {
         method: "POST",
         headers: { 
           "X-Clip-Filename": "clip.raw",
-          "Content-Type": "application/octet-stream"
+          "Content-Type": "application/octet-stream",
+          "X-Client-Elapsed-Ms": String(Date.now() - lastRecognitionAt)
         },
         body: blob,
       });

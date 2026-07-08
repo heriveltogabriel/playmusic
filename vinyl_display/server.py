@@ -521,7 +521,14 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", "0"))
             audio_bytes = self.rfile.read(length)
             filename = self.headers.get("X-Clip-Filename", "clip.webm")
-            self._json(self.app.recognize_audio(audio_bytes, filename=filename))
+            client_elapsed_ms = self.headers.get("X-Client-Elapsed-Ms")
+            elapsed_seconds = None
+            if client_elapsed_ms:
+                try:
+                    elapsed_seconds = float(client_elapsed_ms) / 1000.0
+                except ValueError:
+                    pass
+            self._json(self.app.recognize_audio(audio_bytes, filename=filename, client_elapsed_seconds=elapsed_seconds))
             return
         if path == "/api/playback/next":
             self.app.playback.skip_next()
