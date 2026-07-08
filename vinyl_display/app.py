@@ -219,10 +219,12 @@ class VinylDisplayApp:
         return agenda_ids
 
     def get_weekly_agenda(self) -> list[dict[str, Any]]:
-        from datetime import datetime, timedelta
+        from datetime import datetime, timedelta, timezone
         import json
         
-        now = datetime.now()
+        # Brasilia Time (UTC-3)
+        tz_brt = timezone(timedelta(hours=-3))
+        now = datetime.now(tz_brt)
         # Sunday is the start of the week: (weekday + 1) % 7 calculates days since Sunday
         days_since_sunday = (now.weekday() + 1) % 7
         start_of_week = now - timedelta(days=days_since_sunday)
@@ -282,7 +284,7 @@ class VinylDisplayApp:
     def get_listening_history(self) -> list[dict[str, Any]]:
         """Build a visual history of past weekly agendas with listening progress."""
         import json
-        from datetime import datetime, timedelta
+        from datetime import datetime, timedelta, timezone
         
         hist_str = self.store.get_metadata("historical_agendas")
         if not hist_str:
@@ -298,8 +300,9 @@ class VinylDisplayApp:
         
         all_releases = {r.release_id: r for r in self.store.list_releases_with_stats()}
         
-        # Current week key (to tag the active week)
-        now = datetime.now()
+        # Current week key (to tag the active week) in Brasilia timezone (UTC-3)
+        tz_brt = timezone(timedelta(hours=-3))
+        now = datetime.now(tz_brt)
         days_since_sunday = (now.weekday() + 1) % 7
         current_week_start = now - timedelta(days=days_since_sunday)
         current_week_key = current_week_start.strftime("%Y-%m-%d")

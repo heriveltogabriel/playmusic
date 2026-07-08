@@ -660,8 +660,9 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                 return
             self.app.store.set_metadata("weekly_agenda_ids", json.dumps(ids))
             
-            from datetime import datetime, timedelta
-            now = datetime.now()
+            from datetime import datetime, timedelta, timezone
+            tz_brt = timezone(timedelta(hours=-3))
+            now = datetime.now(tz_brt)
             # Início da semana (domingo)
             days_since_sunday = (now.weekday() + 1) % 7
             start_of_week = now - timedelta(days=days_since_sunday)
