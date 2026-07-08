@@ -173,8 +173,9 @@ class VinylDisplayApp:
         now_recon = time.time()
         latency = 0.0
         if client_elapsed_seconds is not None:
-            latency = client_elapsed_seconds + (now_recon - server_receive_time)
-            print(f"[RECOGNIZE] Latency compensation: client_elapsed={client_elapsed_seconds:.2f}s, server_processing={now_recon - server_receive_time:.2f}s, total_latency={latency:.2f}s")
+            # Add an extra 4.0 seconds constant adjustment to align the player perfectly with the physical turntable
+            latency = client_elapsed_seconds + (now_recon - server_receive_time) + 4.0
+            print(f"[RECOGNIZE] Latency compensation: client_elapsed={client_elapsed_seconds:.2f}s, server_processing={now_recon - server_receive_time:.2f}s, total_latency={latency:.2f}s (including 4.0s constant offset)")
         
         self.playback.handle_match(match, offset=offset, latency=latency)
         print(f"[RECOGNIZE] Match found in local collection! release: '{match.release.title}', track: '{match.track.title}' (score: {match.score}, reason: {match.reason}, offset: {offset}s, latency_compensated: {latency:.2f}s)")
