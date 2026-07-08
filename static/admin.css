@@ -3877,6 +3877,8 @@ dialog::backdrop {
   margin-top: 24px;
   padding-top: 24px;
   border-top: 1px solid var(--border-color);
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .weekly-history-header {
@@ -4005,12 +4007,11 @@ dialog::backdrop {
 }
 
 .weekly-history-plays-list {
-  padding: 0 16px 16px;
+  padding: 12px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
-  padding-top: 16px;
   background: rgba(0, 0, 0, 0.15);
 }
 
@@ -4019,10 +4020,115 @@ dialog::backdrop {
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.02);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-width: 0;
 }
 
 .weekly-history-play-item::before {
   display: none; /* Remover a bolinha da timeline do card copiado */
+}
+
+.weekly-history-play-day {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  text-transform: capitalize;
+}
+
+.weekly-history-play-item .history-play-cover-wrapper {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 6px;
+  box-shadow: var(--shadow-sm);
+  background: #111;
+}
+
+.weekly-history-play-item .history-play-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  margin: 0;
+}
+
+.weekly-history-play-item .history-play-details {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  min-width: 0;
+}
+
+.weekly-history-play-item .history-play-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  width: 100%;
+  color: var(--text-primary);
+}
+
+.weekly-history-play-item .history-play-artist {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  width: 100%;
+  margin-top: 1px;
+}
+
+.weekly-history-play-status {
+  font-size: 0.6rem;
+  font-weight: 700;
+  margin-top: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.weekly-history-play-status.status--done {
+  color: #2ecc71;
+}
+
+.weekly-history-play-status.status--missed {
+  color: #e74c3c;
+}
+
+@media (max-width: 1024px) {
+  .weekly-history-plays-list {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(230, 92, 0, 0.3) rgba(255, 255, 255, 0.02);
+  }
+  .weekly-history-plays-list::-webkit-scrollbar {
+    height: 6px;
+  }
+  .weekly-history-plays-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.01);
+    border-radius: 10px;
+  }
+  .weekly-history-plays-list::-webkit-scrollbar-thumb {
+    background: rgba(230, 92, 0, 0.2);
+    border-radius: 10px;
+  }
+  .weekly-history-play-item {
+    flex: 0 0 110px;
+    scroll-snap-align: start;
+  }
 }
 
 
@@ -4100,4 +4206,134 @@ dialog::backdrop {
   opacity: 1;
   transform: translateX(0);
 }
+
+/* ==================== WEEKLY LINE CHART IN ADMIN TABS ==================== */
+.admin-history-chart-wrapper {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.chart-canvas-container {
+  width: 100%;
+  position: relative;
+  overflow: visible;
+}
+
+#weekly-history-chart {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+.chart-grid-line {
+  stroke: rgba(255, 255, 255, 0.04);
+  stroke-width: 1px;
+}
+
+.chart-grid-line-dashed {
+  stroke: rgba(255, 255, 255, 0.04);
+  stroke-dasharray: 4 4;
+  stroke-width: 1px;
+}
+
+.chart-axis-text {
+  fill: var(--text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  font-family: inherit;
+}
+
+.chart-line-main {
+  stroke: var(--primary);
+  stroke-width: 3.5px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.chart-line-glow {
+  stroke: var(--primary);
+  stroke-width: 8px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+  opacity: 0.18;
+  filter: blur(2px);
+}
+
+.chart-point-halo {
+  fill: var(--primary);
+  opacity: 0.15;
+  transition: r 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease;
+}
+
+.chart-point-center {
+  fill: #121212;
+  stroke: var(--primary);
+  stroke-width: 2.5px;
+  transition: r 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), fill 0.2s ease;
+}
+
+.chart-point-trigger {
+  cursor: pointer;
+}
+
+.chart-point-trigger:hover ~ .chart-point-halo {
+  r: 12px;
+  opacity: 0.3;
+}
+
+.chart-point-trigger:hover ~ .chart-point-center {
+  r: 6.5px;
+  fill: var(--primary-hover);
+}
+
+/* Tooltip on Admin Dashboard (AMOLED Glassmorphism) */
+.chart-tooltip {
+  position: absolute;
+  background: rgba(12, 12, 12, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.75rem;
+  color: var(--text-primary);
+  box-shadow: var(--shadow-md);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  transform: translate(-50%, -120%);
+  pointer-events: none;
+  z-index: 100;
+  white-space: nowrap;
+}
+
+.chart-tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px 5px 0;
+  border-style: solid;
+  border-color: rgba(12, 12, 12, 0.9) transparent;
+  display: block;
+  width: 0;
+}
+
+.chart-tooltip-week {
+  font-weight: 700;
+  margin-bottom: 2px;
+  color: var(--text-secondary);
+}
+
+.chart-tooltip-score {
+  font-weight: 800;
+  color: var(--primary-hover);
+}
+
 

@@ -4368,11 +4368,35 @@ async function renderWeeklyHistory() {
     console.error('Erro ao buscar histórico de agendas', e);
   }
 
-  const sortedWeekKeys = Object.keys(historicalAgendas).map(Number).sort((a, b) => a - b);
-  const recentWeekKeys = sortedWeekKeys.slice(-5);
+  // Setup filter change listener once
+  const filterSelect = document.getElementById('weekly-history-filter');
+  if (filterSelect && !filterSelect.dataset.listenerAdded) {
+    filterSelect.addEventListener('change', () => {
+      renderWeeklyHistory();
+    });
+    filterSelect.dataset.listenerAdded = 'true';
+  }
+  
+  const filterValue = filterSelect ? filterSelect.value : '6';
+  const sortedWeekKeys = Object.keys(historicalAgendas).sort();
+  
+  // Filter based on selected timeframe
+  let recentWeekKeys = sortedWeekKeys;
+  if (filterValue !== 'all') {
+    const monthsLimit = parseInt(filterValue, 10);
+    const cutoffDate = new Date();
+    cutoffDate.setMonth(cutoffDate.getMonth() - monthsLimit);
+    cutoffDate.setHours(0, 0, 0, 0);
+    
+    recentWeekKeys = sortedWeekKeys.filter(weekKeyStr => {
+      const parts = weekKeyStr.split('-');
+      const weekStartDate = new Date(parts[0], parts[1] - 1, parts[2], 0, 0, 0, 0);
+      return weekStartDate >= cutoffDate;
+    });
+  }
   
   if (recentWeekKeys.length === 0) {
-    chartContainer.innerHTML = '<p class="text-muted" style="margin-left:10px;">O histórico será construído a partir das próximas semanas.</p>';
+    chartContainer.innerHTML = '<p class="text-muted" style="margin-left:10px;">O histórico está vazio para o período selecionado.</p>';
     listContainer.innerHTML = '';
     return;
   }
@@ -4384,15 +4408,19 @@ async function renderWeeklyHistory() {
   const currentWeekStart = new Date(now);
   currentWeekStart.setDate(now.getDate() - now.getDay());
   currentWeekStart.setHours(0, 0, 0, 0);
-  const currentWeekKey = currentWeekStart.getTime();
+  
+  const yyyy = currentWeekStart.getFullYear();
+  const mm = (currentWeekStart.getMonth() + 1).toString().padStart(2, '0');
+  const dd = currentWeekStart.getDate().toString().padStart(2, '0');
+  const currentWeekKey = `${yyyy}-${mm}-${dd}`;
   
   // Array com dados processados para o gráfico e os cards
   const weeksData = [];
 
   recentWeekKeys.forEach(weekKeyStr => {
-    const k = Number(weekKeyStr);
-    const startDate = new Date(k);
-    const endDate = new Date(k);
+    const parts = weekKeyStr.split('-');
+    const startDate = new Date(parts[0], parts[1] - 1, parts[2], 0, 0, 0, 0);
+    const endDate = new Date(startDate);
     endDate.setDate(startDate.getDate() + 6);
     endDate.setHours(23, 59, 59, 999);
     
@@ -4415,7 +4443,7 @@ async function renderWeeklyHistory() {
     }).filter(Boolean);
     
     weeksData.push({
-      key: k,
+      key: weekKeyStr,
       startDate,
       endDate,
       lpsData,
@@ -4424,25 +4452,8 @@ async function renderWeeklyHistory() {
     });
   });
 
-  // 2. Montar Gráfico de Barras (Sucesso da Agenda)
-  // O máximo sempre será 7 discos sugeridos
-  weeksData.forEach(wd => {
-    const heightPercent = Math.max((wd.listenedCount / 7) * 100, 10);
-    const isCurrentWeek = wd.key === currentWeekKey;
-    
-    const startDay = wd.startDate.getDate().toString().padStart(2, '0');
-    const startMonth = (wd.startDate.getMonth() + 1).toString().padStart(2, '0');
-    const label = `${startDay}/${startMonth}`;
-    
-    const barHtml = `
-      <div class="weekly-chart-col">
-        <div class="weekly-chart-val">${wd.listenedCount}/7</div>
-        <div class="weekly-chart-bar ${isCurrentWeek ? 'weekly-chart-bar--current' : ''}" style="height: ${heightPercent}%" title="Semana de ${label}"></div>
-        <div class="weekly-chart-label ${isCurrentWeek ? 'weekly-chart-label--current' : ''}">${label}</div>
-      </div>
-    `;
-    chartContainer.insertAdjacentHTML('beforeend', barHtml);
-  });
+  // 2. Montar Gráfico de Linhas SVG
+  renderWeeklyHistorySvg(chartContainer, weeksData);
 
   // 3. Montar a lista de cards (do mais novo para o mais antigo)
   const reversedWeeks = [...weeksData].reverse();
@@ -4457,11 +4468,15 @@ async function renderWeeklyHistory() {
     details.className = 'weekly-history-details';
     if (isCurrentWeek) details.open = true;
     
+    const isPerfect = wd.listenedCount === 7;
+    const medalHtml = isPerfect ? `<span class="perfect-week-medal-admin" title="Semana Perfeita! 🎉" style="margin-left: 8px; filter: drop-shadow(0 0 4px rgba(230, 92, 0, 0.4)); font-size: 1.1rem; vertical-align: middle;">🏆</span>` : '';
+    
     const summary = document.createElement('summary');
     summary.className = 'weekly-history-summary';
     summary.innerHTML = `
       <div class="weekly-history-summary-left">
         <span class="weekly-history-summary-title">${titleText}</span>
+        ${medalHtml}
       </div>
       <div class="weekly-history-summary-right">
         <span class="weekly-history-summary-count">${wd.listenedCount} de 7 ouvidos</span>
@@ -4486,14 +4501,16 @@ async function renderWeeklyHistory() {
       
       const playHtml = `
         <div class="history-play-item weekly-history-play-item ${playClass}">
-          <img class="history-play-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.onerror=null; this.src='${defaultCover}'">
+          <div class="weekly-history-play-day">${dayName}</div>
+          <div class="history-play-cover-wrapper">
+            <img class="history-play-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.onerror=null; this.src='${defaultCover}'">
+          </div>
           <div class="history-play-details">
             <div class="history-play-title" title="${lp.title}">${lp.title}</div>
             <div class="history-play-artist" title="${lp.artist}">${lp.artist}</div>
-            <div class="history-play-meta">
-              ${statusIcon}
-              Sugerido na ${dayName} · ${statusText}
-            </div>
+          </div>
+          <div class="weekly-history-play-status ${item.wasListened ? 'status--done' : 'status--missed'}">
+            ${item.wasListened ? 'Ouvido' : 'Não ouvido'}
           </div>
         </div>
       `;
@@ -4502,5 +4519,227 @@ async function renderWeeklyHistory() {
     
     details.appendChild(playsList);
     listContainer.appendChild(details);
+  });
+}
+
+// ==================== WEEKLY HISTORY SVG LINE CHART ====================
+function renderWeeklyHistorySvg(svg, weeksData) {
+  const tooltip = document.getElementById('chart-tooltip');
+  const N = weeksData.length;
+  
+  svg.replaceChildren();
+  
+  // SVG size parameters (viewBox="0 0 1000 200")
+  const width = 1000;
+  const height = 200;
+  const paddingLeft = 60;
+  const paddingRight = 30;
+  const paddingTop = 25;
+  const paddingBottom = 35;
+  
+  const chartWidth = width - paddingLeft - paddingRight;
+  const chartHeight = height - paddingTop - paddingBottom;
+  
+  // Create definitions (gradients)
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  
+  // Line Gradient
+  const lineGrad = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+  lineGrad.setAttribute('id', 'chart-line-grad');
+  lineGrad.setAttribute('x1', '0%');
+  lineGrad.setAttribute('y1', '0%');
+  lineGrad.setAttribute('x2', '100%');
+  lineGrad.setAttribute('y2', '0%');
+  
+  const lineStop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+  lineStop1.setAttribute('offset', '0%');
+  lineStop1.setAttribute('stop-color', '#e65c00'); // var(--primary)
+  
+  const lineStop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+  lineStop2.setAttribute('offset', '100%');
+  lineStop2.setAttribute('stop-color', '#ff751a'); // var(--primary-hover)
+  
+  lineGrad.appendChild(lineStop1);
+  lineGrad.appendChild(lineStop2);
+  defs.appendChild(lineGrad);
+  
+  // Area Gradient
+  const areaGrad = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+  areaGrad.setAttribute('id', 'chart-area-grad');
+  areaGrad.setAttribute('x1', '0%');
+  areaGrad.setAttribute('y1', '0%');
+  areaGrad.setAttribute('x2', '0%');
+  areaGrad.setAttribute('y2', '100%');
+  
+  const areaStop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+  areaStop1.setAttribute('offset', '0%');
+  areaStop1.setAttribute('stop-color', '#e65c00');
+  areaStop1.setAttribute('stop-opacity', '0.22');
+  
+  const areaStop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+  areaStop2.setAttribute('offset', '100%');
+  areaStop2.setAttribute('stop-color', '#e65c00');
+  areaStop2.setAttribute('stop-opacity', '0.00');
+  
+  areaGrad.appendChild(areaStop1);
+  areaGrad.appendChild(areaStop2);
+  defs.appendChild(areaGrad);
+  
+  svg.appendChild(defs);
+  
+  // Reference Y values: 0%, 50% (3.5 LPs), 100% (7 LPs)
+  const yValues = [
+    { val: 0, pct: 0, label: '0 LPs' },
+    { val: 3.5, pct: 0.5, label: '50%' },
+    { val: 7, pct: 1.0, label: '7 LPs' }
+  ];
+  
+  // 1. Draw horizontal grid lines and Y axis labels
+  yValues.forEach(item => {
+    const y = paddingTop + chartHeight - (item.pct * chartHeight);
+    
+    // Grid line
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', paddingLeft);
+    line.setAttribute('y1', y);
+    line.setAttribute('x2', width - paddingRight);
+    line.setAttribute('y2', y);
+    line.setAttribute('class', item.pct === 0 ? 'chart-grid-line' : 'chart-grid-line-dashed');
+    svg.appendChild(line);
+    
+    // Y label
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', paddingLeft - 8);
+    text.setAttribute('y', y + 3.5);
+    text.setAttribute('text-anchor', 'end');
+    text.setAttribute('class', 'chart-axis-text');
+    text.textContent = item.label;
+    svg.appendChild(text);
+  });
+  
+  // 2. Map data points
+  const points = weeksData.map((wd, idx) => {
+    const x = N > 1 ? paddingLeft + (idx * (chartWidth / (N - 1))) : paddingLeft + (chartWidth / 2);
+    const pct = wd.listenedCount / 7;
+    const y = paddingTop + chartHeight - (pct * chartHeight);
+    return { x, y, wd, pct };
+  });
+  
+  // 3. Draw area and line paths (only if N > 1 to form a line)
+  if (N > 1) {
+    let pathD = `M ${points[0].x} ${points[0].y}`;
+    let areaD = `M ${points[0].x} ${paddingTop + chartHeight} L ${points[0].x} ${points[0].y}`;
+    
+    for (let i = 1; i < N; i++) {
+      pathD += ` L ${points[i].x} ${points[i].y}`;
+      areaD += ` L ${points[i].x} ${points[i].y}`;
+    }
+    
+    areaD += ` L ${points[N - 1].x} ${paddingTop + chartHeight} Z`;
+    
+    // Draw area first
+    const areaPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    areaPath.setAttribute('d', areaD);
+    areaPath.setAttribute('fill', 'url(#chart-area-grad)');
+    svg.appendChild(areaPath);
+    
+    // Draw line glow
+    const lineGlow = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    lineGlow.setAttribute('d', pathD);
+    lineGlow.setAttribute('class', 'chart-line-glow');
+    svg.appendChild(lineGlow);
+    
+    // Draw line main
+    const lineMain = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    lineMain.setAttribute('d', pathD);
+    lineMain.setAttribute('stroke', 'url(#chart-line-grad)');
+    lineMain.setAttribute('class', 'chart-line-main');
+    svg.appendChild(lineMain);
+  }
+  
+  // 4. Draw X-axis labels and data points
+  points.forEach((pt, idx) => {
+    const startDay = pt.wd.startDate.getDate().toString().padStart(2, '0');
+    const startMonth = (pt.wd.startDate.getMonth() + 1).toString().padStart(2, '0');
+    const label = `${startDay}/${startMonth}`;
+    
+    // X label
+    const labelX = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    labelX.setAttribute('x', pt.x);
+    labelX.setAttribute('y', height - 10);
+    labelX.setAttribute('text-anchor', 'middle');
+    labelX.setAttribute('class', 'chart-axis-text');
+    labelX.textContent = label;
+    svg.appendChild(labelX);
+    
+    // Point Group
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    
+    // Halo
+    const halo = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    halo.setAttribute('cx', pt.x);
+    halo.setAttribute('cy', pt.y);
+    halo.setAttribute('r', 8);
+    halo.setAttribute('class', 'chart-point-halo');
+    g.appendChild(halo);
+    
+    // Center
+    const center = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    center.setAttribute('cx', pt.x);
+    center.setAttribute('cy', pt.y);
+    center.setAttribute('r', 4);
+    center.setAttribute('class', 'chart-point-center');
+    g.appendChild(center);
+    
+    // Trigger
+    const trigger = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    trigger.setAttribute('cx', pt.x);
+    trigger.setAttribute('cy', pt.y);
+    trigger.setAttribute('r', 16);
+    trigger.setAttribute('fill', 'transparent');
+    trigger.setAttribute('opacity', '0');
+    trigger.setAttribute('class', 'chart-point-trigger');
+    
+    // Hover events for tooltip
+    const showTooltip = () => {
+      if (!tooltip) return;
+      const endDay = pt.wd.endDate.getDate().toString().padStart(2, '0');
+      const endMonth = (pt.wd.endDate.getMonth() + 1).toString().padStart(2, '0');
+      
+      tooltip.innerHTML = `
+        <div class="chart-tooltip-week">Semana de ${label} a ${endDay}/${endMonth}</div>
+        <div>Ouvidos: <span class="chart-tooltip-score">${pt.wd.listenedCount} de 7 LPs</span> (${Math.round(pt.pct * 100)}%)</div>
+      `;
+      
+      const xPct = (pt.x / width) * 100;
+      const yPct = (pt.y / height) * 100;
+      
+      tooltip.style.left = `${xPct}%`;
+      tooltip.style.top = `${yPct}%`;
+      tooltip.style.opacity = '1';
+      tooltip.style.transform = 'translate(-50%, -120%) scale(1)';
+    };
+    
+    const hideTooltip = () => {
+      if (!tooltip) return;
+      tooltip.style.opacity = '0';
+      tooltip.style.transform = 'translate(-50%, -120%) scale(0.95)';
+    };
+    
+    trigger.addEventListener('pointerenter', showTooltip);
+    trigger.addEventListener('pointerleave', hideTooltip);
+    trigger.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      showTooltip();
+    }, { passive: false });
+    
+    document.addEventListener('touchstart', (e) => {
+      if (e.target !== trigger) {
+        hideTooltip();
+      }
+    });
+    
+    g.appendChild(trigger);
+    svg.appendChild(g);
   });
 }
