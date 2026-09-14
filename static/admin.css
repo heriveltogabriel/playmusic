@@ -1871,7 +1871,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--star-gold);
+  color: var(--text-secondary);
   box-shadow: var(--shadow-sm);
   z-index: 3;
   pointer-events: none;

@@ -66,7 +66,8 @@ class CatalogStore:
                 synced_at = time.time()
                 
         import dataclasses
-        
+        release = dataclasses.replace(release, synced_at=synced_at)
+
         if existing:
             # Keep existing local edits if the incoming release does not specify them
             notes = release.notes if release.notes else existing.notes

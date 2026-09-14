@@ -481,7 +481,6 @@
           <div class="toolbar-right">
             <label for="favorites-sort-select">Ordenar por:</label>
             <select id="favorites-sort-select">
-              <option value="plays_desc" selected>Audições (Maior-Menor)</option>
               <option value="added_desc">Adicionado recentemente</option>
               <option value="added_asc">Mais antigo na coleção</option>
               <option value="year_desc">Ano de Lançamento (Novo-Antigo)</option>
@@ -489,6 +488,7 @@
               <option value="title_asc">Título (A-Z)</option>
               <option value="artist_asc">Artista (A-Z)</option>
               <option value="rating_desc">Avaliação (Maior-Menor)</option>
+              <option value="plays_desc">Audições (Maior-Menor)</option>
             </select>
           </div>
         </div>
@@ -503,13 +503,17 @@
           <!-- Dynamically populated timeline items -->
         </div>
 
+        <div id="favorites-grid" class="lp-grid">
+          <!-- Cards dynamically populated -->
+        </div>
+
         <!-- Empty state -->
         <div id="favorites-empty-state" class="empty-state" style="display: none;">
           <svg viewBox="0 0 24 24" width="64" height="64" stroke="var(--star-gold)" stroke-width="1.5" fill="none">
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" stroke-dasharray="4,4"></polygon>
           </svg>
-          <h3>Nenhum disco nos favoritos</h3>
-          <p>Discos com audições acima do limite configurado entrarão automaticamente para os favoritos!</p>
+          <h3>Nenhum disco favoritado</h3>
+          <p>Você ainda não favoritou nenhum disco. Clique na estrela dos discos na coleção para adicioná-los aqui!</p>
         </div>
       </section>
 

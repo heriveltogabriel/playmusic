@@ -42,7 +42,7 @@ const state = {
 
   // Favorites page state
   favoritesQuery: '',
-  favoritesSortBy: 'plays_desc'
+  favoritesSortBy: 'added_desc'
 };
 
 
@@ -1671,14 +1671,12 @@ function renderGrid() {
     
     card.innerHTML = `
       <div class="lp-card-cover-wrapper">
-        <img class="lp-card-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" loading="lazy" onerror="this.onerror=null; this.src='${defaultCover}'">
-        ${lp.favorite ? `
-        <div class="lp-card-fav-badge" title="Favorito (automático)">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" stroke="currentColor" stroke-width="2">
+        <img class="lp-card-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" loading="lazy" onerror="this.src='${defaultCover}'">
+        <button class="lp-card-fav-btn ${lp.favorite ? 'active' : ''}" title="${lp.favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}" data-id="${lp.id}">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="${lp.favorite ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
           </svg>
-        </div>
-        ` : ''}
+        </button>
       </div>
       <div class="lp-card-info">
         <h4 class="lp-card-title" title="${lp.title}">${lp.title}</h4>
@@ -1759,15 +1757,13 @@ function initializeFavoritesControls() {
 }
 
 function renderFavoritesGrid() {
-  const podiumContainer = document.getElementById('favorites-podium');
-  const timelineContainer = document.getElementById('favorites-timeline');
+  const grid = document.getElementById('favorites-grid');
   const emptyState = document.getElementById('favorites-empty-state');
   const filteredCountElem = document.getElementById('favorites-filtered-count');
   
-  if (!podiumContainer || !timelineContainer) return;
+  if (!grid) return;
   
-  podiumContainer.innerHTML = '';
-  timelineContainer.innerHTML = '';
+  grid.innerHTML = '';
   
   // Filter only favorites
   let favorites = state.lps.filter(lp => lp.favorite === true);
@@ -1781,17 +1777,46 @@ function renderFavoritesGrid() {
     );
   }
   
+  // Apply sorting
+  favorites.sort((a, b) => {
+    if (state.favoritesSortBy === 'added_desc') {
+      return new Date(b.date_added) - new Date(a.date_added);
+    }
+    if (state.favoritesSortBy === 'added_asc') {
+      return new Date(a.date_added) - new Date(b.date_added);
+    }
+    if (state.favoritesSortBy === 'year_desc') {
+      return (b.original_year || b.year) - (a.original_year || a.year);
+    }
+    if (state.favoritesSortBy === 'year_asc') {
+      return (a.original_year || a.year) - (b.original_year || b.year);
+    }
+    if (state.favoritesSortBy === 'title_asc') {
+      return (a.title || '').localeCompare(b.title || '');
+    }
+    if (state.favoritesSortBy === 'artist_asc') {
+      return (a.artist || '').localeCompare(b.artist || '');
+    }
+    if (state.favoritesSortBy === 'rating_desc') {
+      return (b.rating || 0) - (a.rating || 0);
+    }
+    if (state.favoritesSortBy === 'plays_desc') {
+      return (b.plays || 0) - (a.plays || 0);
+    }
+    return 0;
+  });
+  
   if (filteredCountElem) {
     filteredCountElem.textContent = favorites.length;
   }
   
   if (favorites.length === 0) {
-    podiumContainer.style.display = 'none';
-    timelineContainer.style.display = 'none';
+    grid.style.display = 'none';
     if (emptyState) emptyState.style.display = 'flex';
     return;
   }
   
+  grid.style.display = 'grid';
   if (emptyState) emptyState.style.display = 'none';
   
   // 1. Render Podium (Silver - Gold - Bronze) for Top 3 favorites
@@ -2064,6 +2089,70 @@ function renderFavoritesGrid() {
     if (currentItemsContainer) {
       currentItemsContainer.appendChild(itemDiv);
     }
+=======
+  grid.style.display = 'grid';
+  if (emptyState) emptyState.style.display = 'none';
+  
+  favorites.forEach(lp => {
+    const card = document.createElement('div');
+    card.classList.add('lp-card');
+    card.dataset.id = lp.id;
+    
+    const defaultCover = 'https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=200&auto=format&fit=crop';
+    
+    card.innerHTML = `
+      <div class="lp-card-cover-wrapper">
+        <img class="lp-card-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" loading="lazy" onerror="this.src='${defaultCover}'">
+        <button class="lp-card-fav-btn ${lp.favorite ? 'active' : ''}" title="${lp.favorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}" data-id="${lp.id}">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="${lp.favorite ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+        </button>
+      </div>
+      <div class="lp-card-info">
+        <h4 class="lp-card-title" title="${lp.title}">${lp.title}</h4>
+        <p class="lp-card-artist" title="${lp.artist}">${lp.artist}</p>
+        
+        <!-- Plays and Scrobble Row -->
+        <div class="lp-card-plays-row">
+          <span class="lp-card-plays-count">🎧 ${lp.plays || 0} ${lp.plays === 1 ? 'audição' : 'audições'}</span>
+          <button class="lp-card-scrobble-btn" title="Registrar audição agora" data-id="${lp.id}">
+            + Ouvir
+          </button>
+        </div>
+
+        <div class="lp-card-footer">
+          <span class="lp-card-year">
+            ${lp.original_year > 0 ? (lp.edition_year > 0 && lp.edition_year !== lp.original_year ? `${lp.original_year} <span style="font-size: 0.8em; opacity: 0.75; font-weight: normal;">(Ed. ${lp.edition_year})</span>` : lp.original_year) : 'N/A'}
+          </span>
+        </div>
+      </div>
+    `;
+    
+    card.addEventListener('click', () => {
+      openDetailsDialog(lp.id);
+    });
+
+    // Bind click event to favorite button
+    const favBtn = card.querySelector('.lp-card-fav-btn');
+    if (favBtn) {
+      favBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // prevent opening details dialog
+        toggleFavoriteState(lp.id);
+      });
+    }
+    
+    // Bind click event to scrobble button
+    const scrobbleBtn = card.querySelector('.lp-card-scrobble-btn');
+    if (scrobbleBtn) {
+      scrobbleBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // prevent opening details dialog
+        markAsListened(lp.id);
+      });
+    }
+    
+    grid.appendChild(card);
+>>>>>>> 964c2ea (feat: adicionar suporte a ano de edição, tela interativa de favoritos e scripts de migração)
   });
 }
 
