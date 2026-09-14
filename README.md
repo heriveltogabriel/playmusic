@@ -6,6 +6,8 @@ Tela de exibição minimalista (estilo "now playing") de disco de vinil para ser
 
 - **Sincroniza Coleção do Discogs**: Espelhamento de catálogo local para correspondências rápidas offline.
 - **Scrobble/Audição Automática**: Registra automaticamente uma audição para o disco se mais de uma faixa dele for tocada na mesma sessão de reprodução.
+- **Suporte a Ano Original e Edição**: Exibe e armazena o ano de lançamento original do álbum e o ano da edição/prensagem específica no catálogo e na ficha técnica.
+- **Gerenciamento Interativo de Favoritos**: Nova tela de Favoritos no painel com busca, ordenação customizada e botão interativo de estrela nos cards dos LPs com animação fluida de remoção (*fade-out*).
 - **Favorito Automático**: Marca o disco automaticamente como favorito assim que ele alcançar 20 audições acumuladas.
 - **Sincronização Centralizada nas Configurações**: O botão de atualizar/sincronizar coleção agora fica estrategicamente localizado no topo da aba de Configurações, removendo o botão redundante dos botões de navegação de mídia.
 - **Design Retrô Bauhaus (Amber Landscape)**: Paleta AMOLED de carvão fosco, creme analógico quente e laranja ferrugem/âmbar com animação de disco de vinil girando e deslizando, otimizada para telas móveis no modo paisagem.
