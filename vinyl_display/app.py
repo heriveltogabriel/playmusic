@@ -48,7 +48,11 @@ class VinylDisplayApp:
         self.config = dataclasses.replace(self.config, **new_fields)
         
         # Re-initialize clients
-        self.discogs_client = DiscogsClient(self.config.discogs_user, self.config.discogs_user_agent)
+        self.discogs_client = DiscogsClient(
+            self.config.discogs_user,
+            self.config.discogs_user_agent,
+            token=self.config.discogs_token,
+        )
         self.shazam_client = ShazamClient(self.config.rapidapi_shazam_key, self.config.rapidapi_shazam_host)
         self.store.favorite_threshold = self.config.favorite_threshold
         print("[SERVER] Hot-swapped config to use Shazam for music recognition.")

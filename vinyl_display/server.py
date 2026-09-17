@@ -19,7 +19,9 @@ from vinyl_display.auth import AuthManager
 
 def build_app(config: Config) -> VinylDisplayApp:
     store = CatalogStore(config.database_path)
-    discogs = DiscogsClient(config.discogs_user, config.discogs_user_agent)
+    discogs = DiscogsClient(
+        config.discogs_user, config.discogs_user_agent, token=config.discogs_token
+    )
     recognizer = ShazamClient(config.rapidapi_shazam_key, config.rapidapi_shazam_host)
     print("[SERVER] Using Shazam (via RapidAPI) for music recognition.")
     return VinylDisplayApp(store, discogs, recognizer, config)

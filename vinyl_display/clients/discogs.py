@@ -138,6 +138,7 @@ class DiscogsClient:
         self,
         username: str,
         user_agent: str,
+        token: str = "",
         request_json: JsonTransport = default_request_json,
         api_base: str = "https://api.discogs.com",
         page_delay_seconds: float = 1.0,
@@ -147,6 +148,7 @@ class DiscogsClient:
     ):
         self.username = username
         self.user_agent = user_agent
+        self.token = token
         self.request_json = request_json
         self.api_base = api_base.rstrip("/")
         self.page_delay_seconds = page_delay_seconds
@@ -156,7 +158,10 @@ class DiscogsClient:
 
     @property
     def headers(self) -> dict[str, str]:
-        return {"User-Agent": self.user_agent}
+        headers = {"User-Agent": self.user_agent}
+        if getattr(self, "token", None):
+            headers["Authorization"] = f"Discogs token={self.token}"
+        return headers
 
     def _request_json(self, url: str) -> dict[str, Any]:
         attempts = 0
@@ -189,8 +194,8 @@ class DiscogsClient:
             self.sleep_func(self.page_delay_seconds)
         return release_ids
 
-    def collection_releases_meta(self) -> list[tuple[int, str | None]]:
-        releases_meta: list[tuple[int, str | None]] = []
+    def collection_releases_meta(self) -> list[tuple[int, str | None, str]]:
+        releases_meta: list[tuple[int, str | None, str]] = []
         page = 1
         while True:
             url = (
@@ -199,7 +204,18 @@ class DiscogsClient:
             )
             payload = self._request_json(url)
             for item in payload.get("releases", []):
-                releases_meta.append((int(item["id"]), item.get("date_added")))
+                notes_list = item.get("notes") or []
+                note_val = ""
+                for n in notes_list:
+                    if n.get("field_id") == 3:
+                        note_val = n.get("value", "")
+                        break
+                if not note_val:
+                    for n in notes_list:
+                        if n.get("value"):
+                            note_val = n.get("value")
+                            break
+                releases_meta.append((int(item["id"]), item.get("date_added"), note_val))
             pagination = payload.get("pagination") or {}
             if int(pagination.get("page", page)) >= int(pagination.get("pages", page)):
                 break
@@ -244,7 +260,7 @@ class DiscogsClient:
         import datetime
         import dataclasses
         
-        for release_id, date_added_str in self.collection_releases_meta():
+        for release_id, date_added_str, note_val in self.collection_releases_meta():
             synced_ids.add(release_id)
             existing = store.get_release(release_id)
             if existing is None:
@@ -264,8 +280,14 @@ class DiscogsClient:
                     synced_at = dt.timestamp()
                 except Exception as e:
                     print(f"[DISCOGS] Error parsing date_added '{date_added_str}': {e}")
+            
+            updates = {}
             if synced_at > 0.0:
-                release = dataclasses.replace(release, synced_at=synced_at)
+                updates["synced_at"] = synced_at
+            if note_val:
+                updates["notes"] = note_val
+            if updates:
+                release = dataclasses.replace(release, **updates)
             store.upsert_release(release)
             if need_sleep:
                 self.sleep_func(self.page_delay_seconds)

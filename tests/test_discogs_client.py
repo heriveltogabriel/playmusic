@@ -17,7 +17,13 @@ class FakeJsonTransport:
         if url.endswith("/collection/folders/0/releases?per_page=100&page=1"):
             return {
                 "pagination": {"page": 1, "pages": 1, "items": 1},
-                "releases": [{"id": 14192689, "date_added": "2026-06-08T12:00:00-03:00"}],
+                "releases": [
+                    {
+                        "id": 14192689,
+                        "date_added": "2026-06-08T12:00:00-03:00",
+                        "notes": [{"field_id": 3, "value": "Comprado em Londres"}],
+                    }
+                ],
             }
         if url.endswith("/releases/14192689"):
             return {
@@ -98,6 +104,7 @@ class DiscogsClientTests(unittest.TestCase):
             self.assertEqual(release.labels, ["Apple Records"])
             self.assertEqual(release.catalog_numbers, ["B0030719-01"])
             self.assertEqual(release.tracks[0].duration_seconds, 261)
+            self.assertEqual(release.notes, "Comprado em Londres")
             self.assertEqual(store.get_metadata("discogs_last_sync_count"), "1")
             
             import datetime
