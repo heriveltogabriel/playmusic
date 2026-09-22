@@ -1,23 +1,29 @@
 #!/bin/bash
-# Safe deployment script for Vinyl Display PWA
+# Safe deployment script for Vinyl Display PWA to both production servers
 
-echo "📦 Packaging and deploying code to remote production server..."
-tar --exclude="static-backup-v1" \
-    --exclude="static-backup-v2" \
-    --exclude="static-backup-v3" \
-    --exclude=".git" \
-    --exclude="certs" \
-    --exclude="ssh" \
-    --exclude="data" \
-    --exclude="arquivos_sensiveis.zip" \
-    --exclude="collection.db" \
-    --exclude=".env" \
-    -cf - . | ssh -o StrictHostKeyChecking=no -i ssh/ssh-key-2026-05-26.key opc@150.136.207.62 "tar -C /home/opc/vinyl_display -xf -"
+SERVERS=("150.136.207.62" "oldeighty.duckdns.org")
+KEY="ssh/ssh-key-2026-05-26.key"
 
-echo "🧹 Cleaning up metadata files on the remote server..."
-ssh -o StrictHostKeyChecking=no -i ssh/ssh-key-2026-05-26.key opc@150.136.207.62 "find /home/opc/vinyl_display -name \"._*\" -delete"
+for HOST in "${SERVERS[@]}"; do
+  echo "--------------------------------------------------------"
+  echo "📦 Packaging and deploying code to $HOST..."
+  tar --exclude="static-backup-*" \
+      --exclude=".git" \
+      --exclude="certs" \
+      --exclude="ssh" \
+      --exclude="data" \
+      --exclude="backups" \
+      --exclude="scratch" \
+      --exclude="tests" \
+      --exclude="__pycache__" \
+      --exclude="*.pyc" \
+      --exclude="arquivos_sensiveis.zip" \
+      --exclude="collection.db" \
+      --exclude=".env" \
+      -cf - . | ssh -o StrictHostKeyChecking=no -i "$KEY" opc@"$HOST" "tar -C /home/opc/vinyl_display -xf - && find /home/opc/vinyl_display -name \"._*\" -delete && sudo systemctl restart vinyl-display"
+  
+  echo "✅ $HOST deployed and service restarted successfully (data preserved)."
+done
 
-echo "🔄 Restarting the vinyl-display systemd service..."
-ssh -o StrictHostKeyChecking=no -i ssh/ssh-key-2026-05-26.key opc@150.136.207.62 "sudo systemctl restart vinyl-display"
-
-echo "✅ Deployment finished successfully! Remote database preserved."
+echo "--------------------------------------------------------"
+echo "🎉 Deployment to all servers finished successfully!"
