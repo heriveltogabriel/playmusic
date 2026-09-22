@@ -50,6 +50,7 @@ const state = {
 // ==================== INITIALIZATION ====================
 document.addEventListener('DOMContentLoaded', async () => {
   await loadDatabase();
+  initializeMobileMenu();
   initializeViews();
   initializeSidebarFilters();
   initializeFavoritesControls();
@@ -137,6 +138,58 @@ function saveDatabase() {
   // Backend SQLite is the single source of truth.
 }
 
+// ==================== MOBILE DRAWER NAVIGATION ====================
+function initializeMobileMenu() {
+  const toggleBtn = document.getElementById('mobile-menu-toggle');
+  const closeBtn = document.getElementById('sidebar-close-btn');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  const sidebar = document.getElementById('app-sidebar');
+
+  if (!sidebar) return;
+
+  function openMobileMenu() {
+    sidebar.classList.add('open');
+    if (backdrop) backdrop.classList.add('active');
+    document.body.classList.add('no-scroll');
+  }
+
+  function closeMobileMenu() {
+    sidebar.classList.remove('open');
+    if (backdrop) backdrop.classList.remove('active');
+    document.body.classList.remove('no-scroll');
+  }
+
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openMobileMenu();
+    });
+  }
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeMobileMenu();
+    });
+  }
+
+  if (backdrop) {
+    backdrop.addEventListener('click', () => {
+      closeMobileMenu();
+    });
+  }
+
+  // Close drawer on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+      closeMobileMenu();
+    }
+  });
+
+  window.closeMobileMenu = closeMobileMenu;
+  window.openMobileMenu = openMobileMenu;
+}
+
 // ==================== SIDEBAR & VIEW NAVIGATION ====================
 function initializeViews() {
   const navButtons = document.querySelectorAll('.nav-btn, .nav-btn-icon');
@@ -148,6 +201,11 @@ function initializeViews() {
       const targetView = btn.dataset.view;
       if (!targetView) return;
       
+      // Auto-close mobile drawer on selection
+      if (typeof window.closeMobileMenu === 'function') {
+        window.closeMobileMenu();
+      }
+
       // Update sidebar active button
       navButtons.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
