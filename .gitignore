@@ -11,6 +11,5 @@ ssh/
 scratch/
 *.zip
 *recovery_key*
-
-
-
+*.db
+*.sqlite3
