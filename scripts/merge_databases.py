@@ -113,16 +113,22 @@ def main():
             )
             
             # Update release_stats
-            local_conn.execute(
+            cur = local_conn.execute(
                 """
-                INSERT INTO release_stats (release_id, rating, auditions)
-                VALUES (?, ?, ?)
-                ON CONFLICT(release_id) DO UPDATE SET
-                    rating = excluded.rating,
-                    auditions = excluded.auditions
+                UPDATE release_stats
+                SET rating = ?, auditions = ?
+                WHERE release_id = ?
                 """,
-                (r_id, merged_rating, merged_auditions)
+                (merged_rating, merged_auditions, r_id),
             )
+            if cur.rowcount == 0:
+                local_conn.execute(
+                    """
+                    INSERT INTO release_stats (release_id, rating, auditions)
+                    VALUES (?, ?, ?)
+                    """,
+                    (r_id, merged_rating, merged_auditions),
+                )
             
             merged_count += 1
             

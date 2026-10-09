@@ -90,41 +90,57 @@ class CatalogStore:
             
         payload_json = json.dumps(release.to_dict(), ensure_ascii=False, sort_keys=True)
         with self._connect() as connection:
-            connection.execute(
+            cur = connection.execute(
                 """
-                INSERT INTO releases (
-                    release_id, title, artist, year, cover_url, payload_json, synced_at
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT(release_id) DO UPDATE SET
-                    title = excluded.title,
-                    artist = excluded.artist,
-                    year = excluded.year,
-                    cover_url = excluded.cover_url,
-                    payload_json = excluded.payload_json,
-                    synced_at = excluded.synced_at
+                UPDATE releases
+                SET title = ?, artist = ?, year = ?, cover_url = ?, payload_json = ?, synced_at = ?
+                WHERE release_id = ?
                 """,
                 (
-                    release.release_id,
                     release.title,
                     release.artist,
                     release.year,
                     release.cover_url,
                     payload_json,
                     synced_at,
+                    release.release_id,
                 ),
             )
+            if cur.rowcount == 0:
+                connection.execute(
+                    """
+                    INSERT INTO releases (
+                        release_id, title, artist, year, cover_url, payload_json, synced_at
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        release.release_id,
+                        release.title,
+                        release.artist,
+                        release.year,
+                        release.cover_url,
+                        payload_json,
+                        synced_at,
+                    ),
+                )
             # Ensure rating and auditions are synced in release_stats table too
-            connection.execute(
+            cur_stats = connection.execute(
                 """
-                INSERT INTO release_stats (release_id, rating, auditions)
-                VALUES (?, ?, ?)
-                ON CONFLICT(release_id) DO UPDATE SET
-                    rating = excluded.rating,
-                    auditions = excluded.auditions
+                UPDATE release_stats
+                SET rating = ?, auditions = ?
+                WHERE release_id = ?
                 """,
-                (release.release_id, release.rating, release.auditions),
+                (release.rating, release.auditions, release.release_id),
             )
+            if cur_stats.rowcount == 0:
+                connection.execute(
+                    """
+                    INSERT INTO release_stats (release_id, rating, auditions)
+                    VALUES (?, ?, ?)
+                    """,
+                    (release.release_id, release.rating, release.auditions),
+                )
 
     def get_release(self, release_id: int) -> Release | None:
         with self._connect() as connection:
@@ -164,9 +180,8 @@ class CatalogStore:
         with self._connect() as connection:
             connection.execute(
                 """
-                INSERT INTO sync_metadata (key, value)
+                INSERT OR REPLACE INTO sync_metadata (key, value)
                 VALUES (?, ?)
-                ON CONFLICT(key) DO UPDATE SET value = excluded.value
                 """,
                 (key, value),
             )
@@ -185,15 +200,22 @@ class CatalogStore:
         
         # 1. Update release_stats table
         with self._connect() as connection:
-            connection.execute(
+            cur = connection.execute(
                 """
-                INSERT INTO release_stats (release_id, auditions)
-                VALUES (?, 1)
-                ON CONFLICT(release_id) DO UPDATE SET
-                    auditions = auditions + 1
+                UPDATE release_stats
+                SET auditions = auditions + 1
+                WHERE release_id = ?
                 """,
                 (release_id,),
             )
+            if cur.rowcount == 0:
+                connection.execute(
+                    """
+                    INSERT INTO release_stats (release_id, auditions)
+                    VALUES (?, 1)
+                    """,
+                    (release_id,),
+                )
             row = connection.execute(
                 "SELECT auditions FROM release_stats WHERE release_id = ?",
                 (release_id,),
@@ -222,9 +244,8 @@ class CatalogStore:
         with self._connect() as connection:
             connection.execute(
                 """
-                INSERT INTO release_stats (release_id, auditions)
+                INSERT OR IGNORE INTO release_stats (release_id, auditions)
                 VALUES (?, 0)
-                ON CONFLICT(release_id) DO NOTHING
                 """,
                 (release_id,),
             )
@@ -268,15 +289,22 @@ class CatalogStore:
 
     def update_rating(self, release_id: int, rating: int) -> None:
         with self._connect() as connection:
-            connection.execute(
+            cur = connection.execute(
                 """
-                INSERT INTO release_stats (release_id, rating)
-                VALUES (?, ?)
-                ON CONFLICT(release_id) DO UPDATE SET
-                    rating = excluded.rating
+                UPDATE release_stats
+                SET rating = ?
+                WHERE release_id = ?
                 """,
-                (release_id, rating),
+                (rating, release_id),
             )
+            if cur.rowcount == 0:
+                connection.execute(
+                    """
+                    INSERT INTO release_stats (release_id, rating)
+                    VALUES (?, ?)
+                    """,
+                    (release_id, rating),
+                )
         release = self.get_release(release_id)
         if release:
             import dataclasses
