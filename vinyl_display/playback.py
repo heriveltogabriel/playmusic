@@ -322,3 +322,10 @@ class PlaybackController:
             prev_track = release.tracks[index - 1]
             self.active.match = replace(self.active.match, track=prev_track)
             self.active.started_at = now
+
+    def stop(self) -> None:
+        self.active = None
+        self.alternatives = []
+        self.status = "listening"
+        self.message = ""
+

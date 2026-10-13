@@ -73,12 +73,17 @@
             <div id="next-track-title" class="next-track-title">Coloque novo disco para tocar</div>
           </div>
           <div class="media-nav-buttons">
-            <button id="prev-button" class="btn-media-nav" type="button" aria-label="Anterior" disabled>
+            <button id="prev-button" class="btn-media-nav" type="button" aria-label="Anterior" title="Faixa anterior" disabled>
               <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
                 <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
               </svg>
             </button>
-            <button id="next-button" class="btn-media-nav" type="button" aria-label="Próxima" disabled>
+            <button id="stop-button" class="btn-media-nav" type="button" aria-label="Parar Reprodução" title="Parar reprodução" disabled>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                <rect x="6" y="6" width="12" height="12" rx="1.5"/>
+              </svg>
+            </button>
+            <button id="next-button" class="btn-media-nav" type="button" aria-label="Próxima" title="Próxima faixa" disabled>
               <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
                 <path d="M6 18l8.5-6L6 6zm9-12h2v12h-2z"/>
               </svg>
@@ -96,6 +101,23 @@
         </div>
         <p id="error-popup-message"></p>
         <button id="error-popup-close" class="btn-popup-close" type="button">Fechar</button>
+      </div>
+    </div>
+
+    <!-- Popup de confirmação para parar o disco -->
+    <div id="stop-confirm-popup" class="error-popup hidden" role="dialog" aria-modal="true" aria-labelledby="stop-confirm-title" aria-hidden="true">
+      <div class="error-popup-content">
+        <div class="error-popup-header">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="#ff7043">
+            <rect x="6" y="6" width="12" height="12" rx="2"/>
+          </svg>
+          <h3 id="stop-confirm-title">Parar reprodução?</h3>
+        </div>
+        <p id="stop-confirm-message">Deseja realmente parar o disco e voltar à tela inicial?</p>
+        <div class="confirm-popup-actions">
+          <button id="stop-confirm-cancel" class="btn-popup-cancel" type="button">Cancelar</button>
+          <button id="stop-confirm-ok" class="btn-popup-confirm" type="button">Parar Disco</button>
+        </div>
       </div>
     </div>
 

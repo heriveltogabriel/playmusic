@@ -456,6 +456,21 @@ class PlaybackControllerTests(unittest.TestCase):
         self.assertTrue(controller.active.locked)
         self.assertEqual(controller.alternatives, [])
 
+    def test_stop_playback_resets_to_idle(self):
+        controller = PlaybackController()
+        controller.handle_match(match_at_a1(), now=1000)
+        state = controller.current_state(now=1010)
+        self.assertEqual(state["status"], "playing")
+        self.assertIsNotNone(state["release"])
+
+        controller.stop()
+        stopped_state = controller.current_state(now=1010)
+        self.assertEqual(stopped_state["status"], "listening")
+        self.assertIsNone(stopped_state["release"])
+        self.assertIsNone(stopped_state["track"])
+        self.assertIsNone(controller.active)
+        self.assertEqual(stopped_state["alternatives"], [])
+
 
 if __name__ == "__main__":
     unittest.main()

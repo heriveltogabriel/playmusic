@@ -6,6 +6,7 @@ const elements = {
   artistName: document.querySelector("#artist-name"),
   albumLine: document.querySelector("#album-line"),
   prevButton: document.querySelector("#prev-button"),
+  stopButton: document.querySelector("#stop-button"),
   nextButton: document.querySelector("#next-button"),
   nextTrack: document.querySelector("#next-track"),
   nextTrackTitle: document.querySelector("#next-track-title"),
@@ -29,6 +30,9 @@ const elements = {
   alternativesPopup: document.querySelector("#alternatives-popup"),
   alternativesPopupClose: document.querySelector("#alternatives-popup-close"),
   alternativesList: document.querySelector("#alternatives-list"),
+  stopConfirmPopup: document.querySelector("#stop-confirm-popup"),
+  stopConfirmCancel: document.querySelector("#stop-confirm-cancel"),
+  stopConfirmOk: document.querySelector("#stop-confirm-ok"),
 };
 
 let currentTrackKey = null;
@@ -159,6 +163,7 @@ function renderState(state) {
 
   // Desabilitar botões por padrão
   elements.prevButton.disabled = true;
+  if (elements.stopButton) elements.stopButton.disabled = true;
   elements.nextButton.disabled = true;
 
   // Nós só mantemos a tela no modo "Tocando" (com capa da música e título) se:
@@ -211,6 +216,7 @@ function renderState(state) {
     
     // Habilitar botões se estiver tocando e animar vinil
     elements.prevButton.disabled = false;
+    if (elements.stopButton) elements.stopButton.disabled = false;
     elements.nextButton.disabled = !state.next_track;
 
     if (state.status === "playing") {
@@ -834,6 +840,60 @@ elements.prevButton.addEventListener("click", async () => {
     showError("Erro do servidor ao retroceder faixa: " + error.message);
   }
 });
+
+function showStopConfirm() {
+  if (elements.stopConfirmPopup) {
+    elements.stopConfirmPopup.classList.remove("hidden");
+    elements.stopConfirmPopup.setAttribute("aria-hidden", "false");
+  }
+}
+
+function hideStopConfirm() {
+  if (elements.stopConfirmPopup) {
+    elements.stopConfirmPopup.classList.add("hidden");
+    elements.stopConfirmPopup.setAttribute("aria-hidden", "true");
+  }
+}
+
+if (elements.stopButton) {
+  elements.stopButton.addEventListener("click", () => {
+    if (!elements.stopButton.disabled) {
+      showStopConfirm();
+    }
+  });
+}
+
+if (elements.stopConfirmCancel) {
+  elements.stopConfirmCancel.addEventListener("click", hideStopConfirm);
+}
+
+if (elements.stopConfirmPopup) {
+  elements.stopConfirmPopup.addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) {
+      hideStopConfirm();
+    }
+  });
+}
+
+if (elements.stopConfirmOk) {
+  elements.stopConfirmOk.addEventListener("click", async () => {
+    hideStopConfirm();
+    try {
+      window.nextAutoListenAt = 0;
+      const res = await fetchJson("/api/playback/stop", { method: "POST" });
+      if (res && res.state) {
+        renderState(res.state);
+      } else if (res) {
+        renderState(res);
+      } else {
+        await pollState();
+      }
+    } catch (error) {
+      console.error("Erro ao parar disco:", error);
+      showError("Erro do servidor ao parar disco: " + error.message);
+    }
+  });
+}
 
 elements.nextButton.addEventListener("click", async () => {
   try {

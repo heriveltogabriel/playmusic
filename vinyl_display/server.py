@@ -540,6 +540,10 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             self.app.playback.skip_prev()
             self._json(self.app.state())
             return
+        if path == "/api/playback/stop":
+            result = self.app.stop_playback()
+            self._json(result)
+            return
         if path == "/api/playback/switch_release":
             length = int(self.headers.get("Content-Length", "0"))
             body_bytes = self.rfile.read(length)

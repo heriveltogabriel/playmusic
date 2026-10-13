@@ -491,3 +491,8 @@ class VinylDisplayApp:
             return {"status": "ok", "state": self.state()}
         return {"status": "error", "message": "Não foi possível alternar o disco ativo"}
 
+    def stop_playback(self) -> dict[str, Any]:
+        self.playback.stop()
+        return {"status": "ok", "state": self.state()}
+
+
