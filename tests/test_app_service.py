@@ -218,5 +218,67 @@ class AppServiceTests(unittest.TestCase):
             self.assertEqual(len(historical[current_saved_week_key]), 7)
 
 
+    def test_recognize_audio_respects_locked_release(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = CatalogStore(Path(tmp) / "catalog.sqlite3")
+            store.initialize()
+            # Release 1: Studio album Abbey Road
+            store.upsert_release(
+                Release(
+                    release_id=1,
+                    title="Abbey Road",
+                    artist="The Beatles",
+                    year=1969,
+                    cover_url="",
+                    country="",
+                    labels=[],
+                    catalog_numbers=[],
+                    formats=["Vinyl"],
+                    tracks=[Track("A1", "Come Together", 261)],
+                    discogs_url="",
+                )
+            )
+            # Release 2: Compilation
+            store.upsert_release(
+                Release(
+                    release_id=2,
+                    title="1967-1970",
+                    artist="The Beatles",
+                    year=1973,
+                    cover_url="",
+                    country="",
+                    labels=[],
+                    catalog_numbers=[],
+                    formats=["Vinyl"],
+                    tracks=[Track("A1", "Come Together", 261)],
+                    discogs_url="",
+                )
+            )
+            app = VinylDisplayApp(store, FakeDiscogsClient(), FakeShazamClient())
+
+            # 1. Initial recognize matches Abbey Road (because album="Abbey Road" in FakeShazamClient)
+            audio = b"\x10\x20" * 50
+            result1 = app.recognize_audio(audio)
+            self.assertEqual(result1["status"], "matched")
+            self.assertEqual(app.playback.active.match.release.release_id, 1)
+            self.assertEqual(len(app.playback.alternatives), 1)
+
+            # 2. Switch to compilation (release 2)
+            switched = app.switch_playback_release(2)
+            self.assertTrue(switched)
+            self.assertEqual(app.playback.active.match.release.release_id, 2)
+            self.assertTrue(app.playback.active.locked)
+            # Alternatives are cleared and button disappears
+            self.assertEqual(len(app.playback.alternatives), 0)
+
+            # 3. Subsequent audio recognition with the same fake Shazam (which says album="Abbey Road")
+            # Because the session is locked to release 2, it MUST stay on release 2!
+            result2 = app.recognize_audio(audio)
+            self.assertEqual(result2["status"], "matched")
+            self.assertEqual(app.playback.active.match.release.release_id, 2)
+            self.assertTrue(app.playback.active.locked)
+            self.assertEqual(len(app.playback.alternatives), 0)
+
+
 if __name__ == "__main__":
     unittest.main()

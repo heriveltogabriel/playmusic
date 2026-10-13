@@ -13,6 +13,7 @@ class ActivePlayback:
     started_at: float
     played_tracks: set[str] = field(default_factory=set)
     scrobbled: bool = False
+    locked: bool = False
 
 
 def get_track_side(position: str) -> str:
@@ -49,20 +50,32 @@ class PlaybackController:
     ) -> None:
         now = now or time.time()
         started_at = now - offset - latency
-        if alternatives is not None:
+
+        is_same_release = (
+            self.active is not None
+            and self.active.match.release.release_id == match.release.release_id
+        )
+        is_locked = is_same_release and getattr(self.active, "locked", False)
+
+        if is_locked:
+            self.alternatives = []
+        elif alternatives is not None:
             self.alternatives = [a for a in alternatives if a.release.release_id != match.release.release_id]
-        if self.active is not None and self.active.match.release.release_id == match.release.release_id:
+
+        if is_same_release and self.active is not None:
             self.active = replace(
                 self.active,
                 match=match,
-                started_at=started_at
+                started_at=started_at,
+                locked=is_locked,
             )
         else:
             self.active = ActivePlayback(
                 match=match,
                 started_at=started_at,
                 played_tracks=set(),
-                scrobbled=False
+                scrobbled=False,
+                locked=False,
             )
         self.status = "playing"
         self.message = ""
@@ -205,16 +218,15 @@ class PlaybackController:
                 reason="user switch",
             )
 
-        old_match = self.active.match
-        new_alts = [alt for alt in self.alternatives if alt.release.release_id != release_id]
-        new_alts.append(old_match)
-        self.alternatives = new_alts
+        # Clear alternatives so the button disappears and the album is locked
+        self.alternatives = []
 
         self.active = replace(
             self.active,
             match=target_match,
             played_tracks={target_match.track.position},
             scrobbled=False,
+            locked=True,
         )
         return True
 

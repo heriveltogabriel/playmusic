@@ -441,9 +441,20 @@ class PlaybackControllerTests(unittest.TestCase):
 
         new_state = controller.current_state(now=1010)
         self.assertEqual(new_state["release"]["release_id"], 99999)
-        self.assertEqual(len(new_state["alternatives"]), 1)
-        # Previous primary (Abbey Road) is now in alternatives
-        self.assertEqual(new_state["alternatives"][0]["release_id"], 14192689)
+        # Alternatives are cleared and button disappears
+        self.assertEqual(len(new_state["alternatives"]), 0)
+        self.assertTrue(controller.active.locked)
+
+        # Subsequent match for the same album preserves lock and keeps alternatives empty
+        second_track_match = TrackMatch(
+            release=compilation_release,
+            track=compilation_release.tracks[1],
+            score=95,
+            reason="next track",
+        )
+        controller.handle_match(second_track_match, now=1265)
+        self.assertTrue(controller.active.locked)
+        self.assertEqual(controller.alternatives, [])
 
 
 if __name__ == "__main__":

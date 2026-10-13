@@ -145,12 +145,23 @@ class VinylDisplayApp:
 
         print(f"[RECOGNIZE] Recognized: '{recognition.title}' by '{recognition.artist}' (album: '{recognition.album or ''}', confidence: {recognition.confidence})")
         active_release_id = None
+        is_locked = False
         if self.playback.active and self.playback.active.match:
             active_release_id = self.playback.active.match.release.release_id
+            is_locked = getattr(self.playback.active, "locked", False)
 
         matches = self.matcher.match_all(recognition, active_release_id=active_release_id)
-        match = matches[0] if matches else None
-        alternatives = matches[1:] if len(matches) > 1 else []
+        if is_locked and active_release_id:
+            locked_match = next((m for m in matches if m.release.release_id == active_release_id), None)
+            if locked_match is not None:
+                match = locked_match
+                alternatives = []
+            else:
+                match = matches[0] if matches else None
+                alternatives = matches[1:] if len(matches) > 1 else []
+        else:
+            match = matches[0] if matches else None
+            alternatives = matches[1:] if len(matches) > 1 else []
         recognition_payload = {
             "title": recognition.title,
             "artist": recognition.artist,
