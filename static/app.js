@@ -23,6 +23,12 @@ const elements = {
   coverPanel: document.querySelector(".cover-panel"),
   fullscreenButton: document.querySelector("#fullscreen-button"),
   appVersionDisplay: document.querySelector("#app-version-display"),
+  alternativesWrapper: document.querySelector("#alternatives-wrapper"),
+  alternativesBtn: document.querySelector("#alternatives-btn"),
+  alternativesLabel: document.querySelector("#alternatives-label"),
+  alternativesPopup: document.querySelector("#alternatives-popup"),
+  alternativesPopupClose: document.querySelector("#alternatives-popup-close"),
+  alternativesList: document.querySelector("#alternatives-list"),
 };
 
 let currentTrackKey = null;
@@ -36,6 +42,7 @@ const lyricsCache = new Map();
 let lyricsStatusMessage = "Letra não encontrada para esta faixa";
 let nextTrack = null;
 let currentRelease = null;
+let currentAlternatives = [];
 let trackChangeCount = 0;
 let consecutiveFailedListens = 0;
 let micSuspended = false;
@@ -179,6 +186,21 @@ function renderState(state) {
     elements.trackTitle.textContent = track.title;
     elements.artistName.textContent = release.artist;
     elements.albumLine.textContent = release.title;
+
+    currentAlternatives = state.alternatives || [];
+    if (currentAlternatives.length > 0 && elements.alternativesWrapper) {
+      elements.alternativesWrapper.classList.remove("hidden");
+      if (elements.alternativesLabel) {
+        const count = currentAlternatives.length;
+        elements.alternativesLabel.textContent = `Também em ${count} ${count === 1 ? "outro disco" : "outros discos"}`;
+      }
+    } else {
+      if (elements.alternativesWrapper) {
+        elements.alternativesWrapper.classList.add("hidden");
+      }
+      hideAlternatives();
+    }
+
     if (state.next_track && elements.nextTrackTitle) {
       elements.nextTrackTitle.textContent = state.next_track.title;
       elements.nextTrack.style.display = "block";
@@ -241,6 +263,11 @@ function renderState(state) {
 
   // ESTADO DE ESPERA / OCIOSO (Sem música tocando)
   trackChangeCount = 0;
+  currentAlternatives = [];
+  if (elements.alternativesWrapper) {
+    elements.alternativesWrapper.classList.add("hidden");
+  }
+  hideAlternatives();
   setCover(null); // Renderiza a logo do LP DA SEMANA
   currentRelease = null;
   nextTrack = null;
@@ -644,6 +671,109 @@ if (popupOverlay) {
   popupOverlay.addEventListener("click", (e) => {
     if (e.target === e.currentTarget) {
       hideError();
+    }
+  });
+}
+
+function showAlternatives() {
+  if (!elements.alternativesPopup || !elements.alternativesList) return;
+  elements.alternativesList.replaceChildren();
+  if (!currentAlternatives || currentAlternatives.length === 0) return;
+
+  currentAlternatives.forEach((alt) => {
+    const card = document.createElement("div");
+    card.className = "alternative-card";
+
+    const cover = document.createElement("img");
+    cover.className = "alternative-card-cover";
+    cover.alt = alt.title || "Capa";
+    cover.src = alt.cover_url || "/static/logo_lp_da_semana.png";
+
+    const info = document.createElement("div");
+    info.className = "alternative-card-info";
+
+    const title = document.createElement("span");
+    title.className = "alternative-card-title";
+    title.textContent = alt.title;
+
+    const artistYear = document.createElement("span");
+    artistYear.className = "alternative-card-artist";
+    const yearStr = alt.year ? ` (${alt.year})` : "";
+    artistYear.textContent = `${alt.artist}${yearStr}`;
+
+    const track = document.createElement("span");
+    track.className = "alternative-card-track";
+    const posStr = alt.track_position ? `Lado ${alt.track_position}: ` : "";
+    track.textContent = `${posStr}${alt.track_title || ""}`;
+
+    info.appendChild(title);
+    info.appendChild(artistYear);
+    info.appendChild(track);
+
+    const action = document.createElement("div");
+    action.className = "alternative-card-action";
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("width", "18");
+    svg.setAttribute("height", "18");
+    svg.setAttribute("fill", "currentColor");
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", "M5 13h11.86l-5.43 5.43 1.42 1.42L21.14 12l-8.29-7.85-1.42 1.42L16.86 11H5v2z");
+    svg.appendChild(path);
+    action.appendChild(svg);
+
+    card.appendChild(cover);
+    card.appendChild(info);
+    card.appendChild(action);
+
+    card.addEventListener("click", () => {
+      switchActiveRelease(alt.release_id);
+    });
+
+    elements.alternativesList.appendChild(card);
+  });
+
+  elements.alternativesPopup.classList.remove("hidden");
+}
+
+function hideAlternatives() {
+  if (elements.alternativesPopup) {
+    elements.alternativesPopup.classList.add("hidden");
+  }
+}
+
+async function switchActiveRelease(releaseId) {
+  try {
+    const res = await fetchJson("/api/playback/switch_release", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ release_id: releaseId }),
+    });
+    hideAlternatives();
+    if (res && res.state) {
+      renderState(res.state);
+    } else {
+      await pollState();
+    }
+  } catch (err) {
+    console.error("Erro ao alternar disco:", err);
+    showError("Não foi possível alternar o disco: " + err.message);
+  }
+}
+
+if (elements.alternativesBtn) {
+  elements.alternativesBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    showAlternatives();
+  });
+}
+if (elements.alternativesPopupClose) {
+  elements.alternativesPopupClose.addEventListener("click", hideAlternatives);
+}
+if (elements.alternativesPopup) {
+  elements.alternativesPopup.addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) {
+      hideAlternatives();
     }
   });
 }

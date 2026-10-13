@@ -2988,6 +2988,9 @@ function openDetailsDialog(id) {
     }
   }
 
+  // Tracklist
+  renderDetailsTracklist(lp);
+
   // Interactive stars
   renderDetailsStars(lp);
   
@@ -3063,6 +3066,58 @@ function renderDetailsStars(lp) {
     });
     container.appendChild(starSvg);
   }
+}
+
+function renderDetailsTracklist(lp) {
+  const container = document.getElementById('details-tracklist');
+  const countEl = document.getElementById('details-tracklist-count');
+  if (!container) return;
+
+  container.innerHTML = '';
+  const tracks = (lp && Array.isArray(lp.tracks)) ? lp.tracks : [];
+
+  if (countEl) {
+    if (tracks.length > 0) {
+      countEl.textContent = `${tracks.length} ${tracks.length === 1 ? 'faixa' : 'faixas'}`;
+      countEl.style.display = 'inline-block';
+    } else {
+      countEl.textContent = '';
+      countEl.style.display = 'none';
+    }
+  }
+
+  if (tracks.length === 0) {
+    container.innerHTML = '<span class="text-muted" style="font-style: italic; padding: 6px 8px; font-size: 0.82rem;">Nenhuma faixa cadastrada.</span>';
+    return;
+  }
+
+  tracks.forEach((track, idx) => {
+    const item = document.createElement('div');
+    item.className = 'details-track-item';
+
+    const pos = document.createElement('span');
+    pos.className = 'details-track-pos';
+    pos.textContent = track.position || String(idx + 1);
+
+    const name = document.createElement('span');
+    name.className = 'details-track-name';
+    name.textContent = track.title || 'Sem título';
+    name.title = track.title || '';
+
+    item.appendChild(pos);
+    item.appendChild(name);
+
+    if (track.duration_seconds && !isNaN(track.duration_seconds) && track.duration_seconds > 0) {
+      const dur = document.createElement('span');
+      dur.className = 'details-track-duration';
+      const m = Math.floor(track.duration_seconds / 60);
+      const s = Math.floor(track.duration_seconds % 60);
+      dur.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+      item.appendChild(dur);
+    }
+
+    container.appendChild(item);
+  });
 }
 
 function openFormDialog(editId = null) {

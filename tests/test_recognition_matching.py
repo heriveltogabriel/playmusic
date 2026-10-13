@@ -149,6 +149,43 @@ class RecognitionMatchingTests(unittest.TestCase):
         self.assertIsNotNone(match)
         self.assertIn("side start boost", match.reason)
 
+    def test_matcher_returns_multiple_candidates_for_compilation(self):
+        store = make_store()
+        # Add a compilation containing the same song
+        store.upsert_release(
+            Release(
+                release_id=99999,
+                title="1967-1970 (The Blue Album)",
+                artist="The Beatles",
+                year=1973,
+                cover_url="https://example.test/blue.jpg",
+                country="UK",
+                labels=["Apple"],
+                catalog_numbers=["PCSP 718"],
+                formats=["Vinyl"],
+                tracks=[
+                    Track("A1", "Come Together", 261),
+                    Track("A2", "Something", 183),
+                ],
+                discogs_url="https://www.discogs.com/release/99999",
+            )
+        )
+        matcher = CollectionMatcher(store)
+        recognition = RecognitionResult(
+            title="Come Together",
+            artist="The Beatles",
+            album="Abbey Road",
+            provider="shazam",
+            confidence=0.95,
+        )
+
+        matches = matcher.match_all(recognition)
+        self.assertEqual(len(matches), 2)
+        # Abbey Road should score higher because album matches
+        self.assertEqual(matches[0].release.release_id, 14192689)
+        # Blue Album is alternative
+        self.assertEqual(matches[1].release.release_id, 99999)
+
 
 if __name__ == "__main__":
     unittest.main()

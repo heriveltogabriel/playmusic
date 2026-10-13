@@ -61,16 +61,16 @@ class CollectionMatcher:
         self.store = store
         self.minimum_score = minimum_score
 
-    def match(
+    def match_all(
         self,
         recognition: RecognitionResult,
         active_release_id: int | None = None,
-    ) -> TrackMatch | None:
+    ) -> list[TrackMatch]:
         recognized_title = normalize_text(recognition.title)
         recognized_artist = normalize_text(recognition.artist)
         recognized_album = normalize_text(recognition.album)
 
-        best: TrackMatch | None = None
+        matches_by_release: dict[int, TrackMatch] = {}
         for release, track in self.store.iter_track_candidates():
             score = 0
             reasons = []
@@ -104,12 +104,24 @@ class CollectionMatcher:
                 score += 15
                 reasons.append("side start boost")
 
-            if score >= self.minimum_score and (best is None or score > best.score):
-                best = TrackMatch(
+            if score >= self.minimum_score:
+                candidate = TrackMatch(
                     release=release,
                     track=track,
                     score=score,
                     reason=", ".join(reasons),
                 )
+                prev = matches_by_release.get(release.release_id)
+                if prev is None or candidate.score > prev.score:
+                    matches_by_release[release.release_id] = candidate
 
-        return best
+        # Sort matches by score descending
+        return sorted(matches_by_release.values(), key=lambda m: m.score, reverse=True)
+
+    def match(
+        self,
+        recognition: RecognitionResult,
+        active_release_id: int | None = None,
+    ) -> TrackMatch | None:
+        matches = self.match_all(recognition, active_release_id=active_release_id)
+        return matches[0] if matches else None

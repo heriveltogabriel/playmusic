@@ -403,6 +403,48 @@ class PlaybackControllerTests(unittest.TestCase):
         state = controller.current_state(now=1001)
         self.assertEqual(state["track"]["position"], "A1")
 
+    def test_switch_release_swaps_active_album_and_alternatives(self):
+        controller = PlaybackController()
+        primary_match = match_at_a1()
+        compilation_release = Release(
+            release_id=99999,
+            title="1967-1970 (The Blue Album)",
+            artist="The Beatles",
+            year=1973,
+            cover_url="https://example.test/blue.jpg",
+            country="UK",
+            labels=["Apple"],
+            catalog_numbers=["PCSP 718"],
+            formats=["Vinyl"],
+            tracks=[
+                Track("A1", "Come Together", 261),
+                Track("A2", "Something", 183),
+            ],
+            discogs_url="https://www.discogs.com/release/99999",
+        )
+        alt_match = TrackMatch(
+            release=compilation_release,
+            track=compilation_release.tracks[0],
+            score=85,
+            reason="test alt",
+        )
+
+        controller.handle_match(primary_match, now=1000, alternatives=[alt_match])
+        state = controller.current_state(now=1010)
+        self.assertEqual(state["release"]["release_id"], 14192689)
+        self.assertEqual(len(state["alternatives"]), 1)
+        self.assertEqual(state["alternatives"][0]["release_id"], 99999)
+
+        # Switch to compilation
+        switched = controller.switch_release(99999, store=None)
+        self.assertTrue(switched)
+
+        new_state = controller.current_state(now=1010)
+        self.assertEqual(new_state["release"]["release_id"], 99999)
+        self.assertEqual(len(new_state["alternatives"]), 1)
+        # Previous primary (Abbey Road) is now in alternatives
+        self.assertEqual(new_state["alternatives"][0]["release_id"], 14192689)
+
 
 if __name__ == "__main__":
     unittest.main()

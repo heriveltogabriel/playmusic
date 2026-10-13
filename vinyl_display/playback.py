@@ -37,10 +37,20 @@ class PlaybackController:
         self.message = ""
         self.last_recognition: dict[str, Any] | None = None
         self.on_scrobble = on_scrobble
+        self.alternatives: list[TrackMatch] = []
 
-    def handle_match(self, match: TrackMatch, offset: float = 0.0, now: float | None = None, latency: float = 0.0) -> None:
+    def handle_match(
+        self,
+        match: TrackMatch,
+        offset: float = 0.0,
+        now: float | None = None,
+        latency: float = 0.0,
+        alternatives: list[TrackMatch] | None = None,
+    ) -> None:
         now = now or time.time()
         started_at = now - offset - latency
+        if alternatives is not None:
+            self.alternatives = [a for a in alternatives if a.release.release_id != match.release.release_id]
         if self.active is not None and self.active.match.release.release_id == match.release.release_id:
             self.active = replace(
                 self.active,
@@ -110,6 +120,7 @@ class PlaybackController:
                 "progress_seconds": None,
                 "duration_seconds": None,
                 "last_recognition": self.last_recognition,
+                "alternatives": [],
             }
 
         release = self.active.match.release
@@ -128,6 +139,19 @@ class PlaybackController:
                     print(f"[PLAYBACK] Error automatically registering audition for release {release.release_id}: {e}")
 
         next_track = self._next_track(release, track)
+        alternatives_payload = [
+            {
+                "release_id": alt.release.release_id,
+                "title": alt.release.title,
+                "artist": alt.release.artist,
+                "year": alt.release.year,
+                "cover_url": alt.release.cover_url,
+                "track_position": alt.track.position,
+                "track_title": alt.track.title,
+                "score": alt.score,
+            }
+            for alt in self.alternatives
+        ]
 
         if is_side_finished:
             curr_side = get_track_side(track.position)
@@ -146,6 +170,7 @@ class PlaybackController:
                 "progress_seconds": progress,
                 "duration_seconds": track.duration_seconds or 180,
                 "last_recognition": self.last_recognition,
+                "alternatives": alternatives_payload,
             }
 
         return {
@@ -157,7 +182,41 @@ class PlaybackController:
             "progress_seconds": progress,
             "duration_seconds": track.duration_seconds or 180,
             "last_recognition": self.last_recognition,
+            "alternatives": alternatives_payload,
         }
+
+    def switch_release(self, release_id: int, store: Any) -> bool:
+        if self.active is None:
+            return False
+
+        target_match = next((alt for alt in self.alternatives if alt.release.release_id == release_id), None)
+        if target_match is None:
+            target_release = store.get_release(release_id)
+            if not target_release:
+                return False
+            curr_title = self.active.match.track.title.strip().lower()
+            matching_track = next((t for t in target_release.tracks if t.title.strip().lower() == curr_title), None)
+            if not matching_track and target_release.tracks:
+                matching_track = target_release.tracks[0]
+            target_match = TrackMatch(
+                release=target_release,
+                track=matching_track or self.active.match.track,
+                score=100,
+                reason="user switch",
+            )
+
+        old_match = self.active.match
+        new_alts = [alt for alt in self.alternatives if alt.release.release_id != release_id]
+        new_alts.append(old_match)
+        self.alternatives = new_alts
+
+        self.active = replace(
+            self.active,
+            match=target_match,
+            played_tracks={target_match.track.position},
+            scrobbled=False,
+        )
+        return True
 
     def _track_at_elapsed(
         self,

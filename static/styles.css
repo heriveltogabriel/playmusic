@@ -643,13 +643,213 @@ h1 {
   box-shadow: 0 0 10px var(--glow);
 }
 
+/* Alternatives Pill & Popup Styles */
+.alternatives-wrapper {
+  display: inline-flex;
+  align-items: center;
+}
+
+.alternatives-wrapper.hidden {
+  display: none !important;
+}
+
+.alternatives-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(18, 18, 20, 0.88);
+  border: 1px solid rgba(255, 107, 0, 0.45);
+  color: var(--accent);
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+}
+
+.alternatives-btn:hover {
+  background: rgba(255, 107, 0, 0.25);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 0 16px rgba(255, 107, 0, 0.4);
+  transform: translateY(-1px);
+}
+
+.alternatives-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: grid;
+  place-items: center;
+  z-index: 100;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.alternatives-popup.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.alternatives-popup-content {
+  background: #18181a;
+  border: 1px solid rgba(255, 107, 0, 0.3);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85), 0 0 30px rgba(255, 107, 0, 0.12);
+  border-radius: 14px;
+  width: min(440px, 92%);
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  padding: 22px;
+  gap: 14px;
+  transform: scale(1);
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.alternatives-popup.hidden .alternatives-popup-content {
+  transform: scale(0.9);
+}
+
+.alternatives-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--accent);
+  gap: 10px;
+}
+
+.alternatives-popup-header h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+  flex: 1;
+}
+
+.btn-popup-close-icon {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+  transition: color 0.2s ease;
+}
+
+.btn-popup-close-icon:hover {
+  color: #fff;
+}
+
+.alternatives-popup-subtitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
+
+.alternatives-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  max-height: 50vh;
+  padding-right: 4px;
+  scrollbar-width: thin;
+}
+
+.alternative-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.alternative-card:hover {
+  background: rgba(255, 107, 0, 0.1);
+  border-color: rgba(255, 107, 0, 0.4);
+  transform: translateX(3px);
+}
+
+.alternative-card-cover {
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #222;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.alternative-card-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.alternative-card-title {
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.alternative-card-artist {
+  color: var(--muted);
+  font-size: 0.82rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.alternative-card-track {
+  color: var(--accent);
+  font-size: 0.74rem;
+  font-family: 'JetBrains Mono', monospace;
+  margin-top: 1px;
+}
+
+.alternative-card-action {
+  flex-shrink: 0;
+  color: var(--accent);
+  opacity: 0.8;
+  transition: transform 0.2s ease;
+}
+
+.alternative-card:hover .alternative-card-action {
+  opacity: 1;
+  transform: translateX(2px);
+}
+
 /* Bottom-left controls */
 .bottom-controls {
   position: absolute;
   bottom: 24px;
   left: 24px;
   display: flex;
-  gap: 8px;
+  align-items: center;
+  gap: 10px;
   z-index: 50;
 }
 

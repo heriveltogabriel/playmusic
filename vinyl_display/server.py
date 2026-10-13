@@ -540,6 +540,21 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             self.app.playback.skip_prev()
             self._json(self.app.state())
             return
+        if path == "/api/playback/switch_release":
+            length = int(self.headers.get("Content-Length", "0"))
+            body_bytes = self.rfile.read(length)
+            try:
+                payload = json.loads(body_bytes.decode("utf-8"))
+            except Exception:
+                payload = {}
+            release_id = payload.get("release_id")
+            if release_id is None:
+                self.send_response(HTTPStatus.BAD_REQUEST)
+                self.end_headers()
+                return
+            result = self.app.switch_playback_release(int(release_id))
+            self._json(result)
+            return
         if path == "/api/admin/releases/add":
             length = int(self.headers.get("Content-Length", "0"))
             body_bytes = self.rfile.read(length)

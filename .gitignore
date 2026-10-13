@@ -13,3 +13,4 @@ scratch/
 *recovery_key*
 *.db
 *.sqlite3
+backups/

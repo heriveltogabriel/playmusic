@@ -148,7 +148,9 @@ class VinylDisplayApp:
         if self.playback.active and self.playback.active.match:
             active_release_id = self.playback.active.match.release.release_id
 
-        match = self.matcher.match(recognition, active_release_id=active_release_id)
+        matches = self.matcher.match_all(recognition, active_release_id=active_release_id)
+        match = matches[0] if matches else None
+        alternatives = matches[1:] if len(matches) > 1 else []
         recognition_payload = {
             "title": recognition.title,
             "artist": recognition.artist,
@@ -158,9 +160,9 @@ class VinylDisplayApp:
         }
         offset = 0.0
         if recognition.raw and "matches" in recognition.raw:
-            matches = recognition.raw["matches"]
-            if matches and isinstance(matches, list) and len(matches) > 0:
-                offset = float(matches[0].get("offset", 0.0))
+            matches_raw = recognition.raw["matches"]
+            if matches_raw and isinstance(matches_raw, list) and len(matches_raw) > 0:
+                offset = float(matches_raw[0].get("offset", 0.0))
 
         if match is None:
             self.playback.handle_not_found(
@@ -181,8 +183,8 @@ class VinylDisplayApp:
             latency = client_elapsed_seconds + (now_recon - server_receive_time) + 4.0
             print(f"[RECOGNIZE] Latency compensation: client_elapsed={client_elapsed_seconds:.2f}s, server_processing={now_recon - server_receive_time:.2f}s, total_latency={latency:.2f}s (including 4.0s constant offset)")
         
-        self.playback.handle_match(match, offset=offset, latency=latency)
-        print(f"[RECOGNIZE] Match found in local collection! release: '{match.release.title}', track: '{match.track.title}' (score: {match.score}, reason: {match.reason}, offset: {offset}s, latency_compensated: {latency:.2f}s)")
+        self.playback.handle_match(match, offset=offset, latency=latency, alternatives=alternatives)
+        print(f"[RECOGNIZE] Match found in local collection! release: '{match.release.title}', track: '{match.track.title}' (score: {match.score}, reason: {match.reason}, offset: {offset}s, latency_compensated: {latency:.2f}s, alternatives: {len(alternatives)})")
         return {
             "status": "matched",
             "match": match.to_dict(),
@@ -471,4 +473,10 @@ class VinylDisplayApp:
     def toggle_favorite(self, release_id: int) -> dict[str, Any]:
         favorite = self.store.toggle_favorite(release_id)
         return {"status": "ok", "favorite": favorite}
+
+    def switch_playback_release(self, release_id: int) -> dict[str, Any]:
+        success = self.playback.switch_release(release_id, self.store)
+        if success:
+            return {"status": "ok", "state": self.state()}
+        return {"status": "error", "message": "Não foi possível alternar o disco ativo"}
 
