@@ -2108,6 +2108,10 @@ function renderStats() {
   document.getElementById('stat-total-lps').textContent = totalLps;
   document.getElementById('stat-total-artists').textContent = distinctArtistsSet.size;
   document.getElementById('stat-listened-percent').textContent = `${listenedPercent}%`;
+  const listenedFractionEl = document.getElementById('stat-listened-fraction');
+  if (listenedFractionEl) {
+    listenedFractionEl.textContent = `${listenedLps} de ${totalLps} LPs`;
+  }
   document.getElementById('stat-total-plays').textContent = totalPlays;
   
   // 1. Genres Stats Bar Chart
@@ -2621,21 +2625,53 @@ function renderPlayPeriodStats() {
   if (statMonthlyLpsEl) statMonthlyLpsEl.textContent = monthlyLpsMap.size;
   if (statMonthlyPlaysEl) statMonthlyPlaysEl.textContent = monthlyPlaysCount;
 
-  // 4. Render Weekly Top (up to 5 LPs)
-  const weeklyContainer = document.getElementById('weekly-ranking-container');
-  if (weeklyContainer) {
-    weeklyContainer.innerHTML = '';
-    const sortedWeekly = Array.from(weeklyLpsMap.values()).sort((a, b) => {
-      if (b.count !== a.count) return b.count - a.count;
-      if (a.latestDate && b.latestDate) return b.latestDate.localeCompare(a.latestDate);
-      return a.lp.title.localeCompare(b.lp.title);
-    }).slice(0, 5);
+  // 4. Render Unified Top Ranking (Week / Month / All-time)
+  state.activeTopPeriod = state.activeTopPeriod || 'week';
 
-    if (sortedWeekly.length === 0) {
-      weeklyContainer.innerHTML = '<div class="text-muted italic" style="font-size: 0.8rem; padding: 12px 0;">Nenhum LP ouvido nesta semana.</div>';
+  const renderTopRanking = () => {
+    const topContainer = document.getElementById('top-ranking-container');
+    if (!topContainer) return;
+    topContainer.innerHTML = '';
+
+    let items = [];
+    let emptyMsg = '';
+
+    if (state.activeTopPeriod === 'week') {
+      items = Array.from(weeklyLpsMap.values()).sort((a, b) => {
+        if (b.count !== a.count) return b.count - a.count;
+        if (a.latestDate && b.latestDate) return b.latestDate.localeCompare(a.latestDate);
+        return a.lp.title.localeCompare(b.lp.title);
+      }).slice(0, 5);
+      emptyMsg = 'Nenhum LP ouvido nesta semana.';
+    } else if (state.activeTopPeriod === 'month') {
+      items = Array.from(monthlyLpsMap.values()).sort((a, b) => {
+        if (b.count !== a.count) return b.count - a.count;
+        if (a.latestDate && b.latestDate) return b.latestDate.localeCompare(a.latestDate);
+        return a.lp.title.localeCompare(b.lp.title);
+      }).slice(0, 5);
+      emptyMsg = 'Nenhum LP ouvido este mês.';
+    } else {
+      // 'all'
+      items = [...state.lps]
+        .filter(lp => (Number(lp.plays) || 0) > 0)
+        .sort((a, b) => {
+          const diff = (Number(b.plays) || 0) - (Number(a.plays) || 0);
+          if (diff !== 0) return diff;
+          const aLatest = getLatestListenDate(a);
+          const bLatest = getLatestListenDate(b);
+          if (aLatest && bLatest) return bLatest.localeCompare(aLatest);
+          return a.title.localeCompare(b.title);
+        })
+        .slice(0, 5)
+        .map(lp => ({ lp, count: Number(lp.plays) || 0 }));
+      emptyMsg = 'Nenhum LP com audições registradas.';
+    }
+
+    if (items.length === 0) {
+      topContainer.innerHTML = `<div class="text-muted italic" style="font-size: 0.8rem; padding: 12px 0;">${emptyMsg}</div>`;
     } else {
       const defaultCover = 'https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=200&auto=format&fit=crop';
-      sortedWeekly.forEach((item, index) => {
+      items.forEach((item, index) => {
         const lp = item.lp;
         const div = document.createElement('div');
         div.className = 'ranking-item';
@@ -2651,29 +2687,113 @@ function renderPlayPeriodStats() {
           <span class="ranking-count">${item.count} ${item.count === 1 ? 'play' : 'plays'}</span>
         `;
         div.addEventListener('click', () => openDetailsDialog(lp.id));
-        weeklyContainer.appendChild(div);
+        topContainer.appendChild(div);
       });
     }
+  };
+
+  state._renderTopRanking = renderTopRanking;
+
+  const pillsContainer = document.getElementById('top-lps-period-pills');
+  if (pillsContainer) {
+    if (!pillsContainer.dataset.listenerAttached) {
+      pillsContainer.dataset.listenerAttached = 'true';
+      pillsContainer.addEventListener('click', (e) => {
+        const btn = e.target.closest('.stats-period-pill');
+        if (!btn) return;
+        const period = btn.getAttribute('data-period');
+        if (!period || period === state.activeTopPeriod) return;
+        state.activeTopPeriod = period;
+        pillsContainer.querySelectorAll('.stats-period-pill').forEach(b => {
+          b.classList.toggle('active', b.getAttribute('data-period') === period);
+        });
+        if (typeof state._renderTopRanking === 'function') {
+          state._renderTopRanking();
+        }
+      });
+    }
+    pillsContainer.querySelectorAll('.stats-period-pill').forEach(b => {
+      b.classList.toggle('active', b.getAttribute('data-period') === state.activeTopPeriod);
+    });
   }
 
-  // 5. Render Monthly Top (up to 5 LPs)
-  const monthlyContainer = document.getElementById('monthly-ranking-container');
-  if (monthlyContainer) {
-    monthlyContainer.innerHTML = '';
-    const sortedMonthly = Array.from(monthlyLpsMap.values()).sort((a, b) => {
-      if (b.count !== a.count) return b.count - a.count;
-      if (a.latestDate && b.latestDate) return b.latestDate.localeCompare(a.latestDate);
-      return a.lp.title.localeCompare(b.lp.title);
-    }).slice(0, 5);
+  renderTopRanking();
 
-    if (sortedMonthly.length === 0) {
-      monthlyContainer.innerHTML = '<div class="text-muted italic" style="font-size: 0.8rem; padding: 12px 0;">Nenhum LP ouvido este mês.</div>';
+  // 5. Render Shelf Rescue ("💎 Resgate da Estante")
+  const forgottenContainer = document.getElementById('forgotten-ranking-container');
+  if (forgottenContainer) {
+    forgottenContainer.innerHTML = '';
+
+    const getLatestListenTimestamp = (lp) => {
+      if (!lp.listen_dates || lp.listen_dates.length === 0) return 0;
+      const dates = Array.isArray(lp.listen_dates) ? lp.listen_dates : [lp.listen_dates];
+      let maxT = 0;
+      for (const d of dates) {
+        const t = new Date(d).getTime();
+        if (!isNaN(t) && t > maxT) maxT = t;
+      }
+      return maxT;
+    };
+
+    // Unplayed LPs (0 plays)
+    const unplayedLps = state.lps.filter(lp => (Number(lp.plays) || 0) === 0);
+    // Sort unplayed by date_added / synced_at ascending (oldest first, waiting the longest)
+    unplayedLps.sort((a, b) => {
+      const aDate = a.date_added ? new Date(a.date_added).getTime() : 0;
+      const bDate = b.date_added ? new Date(b.date_added).getTime() : 0;
+      if (aDate !== bDate) return aDate - bDate;
+      return a.title.localeCompare(b.title);
+    });
+
+    let forgottenList = [];
+    if (unplayedLps.length >= 5) {
+      forgottenList = unplayedLps.slice(0, 5).map(lp => ({ lp, isUnplayed: true }));
+    } else {
+      forgottenList = unplayedLps.map(lp => ({ lp, isUnplayed: true }));
+      // Complete remaining slots with played LPs sorted by oldest listen timestamp
+      const playedLps = state.lps.filter(lp => (Number(lp.plays) || 0) > 0);
+      playedLps.sort((a, b) => {
+        const aLast = getLatestListenTimestamp(a);
+        const bLast = getLatestListenTimestamp(b);
+        if (aLast !== bLast) return aLast - bLast;
+        return a.title.localeCompare(b.title);
+      });
+      const remainingNeeded = 5 - forgottenList.length;
+      const filler = playedLps.slice(0, remainingNeeded).map(lp => ({
+        lp,
+        isUnplayed: false,
+        lastListenTime: getLatestListenTimestamp(lp)
+      }));
+      forgottenList = forgottenList.concat(filler);
+    }
+
+    if (forgottenList.length === 0) {
+      forgottenContainer.innerHTML = '<div class="text-muted italic" style="font-size: 0.8rem; padding: 12px 0;">Nenhum disco encontrado na coleção.</div>';
     } else {
       const defaultCover = 'https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=200&auto=format&fit=crop';
-      sortedMonthly.forEach((item, index) => {
+      const nowTime = now.getTime();
+      forgottenList.forEach((item, index) => {
         const lp = item.lp;
         const div = document.createElement('div');
         div.className = 'ranking-item';
+
+        let badgeHtml = '';
+        if (item.isUnplayed) {
+          badgeHtml = '<span class="ranking-badge-unplayed">Nunca ouvido</span>';
+        } else {
+          const diffDays = Math.max(0, Math.floor((nowTime - item.lastListenTime) / (1000 * 60 * 60 * 24)));
+          let timeText = '';
+          if (diffDays === 0) {
+            timeText = 'hoje';
+          } else if (diffDays >= 60) {
+            const months = Math.floor(diffDays / 30);
+            timeText = `há ${months} meses`;
+          } else {
+            timeText = `há ${diffDays} ${diffDays === 1 ? 'dia' : 'dias'}`;
+          }
+          badgeHtml = `<span class="ranking-badge-dormant">${timeText}</span>`;
+        }
+
         div.innerHTML = `
           <div class="ranking-item-left" style="gap: 8px; flex: 1; min-width: 0; display: flex; align-items: center;">
             <span class="ranking-badge">#${index+1}</span>
@@ -2683,10 +2803,10 @@ function renderPlayPeriodStats() {
               <div class="addition-artist" style="font-size: 0.75rem;">${lp.artist}</div>
             </div>
           </div>
-          <span class="ranking-count">${item.count} ${item.count === 1 ? 'play' : 'plays'}</span>
+          ${badgeHtml}
         `;
         div.addEventListener('click', () => openDetailsDialog(lp.id));
-        monthlyContainer.appendChild(div);
+        forgottenContainer.appendChild(div);
       });
     }
   }

@@ -553,6 +553,7 @@
             <div class="stat-mini-card">
               <div class="mini-card-label">Coleção Ouvida</div>
               <div id="stat-listened-percent" class="mini-card-value">0%</div>
+              <div id="stat-listened-fraction" style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; font-weight: 500;">0 de 0 LPs</div>
             </div>
             <div class="stat-mini-card">
               <div class="mini-card-label">Total de Audições</div>
@@ -605,17 +606,32 @@
                 </div>
               </div>
 
-              <!-- Two columns for Top LPs -->
+              <!-- Two columns for Top LPs (with period tabs) and Shelf Rescue -->
               <div class="stats-row">
+                <!-- Left: Top LPs with period tabs -->
                 <div class="stats-section-card" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05); padding: 20px;">
-                  <h4 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 16px; color: var(--text-primary);">🔥 Top LPs da Semana</h4>
-                  <div id="weekly-ranking-container" class="custom-ranking-list">
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+                    <h4 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text-primary);">🔥 Top LPs Mais Tocados</h4>
+                    <div class="stats-period-pills" id="top-lps-period-pills">
+                      <button type="button" class="stats-period-pill active" data-period="week">Semana</button>
+                      <button type="button" class="stats-period-pill" data-period="month">Mês</button>
+                      <button type="button" class="stats-period-pill" data-period="all">Geral</button>
+                    </div>
+                  </div>
+                  <div id="top-ranking-container" class="custom-ranking-list">
                     <!-- Dynamically generated list -->
                   </div>
                 </div>
+
+                <!-- Right: Resgate da Estante -->
                 <div class="stats-section-card" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05); padding: 20px;">
-                  <h4 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 16px; color: var(--text-primary);">📅 Top LPs do Mês</h4>
-                  <div id="monthly-ranking-container" class="custom-ranking-list">
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+                    <div>
+                      <h4 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text-primary);">💎 Resgate da Estante</h4>
+                      <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 3px;">Discos parados ou que nunca foram para o prato</div>
+                    </div>
+                  </div>
+                  <div id="forgotten-ranking-container" class="custom-ranking-list">
                     <!-- Dynamically generated list -->
                   </div>
                 </div>
