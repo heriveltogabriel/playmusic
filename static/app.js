@@ -150,6 +150,9 @@ function setCover(release) {
 }
 
 function renderState(state) {
+  if (!state) return;
+  if (recording) return;
+
   if (state.lyrics_latency_offset !== undefined) {
     lyricsLatencyOffset = parseFloat(state.lyrics_latency_offset);
   }
@@ -477,7 +480,7 @@ async function startMicrophone() {
 
       if (consecutiveLoudSeconds >= 2 && !recording) {
         consecutiveLoudSeconds = 0;
-        recordClip();
+        recordClip(true, false);
       }
     }, 1000);
 
@@ -493,7 +496,7 @@ async function startMicrophone() {
   }
 }
 
-function recordClip(isAutomatic = false) {
+function recordClip(isAutomatic = false, isManual = false) {
   if (!mediaStream || !micAudioContext || recording) return;
   recording = true;
   if (elements.retryButton) {
@@ -509,14 +512,14 @@ function recordClip(isAutomatic = false) {
     elements.nextTrack.style.display = "block";
   }
 
-  if (!isPlaying) {
+  if (isManual || !isPlaying) {
     elements.statusLabel.textContent = "Ouvindo";
-    elements.trackTitle.textContent = "Ouvindo o disco...";
+    elements.trackTitle.textContent = "Ouvindo novo disco...";
     elements.artistName.textContent = "Capturando áudio do microfone";
-    elements.albumLine.textContent = "Aguarde 4 segundos";
+    elements.albumLine.textContent = "Aguarde 5 segundos...";
   }
   if (elements.micDebug) {
-    elements.micDebug.textContent = "Microfone: gravando trecho de 4 segundos...";
+    elements.micDebug.textContent = "Microfone: gravando trecho de 5 segundos...";
   }
 
   const processor = micAudioContext.createScriptProcessor(4096, 1, 1);
@@ -543,10 +546,11 @@ function recordClip(isAutomatic = false) {
       elements.nextTrackTitle.textContent = "Pesquisando...";
     }
 
-    if (!isPlaying) {
+    if (isManual || !isPlaying) {
       elements.statusLabel.textContent = "Identificando";
       elements.trackTitle.textContent = "Buscando música...";
       elements.artistName.textContent = "Processando áudio com o Shazam";
+      elements.albumLine.textContent = "Identificando com o Shazam...";
     }
     if (elements.micDebug) {
       elements.micDebug.textContent = "Shazam: identificando música no servidor...";
@@ -574,7 +578,6 @@ function recordClip(isAutomatic = false) {
         },
         body: blob,
       });
-      const isPlaying = (currentRelease !== null);
 
       if (response && response.status === "matched" && response.match) {
         consecutiveFailedListens = 0;
@@ -601,12 +604,19 @@ function recordClip(isAutomatic = false) {
           if (elements.micDebug && !micSuspended) {
             elements.micDebug.textContent = "Shazam: serviço indisponível (" + (response.message || "limite/erro") + ")";
           }
-          window.nextAutoListenAt = Date.now() + 90000;
+          window.nextAutoListenAt = isManual ? (Date.now() + 4000) : (Date.now() + 90000);
         } else {
           if (elements.micDebug && !micSuspended) {
             elements.micDebug.textContent = "Shazam: música não identificada na coleção";
           }
-          window.nextAutoListenAt = Date.now() + 90000;
+          window.nextAutoListenAt = isManual ? (Date.now() + 4000) : (Date.now() + 90000);
+        }
+
+        if (isManual) {
+          elements.statusLabel.textContent = "Aguardando";
+          elements.trackTitle.textContent = "Música ainda não detectada";
+          elements.artistName.textContent = "Certifique-se de que a agulha já está tocando o disco";
+          elements.albumLine.textContent = "Ouvindo novamente em instantes...";
         }
       }
       await pollState();
@@ -628,14 +638,14 @@ function recordClip(isAutomatic = false) {
       if (elements.micDebug && !micSuspended) {
         elements.micDebug.textContent = `Erro do servidor: ${error.message}`;
       }
-      window.nextAutoListenAt = Date.now() + 90000;
+      window.nextAutoListenAt = isManual ? (Date.now() + 4000) : (Date.now() + 90000);
     } finally {
       recording = false;
       if (elements.retryButton) {
         elements.retryButton.classList.remove("recording");
       }
     }
-  }, 4000); // 4 seconds clip
+  }, 5000); // 5 seconds clip
 }
 
 function float32To16BitPCM(float32Array) {
@@ -811,8 +821,11 @@ document.addEventListener("touchstart", handleFirstGesture);
 
 elements.retryButton.addEventListener("click", async (e) => {
   e.stopPropagation();
+  hideStopConfirm();
   micSuspended = false;
   consecutiveFailedListens = 0;
+  consecutiveLoudSeconds = 0;
+  window.nextAutoListenAt = 0;
   await handleFirstGesture();
 
   if (!mediaStream) {
@@ -827,7 +840,27 @@ elements.retryButton.addEventListener("click", async (e) => {
     return;
   }
 
-  recordClip();
+  // Se havia um disco tocando, o usuário tirou o disco e quer ouvir um novo!
+  // Paramos o disco anterior no servidor e resetamos o estado local imediatamente:
+  if (currentRelease !== null) {
+    try {
+      fetchJson("/api/playback/stop", { method: "POST" }).catch(() => {});
+    } catch (err) {}
+    currentRelease = null;
+    nextTrack = null;
+    currentTrackKey = null;
+    currentAlternatives = [];
+    playbackTracker.active = false;
+    playbackTracker.baseProgress = 0;
+    playbackTracker.duration = 0;
+    document.body.classList.remove("is-playing");
+    if (elements.vinylWrapper) {
+      elements.vinylWrapper.classList.remove("playing");
+    }
+    setCover(null);
+  }
+
+  recordClip(false, true);
 });
 
 // O clique na capa agora alterna a exibição das letras
@@ -880,6 +913,19 @@ if (elements.stopConfirmOk) {
     hideStopConfirm();
     try {
       window.nextAutoListenAt = 0;
+      currentRelease = null;
+      nextTrack = null;
+      currentTrackKey = null;
+      currentAlternatives = [];
+      playbackTracker.active = false;
+      playbackTracker.baseProgress = 0;
+      playbackTracker.duration = 0;
+      document.body.classList.remove("is-playing");
+      if (elements.vinylWrapper) {
+        elements.vinylWrapper.classList.remove("playing");
+      }
+      setCover(null);
+
       const res = await fetchJson("/api/playback/stop", { method: "POST" });
       if (res && res.state) {
         renderState(res.state);
