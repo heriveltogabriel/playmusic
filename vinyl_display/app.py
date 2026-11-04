@@ -3,7 +3,12 @@ from __future__ import annotations
 from typing import Any
 
 from vinyl_display.catalog import CatalogStore
-from vinyl_display.clients.shazam import ShazamClient
+from vinyl_display.clients.shazam import (
+    ShazamBudgetExceeded,
+    ShazamClient,
+    ShazamQuotaExhausted,
+    ShazamUsage,
+)
 from vinyl_display.clients.discogs import DiscogsClient
 from vinyl_display.clients.musicbrainz import MusicBrainzClient
 from vinyl_display.matcher import CollectionMatcher
@@ -32,6 +37,27 @@ class VinylDisplayApp:
         self.playback = PlaybackController(on_scrobble=self.store.increment_auditions)
         self.store.initialize()
 
+    @staticmethod
+    def make_shazam_client(store: CatalogStore, config: Any) -> ShazamClient:
+        """Cliente do Shazam com rodízio de chaves, contador mensal e orçamento diário."""
+        return ShazamClient(
+            config.rapidapi_shazam_key,
+            config.rapidapi_shazam_host,
+            usage=ShazamUsage(store),
+            daily_budget=getattr(config, "shazam_daily_budget", 0),
+            monthly_limit=getattr(config, "shazam_monthly_limit", 500),
+        )
+
+    def shazam_usage(self) -> dict[str, Any] | None:
+        summary = getattr(self.shazam_client, "usage_summary", None)
+        return summary() if callable(summary) else None
+
+    def _log_event(self, status: str, **fields: Any) -> None:
+        try:
+            self.store.log_recognition_event(status, **fields)
+        except Exception as error:  # o registro nunca pode derrubar o reconhecimento
+            print(f"[RECOGNIZE] Could not log recognition event: {error}")
+
     def update_config(self, updates: dict[str, str]) -> None:
         import dataclasses
         from vinyl_display.config import update_dotenv
@@ -59,7 +85,7 @@ class VinylDisplayApp:
             self.config.discogs_user_agent,
             token=self.config.discogs_token,
         )
-        self.shazam_client = ShazamClient(self.config.rapidapi_shazam_key, self.config.rapidapi_shazam_host)
+        self.shazam_client = self.make_shazam_client(self.store, self.config)
         self.store.favorite_threshold = self.config.favorite_threshold
         print("[SERVER] Hot-swapped config to use Shazam for music recognition.")
 
@@ -126,22 +152,37 @@ class VinylDisplayApp:
             except Exception as e:
                 print(f"[RECOGNIZE] Error calculating RMS: {e}")
         print(f"[RECOGNIZE] Received audio data: {len(audio_bytes)} bytes, filename: {filename}, RMS Volume: {rms:.5f}")
+        active_before = self.playback.active.match.release.release_id if self.playback.active else None
         if rms < 0.015:
             self.playback.set_listening()
             print("[RECOGNIZE] Audio volume is too low, skipping recognition.")
+            self._log_event("too_quiet", rms=rms, active_release_id=active_before)
             return {"status": "no_result", "message": "Áudio muito silencioso"}
         try:
             recognition = self.shazam_client.recognize(audio_bytes, filename=filename)
+        except ShazamBudgetExceeded as error:
+            self.playback.set_listening()
+            print(f"[RECOGNIZE] {error}")
+            self._log_event("budget_exceeded", rms=rms, active_release_id=active_before, detail=str(error))
+            return {"status": "budget_exceeded", "message": str(error)}
+        except ShazamQuotaExhausted as error:
+            self.playback.set_listening()
+            print(f"[RECOGNIZE] {error}")
+            self._log_event("quota_exhausted", rms=rms, active_release_id=active_before, detail=str(error))
+            return {"status": "quota_exhausted", "message": str(error)}
         except Exception as error:
             self.playback.set_listening()
             print(f"[RECOGNIZE] Recognition client raised exception: {error}")
+            self._log_event("error", shazam_called=True, rms=rms, active_release_id=active_before, detail=str(error)[:300])
             return {
                 "status": "recognition_unavailable",
                 "message": str(error),
             }
+        shazam_key = getattr(self.shazam_client, "last_key_label", None)
         if recognition is None:
             self.playback.set_listening()
             print("[RECOGNIZE] Recognition returned no result (music not recognized).")
+            self._log_event("no_result", shazam_called=True, shazam_key=shazam_key, rms=rms, active_release_id=active_before)
             return {"status": "no_result"}
 
         print(f"[RECOGNIZE] Recognized: '{recognition.title}' by '{recognition.artist}' (album: '{recognition.album or ''}', confidence: {recognition.confidence})")
@@ -182,6 +223,10 @@ class VinylDisplayApp:
                 artist=recognition.artist,
             )
             print(f"[RECOGNIZE] Track not found in local Discogs collection database.")
+            self._log_event(
+                "not_found", shazam_called=True, shazam_key=shazam_key, rms=rms,
+                title=recognition.title, artist=recognition.artist, active_release_id=active_before,
+            )
             return {
                 "status": "not_found",
                 "recognition": recognition_payload,
@@ -197,6 +242,12 @@ class VinylDisplayApp:
         
         self.playback.handle_match(match, offset=offset, latency=latency, alternatives=alternatives)
         self._learn_missing_duration(match, recognition)
+        self._log_event(
+            "matched", shazam_called=True, shazam_key=shazam_key, rms=rms,
+            title=recognition.title, artist=recognition.artist,
+            release_id=match.release.release_id, track_position=match.track.position,
+            score=match.score, active_release_id=active_before,
+        )
         print(f"[RECOGNIZE] Match found in local collection! release: '{match.release.title}', track: '{match.track.title}' (score: {match.score}, reason: {match.reason}, offset: {offset}s, latency_compensated: {latency:.2f}s, alternatives: {len(alternatives)})")
         return {
             "status": "matched",

@@ -740,13 +740,18 @@
               </div>
               <p class="settings-card-desc">Opção alternativa / de backup para reconhecimento de áudio usando a API do Shazam via RapidAPI.</p>
               <div class="form-group">
-                <label for="setting-shazam-key">Chave da RapidAPI (Key)</label>
-                <input type="password" id="setting-shazam-key" placeholder="Insira sua chave do RapidAPI Shazam...">
+                <label for="setting-shazam-key">Chaves da RapidAPI (uma ou mais, separadas por vírgula)</label>
+                <input type="password" id="setting-shazam-key" placeholder="chave1,chave2 — a próxima é usada quando a cota da anterior acaba">
               </div>
               <div class="form-group">
                 <label for="setting-shazam-host">Host da RapidAPI (Host)</label>
                 <input type="text" id="setting-shazam-host" placeholder="Ex: shazam-core.p.rapidapi.com" value="shazam-core.p.rapidapi.com">
               </div>
+              <div class="form-group">
+                <label for="setting-shazam-budget">Limite de chamadas por dia (0 = sem limite)</label>
+                <input type="number" id="setting-shazam-budget" min="0" step="1" value="60">
+              </div>
+              <div id="shazam-usage" class="shazam-usage" style="display: none;"></div>
               
               <!-- Help Info: RapidAPI Shazam Key -->
               <div style="margin-top: 15px; padding: 12px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 8px; font-size: 0.78rem; line-height: 1.4; color: var(--text-muted);">

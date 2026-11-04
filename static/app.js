@@ -50,6 +50,17 @@ let currentAlternatives = [];
 let trackChangeCount = 0;
 let consecutiveFailedListens = 0;
 let micSuspended = false;
+
+// Espera entre escutas sem resultado quando nenhum disco está tocando: 8s nas 3 primeiras
+// tentativas e depois dobra até 5 min. O microfone nunca "dorme" (antes exigia toque na
+// tela), mas ruído ambiente também não queima as chamadas do Shazam.
+function idleRetryDelayMs(failures) {
+  const steps = Math.max(0, failures - 3);
+  return Math.min(300000, 8000 * Math.pow(2, steps));
+}
+
+// Respostas do servidor que dizem para não tentar de novo tão cedo
+const SHAZAM_PAUSE_MS = { budget_exceeded: 30 * 60000, quota_exhausted: 60 * 60000 };
 let consecutiveLoudSeconds = 0;
 
 let mediaStream = null;
@@ -597,7 +608,8 @@ function recordClip(isAutomatic = false, isManual = false, attempt = 1, maxAttem
         elements.retryButton.classList.remove("recording");
       }
 
-      if (isManual && attempt < maxAttempts) {
+      const shazamPause = response ? SHAZAM_PAUSE_MS[response.status] : undefined;
+      if (isManual && attempt < maxAttempts && !shazamPause) {
         // Tentativa manual inteligente: se a agulha ainda estava caindo ou no lead-in silencioso,
         // aguarda 2s e tenta automaticamente a próxima tentativa para pegar a faixa 1 de primeira!
         if (elements.nextTrackTitle) {
@@ -621,18 +633,20 @@ function recordClip(isAutomatic = false, isManual = false, attempt = 1, maxAttem
       if (!stillPlaying) {
         // Ocioso esperando disco: cooldown curto (8s) para detectar a faixa 1 rapidamente
         // sem pular direto para a faixa 2 ou 3!
-        window.nextAutoListenAt = Date.now() + 8000;
         consecutiveFailedListens++;
-        if (consecutiveFailedListens >= 8) {
-          micSuspended = true;
-          consecutiveFailedListens = 0;
-          if (elements.micDebug) {
-            elements.micDebug.textContent = "Microfone: em repouso (toque na tela ou no botão para reativar)";
-          }
-        }
+        window.nextAutoListenAt = Date.now() + idleRetryDelayMs(consecutiveFailedListens);
       } else {
         // Já está tocando: cooldown longo (60s) para economizar tokens Shazam
         window.nextAutoListenAt = Date.now() + 60000;
+      }
+
+      if (shazamPause) {
+        // Orçamento diário ou cota mensal esgotados: o servidor recusa sem gastar chamadas,
+        // então espera bem mais antes de tentar de novo.
+        window.nextAutoListenAt = Date.now() + shazamPause;
+        if (elements.micDebug) {
+          elements.micDebug.textContent = "Shazam pausado: " + (response.message || response.status);
+        }
       }
 
       if (isManual) {
@@ -659,20 +673,11 @@ function recordClip(isAutomatic = false, isManual = false, attempt = 1, maxAttem
       if (elements.retryButton) {
         elements.retryButton.classList.remove("recording");
       }
-      if (!playbackTracker.active) {
-        consecutiveFailedListens++;
-        if (consecutiveFailedListens >= 8) {
-          micSuspended = true;
-          consecutiveFailedListens = 0;
-          if (elements.micDebug) {
-            elements.micDebug.textContent = "Microfone: em repouso (toque na tela ou no botão para reativar)";
-          }
-        }
-      }
-      if (elements.micDebug && !micSuspended) {
+      consecutiveFailedListens++;
+      if (elements.micDebug) {
         elements.micDebug.textContent = `Erro do servidor: ${error.message}`;
       }
-      window.nextAutoListenAt = Date.now() + 8000;
+      window.nextAutoListenAt = Date.now() + idleRetryDelayMs(consecutiveFailedListens);
       await pollState();
     }
   }, 4000); // 4 seconds clip

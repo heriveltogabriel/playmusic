@@ -47,6 +47,28 @@ class CatalogStore:
             )
             connection.execute(
                 """
+                CREATE TABLE IF NOT EXISTS recognition_events (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    at REAL NOT NULL,
+                    status TEXT NOT NULL,
+                    shazam_called INTEGER NOT NULL DEFAULT 0,
+                    shazam_key TEXT,
+                    title TEXT,
+                    artist TEXT,
+                    release_id INTEGER,
+                    track_position TEXT,
+                    score INTEGER,
+                    rms REAL,
+                    active_release_id INTEGER,
+                    detail TEXT
+                )
+                """
+            )
+            connection.execute(
+                "CREATE INDEX IF NOT EXISTS idx_recognition_events_at ON recognition_events(at)"
+            )
+            connection.execute(
+                """
                 CREATE TABLE IF NOT EXISTS sync_metadata (
                     key TEXT PRIMARY KEY,
                     value TEXT NOT NULL
@@ -431,6 +453,33 @@ class CatalogStore:
         with self._connect() as connection:
             connection.execute("DELETE FROM releases WHERE release_id = ?", (release_id,))
             connection.execute("DELETE FROM release_stats WHERE release_id = ?", (release_id,))
+
+    def log_recognition_event(self, status: str, **fields) -> None:
+        """Registra cada tentativa de reconhecimento (com ou sem chamada ao Shazam)."""
+        allowed = {
+            "shazam_called", "shazam_key", "title", "artist", "release_id",
+            "track_position", "score", "rms", "active_release_id", "detail",
+        }
+        values = {k: v for k, v in fields.items() if k in allowed}
+        values["shazam_called"] = 1 if values.get("shazam_called") else 0
+        columns = ["at", "status", *values.keys()]
+        params = [fields.get("at") or time.time(), status, *values.values()]
+        with self._connect() as connection:
+            connection.execute(
+                f"INSERT INTO recognition_events ({', '.join(columns)}) VALUES ({', '.join('?' for _ in columns)})",
+                params,
+            )
+
+    def recognition_stats(self, since: float) -> dict[str, int]:
+        """Contagem de eventos por status desde `since` e total de chamadas ao Shazam."""
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT status, COUNT(*), SUM(shazam_called) FROM recognition_events WHERE at >= ? GROUP BY status",
+                (since,),
+            ).fetchall()
+        stats = {row[0]: int(row[1]) for row in rows}
+        stats["shazam_calls"] = sum(int(row[2] or 0) for row in rows)
+        return stats
 
     def update_tracks(self, release_id: int, tracks: list[Track]) -> bool:
         """Substitui a tracklist de um disco preservando todos os outros campos."""

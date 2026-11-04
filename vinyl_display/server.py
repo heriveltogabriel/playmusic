@@ -11,7 +11,6 @@ from urllib.parse import urlparse
 
 from vinyl_display.app import VinylDisplayApp
 from vinyl_display.catalog import CatalogStore
-from vinyl_display.clients.shazam import ShazamClient
 from vinyl_display.clients.discogs import DiscogsClient
 from vinyl_display.config import Config, load_config
 from vinyl_display.auth import AuthManager
@@ -22,8 +21,8 @@ def build_app(config: Config) -> VinylDisplayApp:
     discogs = DiscogsClient(
         config.discogs_user, config.discogs_user_agent, token=config.discogs_token
     )
-    recognizer = ShazamClient(config.rapidapi_shazam_key, config.rapidapi_shazam_host)
-    print("[SERVER] Using Shazam (via RapidAPI) for music recognition.")
+    recognizer = VinylDisplayApp.make_shazam_client(store, config)
+    print(f"[SERVER] Using Shazam (via RapidAPI) with {len(recognizer.api_keys)} key(s), daily budget {recognizer.daily_budget}.")
     return VinylDisplayApp(store, discogs, recognizer, config)
 
 
@@ -45,6 +44,13 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
         if "session_token" in cookie:
             return cookie["session_token"].value
         return None
+
+    def _secure_flag(self) -> str:
+        """Marca o cookie como Secure quando a requisição chegou por HTTPS (nginx ou TLS próprio)."""
+        forwarded = (self.headers.get("X-Forwarded-Proto") or "").lower()
+        if forwarded == "https" or isinstance(self.connection, ssl.SSLSocket):
+            return "; Secure"
+        return ""
 
     def _is_authenticated(self) -> bool:
         token = self._get_session_token()
@@ -95,8 +101,11 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                 "last_sync_added": self.app.store.get_metadata("discogs_last_sync_added"),
                 "last_sync_updated": self.app.store.get_metadata("discogs_last_sync_updated"),
                 "last_sync_deleted": self.app.store.get_metadata("discogs_last_sync_deleted"),
+                "last_sync_error": self.app.store.get_metadata("discogs_last_sync_error") or "",
                 "lyrics_latency_offset": self.app.config.lyrics_latency_offset if self.app.config else 1.3,
                 "favorite_threshold": self.app.config.favorite_threshold if self.app.config else 5,
+                "shazam_daily_budget": getattr(self.app.config, "shazam_daily_budget", 0) if self.app.config else 0,
+                "shazam_usage": self.app.shazam_usage(),
             }
             self._json(config_data)
             return
@@ -322,14 +331,6 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
     def do_POST(self) -> None:
         path = urlparse(self.path).path
         
-        if path == "/api/debug/dom":
-            length = int(self.headers.get("Content-Length", "0"))
-            body_bytes = self.rfile.read(length)
-            from pathlib import Path
-            Path("scratch/dom_dump.html").write_bytes(body_bytes)
-            self._json({"success": True})
-            return
-
         # Check authentication for protected POST routes
         if path.startswith("/api/admin/") or path == "/api/sync" or path == "/api/config" or path == "/api/auth/change_password":
             if not self._is_authenticated():
@@ -356,7 +357,7 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                     self.send_response(HTTPStatus.OK)
                     self.send_header("Content-Type", "application/json; charset=utf-8")
                     self.send_header("Content-Length", str(len(body)))
-                    self.send_header("Set-Cookie", f"session_token={token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=2592000")
+                    self.send_header("Set-Cookie", f"session_token={token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=2592000{self._secure_flag()}")
                     self.end_headers()
                     self.wfile.write(body)
             else:
@@ -402,7 +403,7 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
-            self.send_header("Set-Cookie", f"session_token={token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=2592000")
+            self.send_header("Set-Cookie", f"session_token={token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=2592000{self._secure_flag()}")
             self.end_headers()
             self.wfile.write(body)
             return
@@ -433,7 +434,7 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                 self.send_response(HTTPStatus.OK)
                 self.send_header("Content-Type", "application/json; charset=utf-8")
                 self.send_header("Content-Length", str(len(body)))
-                self.send_header("Set-Cookie", f"session_token={token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=2592000")
+                self.send_header("Set-Cookie", f"session_token={token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=2592000{self._secure_flag()}")
                 self.end_headers()
                 self.wfile.write(body)
             else:
@@ -454,7 +455,7 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             self.send_response(HTTPStatus.OK)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
-            self.send_header("Set-Cookie", "session_token=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0")
+            self.send_header("Set-Cookie", f"session_token=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0{self._secure_flag()}")
             self.end_headers()
             self.wfile.write(body)
             return
@@ -507,6 +508,8 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                 "LYRICS_LATENCY_OFFSET": str(payload.get("lyrics_latency_offset", 1.3)).strip(),
                 "FAVORITE_THRESHOLD": str(payload.get("favorite_threshold", 5)).strip(),
             }
+            if "shazam_daily_budget" in payload:
+                updates["SHAZAM_DAILY_BUDGET"] = str(int(payload.get("shazam_daily_budget") or 0))
             
             try:
                 self.app.update_config(updates)

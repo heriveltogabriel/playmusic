@@ -22,6 +22,8 @@ class Config:
     key_file: Path | None
     lyrics_latency_offset: float
     favorite_threshold: int
+    shazam_daily_budget: int = 60
+    shazam_monthly_limit: int = 500
 
 
 
@@ -87,6 +89,8 @@ def load_config() -> Config:
         key_file=_optional_path(os.environ.get("VINYL_KEY_FILE")),
         lyrics_latency_offset=float(os.environ.get("LYRICS_LATENCY_OFFSET", "1.3")),
         favorite_threshold=int(os.environ.get("FAVORITE_THRESHOLD", "5")),
+        shazam_daily_budget=int(os.environ.get("SHAZAM_DAILY_BUDGET", "60")),
+        shazam_monthly_limit=int(os.environ.get("SHAZAM_MONTHLY_LIMIT", "500")),
     )
 
 

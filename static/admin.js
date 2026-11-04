@@ -3866,9 +3866,54 @@ function updateSyncStatusUI(config) {
     document.getElementById('last-sync-added').textContent = config.last_sync_added || '0';
     document.getElementById('last-sync-updated').textContent = config.last_sync_updated || '0';
     document.getElementById('last-sync-deleted').textContent = config.last_sync_deleted || '0';
+    let errorLine = document.getElementById('last-sync-error');
+    if (!errorLine) {
+      errorLine = document.createElement('div');
+      errorLine.id = 'last-sync-error';
+      errorLine.style.cssText = 'margin-top: 8px; font-size: 0.8rem; color: var(--primary);';
+      container.appendChild(errorLine);
+    }
+    errorLine.textContent = config.last_sync_error ? `Último sync automático falhou: ${config.last_sync_error}` : '';
   } else {
     container.style.display = 'none';
   }
+}
+
+// Uso do Shazam no mês: uma linha por chave (só os 4 últimos caracteres aparecem)
+function renderShazamUsage(usage) {
+  const box = document.getElementById('shazam-usage');
+  if (!box) return;
+  box.replaceChildren();
+  if (!usage || !usage.keys || usage.keys.length === 0) {
+    box.style.display = 'none';
+    return;
+  }
+  box.style.display = 'block';
+  box.style.cssText += 'margin-top: 12px; padding: 12px; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; font-size: 0.8rem; line-height: 1.5;';
+
+  const title = document.createElement('b');
+  title.style.display = 'block';
+  title.style.marginBottom = '6px';
+  const [year, month] = (usage.month || '').split('-');
+  title.textContent = `Uso do Shazam em ${month}/${year}`;
+  box.appendChild(title);
+
+  usage.keys.forEach((k) => {
+    const line = document.createElement('div');
+    const pct = k.limit ? Math.round((k.calls / k.limit) * 100) : 0;
+    const status = k.exhausted ? ' — cota esgotada' : (pct >= 80 ? ' — perto do limite' : '');
+    line.textContent = `Chave ${k.key}: ${k.calls} de ${k.limit} (${pct}%)${status}`;
+    if (k.exhausted || pct >= 80) line.style.color = 'var(--primary)';
+    box.appendChild(line);
+  });
+
+  const today = document.createElement('div');
+  today.style.marginTop = '6px';
+  today.style.color = 'var(--text-muted)';
+  today.textContent = usage.daily_budget
+    ? `Hoje: ${usage.today} de ${usage.daily_budget} chamadas permitidas`
+    : `Hoje: ${usage.today} chamadas (sem limite diário)`;
+  box.appendChild(today);
 }
 
 async function loadSettingsFromServer() {
@@ -3885,6 +3930,9 @@ async function loadSettingsFromServer() {
     
     document.getElementById('setting-shazam-key').value = config.rapidapi_shazam_key || '';
     document.getElementById('setting-shazam-host').value = config.rapidapi_shazam_host || '';
+    const budgetInput = document.getElementById('setting-shazam-budget');
+    if (budgetInput && config.shazam_daily_budget !== undefined) budgetInput.value = config.shazam_daily_budget;
+    renderShazamUsage(config.shazam_usage);
     
     document.getElementById('setting-lyrics-latency').value = config.lyrics_latency_offset !== undefined ? config.lyrics_latency_offset : 1.3;
     document.getElementById('setting-favorite-threshold').value = config.favorite_threshold !== undefined ? config.favorite_threshold : 5;
@@ -3959,8 +4007,11 @@ function initializeSettingsForm() {
     const rapidapi_shazam_host = document.getElementById('setting-shazam-host').value.trim();
     const lyrics_latency_offset = parseFloat(document.getElementById('setting-lyrics-latency').value) || 1.3;
     const favorite_threshold = parseInt(document.getElementById('setting-favorite-threshold').value) || 5;
+    const budgetInput = document.getElementById('setting-shazam-budget');
+    const shazam_daily_budget = budgetInput ? Math.max(0, parseInt(budgetInput.value) || 0) : 60;
     
     const payload = {
+      shazam_daily_budget,
       discogs_user,
       discogs_user_agent,
       discogs_token,
@@ -4383,12 +4434,6 @@ function renderPlaysHistory() {
     isFirstMonth = false;
   });
 
-  // Enviar a estrutura DOM renderizada para o servidor para inspeção de layout
-  fetch('/api/debug/dom', {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body: container.outerHTML
-  }).catch(e => console.error("Erro ao enviar DOM de debug:", e));
 }
 
 // ==================== HISTÓRICO SEMANAL (GRÁFICO) ====================
