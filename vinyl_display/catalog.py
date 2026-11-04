@@ -432,6 +432,36 @@ class CatalogStore:
             connection.execute("DELETE FROM releases WHERE release_id = ?", (release_id,))
             connection.execute("DELETE FROM release_stats WHERE release_id = ?", (release_id,))
 
+    def update_tracks(self, release_id: int, tracks: list[Track]) -> bool:
+        """Substitui a tracklist de um disco preservando todos os outros campos."""
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT payload_json FROM releases WHERE release_id = ?", (release_id,)
+            ).fetchone()
+            if row is None:
+                return False
+            payload = json.loads(row["payload_json"])
+            payload["tracks"] = [track.to_dict() for track in tracks]
+            connection.execute(
+                "UPDATE releases SET payload_json = ? WHERE release_id = ?",
+                (json.dumps(payload, ensure_ascii=False, sort_keys=True), release_id),
+            )
+        return True
+
+    def update_track_duration(self, release_id: int, position: str, duration_seconds: int) -> bool:
+        """Preenche a duração de uma faixa que ainda não tem duração. Não sobrescreve valores existentes."""
+        release = self.get_release(release_id)
+        if release is None:
+            return False
+        changed = False
+        tracks = []
+        for track in release.tracks:
+            if track.position == position and not track.duration_seconds:
+                track = Track(track.position, track.title, int(duration_seconds))
+                changed = True
+            tracks.append(track)
+        return self.update_tracks(release_id, tracks) if changed else False
+
     def toggle_favorite(self, release_id: int) -> bool:
         release = self.get_release(release_id)
         if not release:

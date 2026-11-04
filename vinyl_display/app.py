@@ -5,6 +5,7 @@ from typing import Any
 from vinyl_display.catalog import CatalogStore
 from vinyl_display.clients.shazam import ShazamClient
 from vinyl_display.clients.discogs import DiscogsClient
+from vinyl_display.clients.musicbrainz import MusicBrainzClient
 from vinyl_display.matcher import CollectionMatcher
 from vinyl_display.playback import PlaybackController
 
@@ -16,8 +17,13 @@ class VinylDisplayApp:
         discogs_client: DiscogsClient,
         shazam_client: ShazamClient | Any,
         config: Any = None,
+        musicbrainz_client: MusicBrainzClient | Any = None,
+        run_in_background: Any = None,
     ):
         self.store = store
+        self.musicbrainz_client = musicbrainz_client or MusicBrainzClient()
+        self._run_in_background = run_in_background or self._start_daemon_thread
+        self._duration_lookups_in_flight: set[tuple[int, str]] = set()
         self.store.favorite_threshold = config.favorite_threshold if config else 5
         self.discogs_client = discogs_client
         self.shazam_client = shazam_client
@@ -58,18 +64,13 @@ class VinylDisplayApp:
         print("[SERVER] Hot-swapped config to use Shazam for music recognition.")
 
     def state(self) -> dict[str, Any]:
-        state = self.playback.current_state()
-        if state.get("release"):
-            release_id = state["release"]["release_id"]
-            latest_release = self.store.get_release(release_id)
+        # Atualiza o disco ativo com a versão do banco ANTES de calcular o estado, para que
+        # durações aprendidas e edições do admin já valham neste mesmo poll.
+        if self.playback.active is not None:
+            latest_release = self.store.get_release(self.playback.active.match.release.release_id)
             if latest_release:
-                state["release"] = latest_release.to_dict()
-                if self.playback.active and self.playback.active.match.release.release_id == release_id:
-                    import dataclasses
-                    self.playback.active.match = dataclasses.replace(
-                        self.playback.active.match,
-                        release=latest_release
-                    )
+                self.playback.refresh_release(latest_release)
+        state = self.playback.current_state()
         state["collection_count"] = self.store.collection_count()
         state["last_sync_at"] = self.store.get_metadata("discogs_last_sync_at")
         state["lyrics_latency_offset"] = self.config.lyrics_latency_offset if self.config else 1.3
@@ -195,12 +196,47 @@ class VinylDisplayApp:
             print(f"[RECOGNIZE] Latency compensation: client_elapsed={client_elapsed_seconds:.2f}s, server_processing={now_recon - server_receive_time:.2f}s, total_latency={latency:.2f}s (including 4.0s constant offset)")
         
         self.playback.handle_match(match, offset=offset, latency=latency, alternatives=alternatives)
+        self._learn_missing_duration(match, recognition)
         print(f"[RECOGNIZE] Match found in local collection! release: '{match.release.title}', track: '{match.track.title}' (score: {match.score}, reason: {match.reason}, offset: {offset}s, latency_compensated: {latency:.2f}s, alternatives: {len(alternatives)})")
         return {
             "status": "matched",
             "match": match.to_dict(),
             "recognition": recognition_payload,
         }
+
+    @staticmethod
+    def _start_daemon_thread(target: Any) -> None:
+        import threading
+
+        threading.Thread(target=target, daemon=True).start()
+
+    def _learn_missing_duration(self, match: Any, recognition: Any) -> None:
+        """Se a faixa reconhecida não tem duração no Discogs, busca pelo ISRC (que o Shazam
+        devolve) no MusicBrainz em segundo plano e grava no catálogo para as próximas vezes."""
+        if match.track.duration_seconds:
+            return
+        isrc = str(((recognition.raw or {}).get("track") or {}).get("isrc") or "").strip()
+        if not isrc:
+            return
+        key = (match.release.release_id, match.track.position)
+        if key in self._duration_lookups_in_flight:
+            return
+        self._duration_lookups_in_flight.add(key)
+
+        def lookup() -> None:
+            try:
+                seconds = self.musicbrainz_client.recording_length_by_isrc(isrc)
+                if seconds and 20 <= seconds <= 30 * 60:
+                    if self.store.update_track_duration(key[0], key[1], seconds):
+                        print(f"[DURATION] Learned {seconds}s for release {key[0]} track {key[1]} via ISRC {isrc}")
+                else:
+                    print(f"[DURATION] No usable MusicBrainz duration for ISRC {isrc}")
+            except Exception as error:
+                print(f"[DURATION] Lookup failed for ISRC {isrc}: {error}")
+            finally:
+                self._duration_lookups_in_flight.discard(key)
+
+        self._run_in_background(lookup)
 
     def list_admin_releases(self) -> list[dict[str, Any]]:
         releases = self.store.list_releases_with_stats()

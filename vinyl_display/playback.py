@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import time
 from dataclasses import dataclass, replace, field
 from typing import Any, Callable
@@ -16,12 +17,28 @@ class ActivePlayback:
     locked: bool = False
 
 
+# Prefixos de disco usados pelo Discogs em LPs duplos/box sets: "LP-A1", "LP1-B2", "Disc 2-C1", "1-A1"
+_DISC_PREFIX_RE = re.compile(
+    r"^(?:(?:LP|CD|DISC|DISCO|VINYL|DVD)\s*\d*|\d+\"?)\s*[-.:/]\s*(?=[A-Z])"
+)
+
+# Numeração de CD/disco sem lado: "CD1-1", "Disc 2-03"
+_DISC_TRACK_NUMBER_RE = re.compile(r"^(?:LP|CD|DISC|DISCO|VINYL|DVD)\s*\d*\s*[-.:/]\s*\d")
+
+
 def get_track_side(position: str) -> str:
+    """Retorna o lado do vinil ("A", "B", "AA"...) a partir da posição da faixa no Discogs.
+
+    Posições puramente numéricas ("1", "12", "1-3") não indicam lado e retornam "".
+    """
     if not position:
         return ""
     pos = position.strip().upper()
     if pos.startswith("SIDE "):
         return pos
+    if _DISC_TRACK_NUMBER_RE.match(pos):
+        return ""
+    pos = _DISC_PREFIX_RE.sub("", pos)
     side = ""
     for char in pos:
         if char.isalpha():
@@ -191,6 +208,7 @@ class PlaybackController:
                 "next_track": None if next_track is None else next_track.to_dict(),
                 "progress_seconds": progress,
                 "duration_seconds": track.duration_seconds or 180,
+                "duration_estimated": not track.duration_seconds,
                 "last_recognition": self.last_recognition,
                 "alternatives": alternatives_payload,
             }
@@ -203,9 +221,24 @@ class PlaybackController:
             "next_track": None if next_track is None else next_track.to_dict(),
             "progress_seconds": progress,
             "duration_seconds": track.duration_seconds or 180,
+            "duration_estimated": not track.duration_seconds,
             "last_recognition": self.last_recognition,
             "alternatives": alternatives_payload,
         }
+
+    def refresh_release(self, latest: Release) -> None:
+        """Troca o disco ativo pela versão mais recente do banco (ex.: duração aprendida ou
+        edição no admin), remapeando a faixa ativa pela posição. Sem isso a faixa antiga
+        deixa de existir em release.tracks e o avanço automático para de funcionar."""
+        if self.active is None or self.active.match.release.release_id != latest.release_id:
+            return
+        if self.active.match.release == latest:
+            return
+        old_track = self.active.match.track
+        new_track = next((t for t in latest.tracks if t.position == old_track.position), None)
+        if new_track is None:
+            new_track = next((t for t in latest.tracks if t.title == old_track.title), old_track)
+        self.active.match = replace(self.active.match, release=latest, track=new_track)
 
     def switch_release(self, release_id: int, store: Any) -> bool:
         if self.active is None:

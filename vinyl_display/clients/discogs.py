@@ -9,6 +9,7 @@ import urllib.request
 
 from vinyl_display.catalog import CatalogStore
 from vinyl_display.models import Release, Track
+from vinyl_display.tracklist import infer_vinyl_sides
 
 JsonTransport = Callable[[str, dict[str, str]], dict[str, Any]]
 SleepFunc = Callable[[float], None]
@@ -124,7 +125,7 @@ def release_from_discogs(payload: dict[str, Any]) -> Release:
         labels=labels,
         catalog_numbers=catalog_numbers,
         formats=_format_values(payload),
-        tracks=tracks,
+        tracks=infer_vinyl_sides(tracks, _format_values(payload)),
         discogs_url=str(payload.get("uri") or ""),
         genres=list(payload.get("genres") or []),
         styles=list(payload.get("styles") or []),
