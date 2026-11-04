@@ -54,6 +54,57 @@ let micSuspended = false;
 // Espera entre escutas sem resultado quando nenhum disco está tocando: 8s nas 3 primeiras
 // tentativas e depois dobra até 5 min. O microfone nunca "dorme" (antes exigia toque na
 // tela), mas ruído ambiente também não queima as chamadas do Shazam.
+// ---------- v3.5: acompanhamento pelo silêncio (sem Shazam a cada faixa) ----------
+// Ajuste fino sem novo deploy: localStorage.vinylDetector = '{"gapRatio":0.2}'
+function loadDetectorOptions() {
+  try {
+    return JSON.parse(window.localStorage.getItem("vinylDetector") || "{}");
+  } catch (e) {
+    return {};
+  }
+}
+const silenceDetector = window.VinylSilence ? new window.VinylSilence.SilenceDetector(loadDetectorOptions()) : null;
+const DETECTOR_HOLD_MS = 6 * 3600 * 1000; // enquanto o detector acompanha, nada de re-escuta agendada
+const FLIP_FALLBACK_MS = 120000;           // virada não percebida em 2 min -> Shazam confere
+let lastServerState = null;
+let waitingFlipSince = 0;
+let driftCheckBoundaries = 0;
+let pendingDriftListen = false;
+let lastDetectorAction = "";
+
+async function handleSilenceResume(event) {
+  if (recording || !silenceDetector || !lastServerState) return;
+  const action = window.VinylSilence.decideOnResume(event, lastServerState);
+  const gapSeconds = Math.round(event.gapMs / 100) / 10;
+  lastDetectorAction = `${action} após pausa de ${gapSeconds}s`;
+  if (action === "ignore") return;
+  if (action === "recognize") {
+    recordClip(true, false);
+    return;
+  }
+  try {
+    const res = await fetchJson(`/api/playback/${action}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ago_seconds: (Date.now() - event.resumedAt) / 1000, gap_seconds: gapSeconds }),
+    });
+    const result = (res && res.result) || {};
+    if (action === "flip" && !result.flipped) {
+      // Não havia outro lado (ou o disco não tem lados): provavelmente é outro disco
+      recordClip(true, false);
+      return;
+    }
+    if (action === "flip") {
+      lastDetectorAction = `virou para ${result.track} sem Shazam`;
+    } else if (result.aligned) {
+      lastDetectorAction = `faixa ${result.track} confirmada pela pausa (ajuste ${result.shift}s)`;
+    }
+    if (res && res.state) renderState(res.state);
+  } catch (error) {
+    console.error("Erro ao enviar evento do detector:", error);
+  }
+}
+
 function idleRetryDelayMs(failures) {
   const steps = Math.max(0, failures - 3);
   return Math.min(300000, 8000 * Math.pow(2, steps));
@@ -161,6 +212,7 @@ function setCover(release) {
 }
 
 function renderState(state) {
+  lastServerState = state;
   if (!state) return;
 
   if (state.lyrics_latency_offset !== undefined) {
@@ -238,10 +290,21 @@ function renderState(state) {
       }
       document.body.classList.add("is-playing");
 
-      // Calculate next auto-listen timestamp when the track ends
+      waitingFlipSince = 0;
       const progress = state.progress_seconds || 0;
       const duration = track.duration_seconds || state.duration_seconds || 0;
-      if (duration && progress < duration) {
+      if (silenceDetector && !state.duration_estimated) {
+        // v3.5: as pausas entre faixas mantêm o tempo certo; o Shazam só é chamado se
+        // duas trocas de faixa seguidas passarem sem pausa (deriva ou disco trocado).
+        if ((state.seconds_since_anchor || 0) < 10) driftCheckBoundaries = 0;
+        const unconfirmed = state.unconfirmed_boundaries || 0;
+        if (unconfirmed >= 2 && unconfirmed >= driftCheckBoundaries + 2) {
+          driftCheckBoundaries = unconfirmed;
+          pendingDriftListen = true;
+        }
+        window.nextAutoListenAt = pendingDriftListen ? 0 : Date.now() + DETECTOR_HOLD_MS;
+      } else if (duration && progress < duration) {
+        // Duração desconhecida: confere com o Shazam no fim estimado da faixa
         const remaining = duration - progress;
         window.nextAutoListenAt = Date.now() + (remaining * 1000);
       } else {
@@ -263,8 +326,14 @@ function renderState(state) {
       }
       document.body.classList.add("is-playing");
 
-      // Zera o cooldown de escuta para o microfone captar imediatamente a música quando o disco virar
-      window.nextAutoListenAt = 0;
+      if (!waitingFlipSince) waitingFlipSince = Date.now();
+      if (silenceDetector && state.next_track) {
+        // v3.5: o detector percebe a agulha no próximo lado e segue sem Shazam
+        window.nextAutoListenAt = waitingFlipSince + FLIP_FALLBACK_MS;
+      } else {
+        // Fim do disco (ou sem detector): o próximo som é outro disco, precisa do Shazam
+        window.nextAutoListenAt = 0;
+      }
 
       // Desativa o tracker local e preenche a barra de progresso em 100%
       playbackTracker.active = false;
@@ -447,6 +516,19 @@ async function startMicrophone() {
       }
     };
 
+    const detectorSamples = new Uint8Array(micAnalyserNode.fftSize);
+    setInterval(() => {
+      if (!silenceDetector || !micAudioContext || micAudioContext.state !== "running") return;
+      micAnalyserNode.getByteTimeDomainData(detectorSamples);
+      let sum = 0;
+      for (let i = 0; i < detectorSamples.length; i++) {
+        const v = (detectorSamples[i] - 128) / 128;
+        sum += v * v;
+      }
+      const event = silenceDetector.push(Math.sqrt(sum / detectorSamples.length), Date.now());
+      if (event) handleSilenceResume(event);
+    }, 250);
+
     const samples = new Uint8Array(micAnalyserNode.fftSize);
     setInterval(() => {
       if (!micAudioContext || micAudioContext.state === "suspended") {
@@ -469,7 +551,13 @@ async function startMicrophone() {
       if (isCooldownActive) {
         if (elements.micDebug && !recording) {
           const secsLeft = Math.ceil((window.nextAutoListenAt - now) / 1000);
-          elements.micDebug.textContent = `Microfone: suspenso (próxima busca em ${secsLeft}s)`;
+          if (silenceDetector && currentRelease && secsLeft > 3600) {
+            const level = Math.round(silenceDetector.level * 1000) / 10;
+            const gap = Math.round(silenceDetector.currentGapMs(now) / 100) / 10;
+            elements.micDebug.textContent = `Detector: nível ${level}% | pausa ${gap}s${lastDetectorAction ? " | " + lastDetectorAction : ""}`;
+          } else {
+            elements.micDebug.textContent = `Microfone: suspenso (próxima busca em ${secsLeft}s)`;
+          }
         }
         return;
       }
@@ -513,6 +601,7 @@ function recordClip(isAutomatic = false, isManual = false, attempt = 1, maxAttem
     elements.retryButton.classList.add("recording");
   }
   lastRecognitionAt = Date.now();
+  pendingDriftListen = false;
 
   const isPlaying = (currentRelease !== null) || playbackTracker.active;
 

@@ -152,14 +152,7 @@ class AuthManager:
         
         self.save()
         
-        # Write recovery key locally as backup
-        try:
-            recovery_txt = self.data_dir / "recovery_key.txt"
-            with open(recovery_txt, "w", encoding="utf-8") as f:
-                f.write(recovery_key + "\n")
-        except Exception as e:
-            print(f"[AUTH] Error saving recovery_key.txt: {e}")
-            
+        # A chave é mostrada uma única vez para o usuário guardar; o servidor só guarda o hash.
         return recovery_key
 
     def recover_password(self, recovery_key: str, new_password: str) -> str | None:
@@ -186,14 +179,7 @@ class AuthManager:
         
         self.save()
         
-        # Update recovery key locally as backup
-        try:
-            recovery_txt = self.data_dir / "recovery_key.txt"
-            with open(recovery_txt, "w", encoding="utf-8") as f:
-                f.write(new_recovery_key + "\n")
-        except Exception as e:
-            print(f"[AUTH] Error saving recovery_key.txt: {e}")
-            
+        # A chave é mostrada uma única vez para o usuário guardar; o servidor só guarda o hash.
         return new_recovery_key
 
     def create_session(self) -> str:

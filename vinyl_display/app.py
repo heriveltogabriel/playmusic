@@ -15,6 +15,12 @@ from vinyl_display.matcher import CollectionMatcher
 from vinyl_display.playback import PlaybackController
 
 
+def json_detail(payload: dict[str, Any]) -> str:
+    import json
+
+    return json.dumps(payload, ensure_ascii=False, sort_keys=True)[:300]
+
+
 class VinylDisplayApp:
     def __init__(
         self,
@@ -34,8 +40,12 @@ class VinylDisplayApp:
         self.shazam_client = shazam_client
         self.config = config
         self.matcher = CollectionMatcher(store)
-        self.playback = PlaybackController(on_scrobble=self.store.increment_auditions)
+        self.playback = PlaybackController(
+            on_scrobble=self.store.increment_auditions,
+            on_change=self._save_playback,
+        )
         self.store.initialize()
+        self._restore_playback()
 
     @staticmethod
     def make_shazam_client(store: CatalogStore, config: Any) -> ShazamClient:
@@ -51,6 +61,61 @@ class VinylDisplayApp:
     def shazam_usage(self) -> dict[str, Any] | None:
         summary = getattr(self.shazam_client, "usage_summary", None)
         return summary() if callable(summary) else None
+
+    PLAYBACK_METADATA_KEY = "active_playback"
+
+    def _save_playback(self, playback: PlaybackController) -> None:
+        import json
+
+        snapshot = playback.snapshot()
+        self.store.set_metadata(self.PLAYBACK_METADATA_KEY, json.dumps(snapshot) if snapshot else "")
+
+    def _restore_playback(self) -> None:
+        """Depois de um restart ou deploy, volta ao disco que estava tocando (até 30 min)."""
+        import json
+
+        raw = self.store.get_metadata(self.PLAYBACK_METADATA_KEY)
+        if not raw:
+            return
+        try:
+            restored = self.playback.restore(json.loads(raw), self.store)
+        except Exception as error:
+            print(f"[PLAYBACK] Could not restore playback state: {error}")
+            return
+        if restored:
+            print(f"[PLAYBACK] Restored active playback: {self.playback.active.match.release.title} / {self.playback.active.match.track.position}")
+
+    def playback_boundary(self, ago_seconds: float, gap_seconds: float | None = None) -> dict[str, Any]:
+        """Pausa curta ouvida pelo celular: tenta alinhar o tempo ao início de uma faixa."""
+        import time
+
+        now = time.time()
+        at = now - max(0.0, min(float(ago_seconds or 0), 30.0))
+        active_id = self.playback.active.match.release.release_id if self.playback.active else None
+        result = self.playback.align_track_start(at, now=now)
+        self._log_event(
+            "gap_aligned" if result.get("aligned") else "gap_ignored",
+            active_release_id=active_id,
+            track_position=result.get("track") or result.get("nearest"),
+            detail=json_detail({"gap_seconds": gap_seconds, **result}),
+        )
+        return {"status": "ok", "result": result, "state": self.state()}
+
+    def playback_flip(self, ago_seconds: float, gap_seconds: float | None = None) -> dict[str, Any]:
+        """Silêncio longo e agulha voltando no fim de um lado: vai para o próximo lado sem Shazam."""
+        import time
+
+        now = time.time()
+        at = now - max(0.0, min(float(ago_seconds or 0), 30.0))
+        active_id = self.playback.active.match.release.release_id if self.playback.active else None
+        result = self.playback.flip_to_next_side(at, now=now)
+        self._log_event(
+            "flip_local" if result.get("flipped") else "flip_rejected",
+            active_release_id=active_id,
+            track_position=result.get("track"),
+            detail=json_detail({"gap_seconds": gap_seconds, **result}),
+        )
+        return {"status": "ok", "result": result, "state": self.state()}
 
     def _log_event(self, status: str, **fields: Any) -> None:
         try:

@@ -34,10 +34,9 @@ class AuthManagerTests(unittest.TestCase):
             self.assertTrue(auth.verify_recovery_key(recovery_key))
             self.assertFalse(auth.verify_recovery_key("VINYL-RESTORE-WRONG-KEYY"))
             
-            # Verify recovery_key.txt backup was written
-            backup_file = tmp_path / "recovery_key.txt"
-            self.assertTrue(backup_file.exists())
-            self.assertEqual(backup_file.read_text(encoding="utf-8").strip(), recovery_key)
+            # A chave é mostrada uma vez e não fica gravada em texto puro no servidor (v3.5)
+            self.assertFalse((tmp_path / "recovery_key.txt").exists())
+            self.assertNotIn(recovery_key, (tmp_path / "auth.json").read_text(encoding="utf-8"))
 
     def test_recover_password(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -62,9 +61,8 @@ class AuthManagerTests(unittest.TestCase):
             self.assertFalse(auth.verify_recovery_key(orig_recovery_key))
             self.assertTrue(auth.verify_recovery_key(new_recovery_key))
             
-            # Check recovery key backup file was updated
-            backup_file = tmp_path / "recovery_key.txt"
-            self.assertEqual(backup_file.read_text(encoding="utf-8").strip(), new_recovery_key)
+            # A nova chave também não é gravada em texto puro (v3.5)
+            self.assertFalse((tmp_path / "recovery_key.txt").exists())
 
     def test_session_management(self):
         with tempfile.TemporaryDirectory() as tmp:

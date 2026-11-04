@@ -543,6 +543,21 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             self.app.playback.skip_prev()
             self._json(self.app.state())
             return
+        if path in ("/api/playback/boundary", "/api/playback/flip"):
+            length = int(self.headers.get("Content-Length", "0") or 0)
+            try:
+                payload = json.loads(self.rfile.read(length).decode("utf-8") or "{}") if length else {}
+                ago = float(payload.get("ago_seconds") or 0)
+                gap = payload.get("gap_seconds")
+                gap = float(gap) if gap is not None else None
+            except (ValueError, TypeError):
+                self.send_error(HTTPStatus.BAD_REQUEST)
+                return
+            if path.endswith("boundary"):
+                self._json(self.app.playback_boundary(ago, gap))
+            else:
+                self._json(self.app.playback_flip(ago, gap))
+            return
         if path == "/api/playback/stop":
             result = self.app.stop_playback()
             self._json(result)

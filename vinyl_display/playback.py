@@ -15,6 +15,7 @@ class ActivePlayback:
     played_tracks: set[str] = field(default_factory=set)
     scrobbled: bool = False
     locked: bool = False
+    anchored_at: float = 0.0  # última vez que o tempo foi confirmado (Shazam, pausa entre faixas ou virada)
 
 
 # Prefixos de disco usados pelo Discogs em LPs duplos/box sets: "LP-A1", "LP1-B2", "Disc 2-C1", "1-A1"
@@ -49,13 +50,31 @@ def get_track_side(position: str) -> str:
 
 
 class PlaybackController:
-    def __init__(self, on_scrobble: Callable[[int], Any] | None = None):
+    # Tolerância para aceitar uma pausa como início de faixa (segundos)
+    BOUNDARY_TOLERANCE = 25
+    # Uma pausa ainda não confirmada só conta como "perdida" depois deste atraso
+    BOUNDARY_GRACE = 30
+    GAP_SECONDS = 3
+
+    def __init__(
+        self,
+        on_scrobble: Callable[[int], Any] | None = None,
+        on_change: Callable[["PlaybackController"], Any] | None = None,
+    ):
+        self.on_change = on_change
         self.active: ActivePlayback | None = None
         self.status = "listening"
         self.message = ""
         self.last_recognition: dict[str, Any] | None = None
         self.on_scrobble = on_scrobble
         self.alternatives: list[TrackMatch] = []
+
+    def _changed(self) -> None:
+        if self.on_change:
+            try:
+                self.on_change(self)
+            except Exception as error:
+                print(f"[PLAYBACK] Could not persist playback state: {error}")
 
     def handle_match(
         self,
@@ -85,6 +104,7 @@ class PlaybackController:
                 match=match,
                 started_at=started_at,
                 locked=is_locked,
+                anchored_at=now,
             )
         else:
             self.active = ActivePlayback(
@@ -93,9 +113,11 @@ class PlaybackController:
                 played_tracks=set(),
                 scrobbled=False,
                 locked=False,
+                anchored_at=now,
             )
         self.status = "playing"
         self.message = ""
+        self._changed()
 
     def handle_not_found(self, title: str, artist: str, now: float | None = None) -> None:
         self.last_recognition = {
@@ -162,6 +184,7 @@ class PlaybackController:
         )
         if len(self.active.played_tracks) > 1 and not self.active.scrobbled:
             self.active.scrobbled = True
+            self._changed()
             if self.on_scrobble:
                 try:
                     self.on_scrobble(release.release_id)
@@ -169,6 +192,7 @@ class PlaybackController:
                     print(f"[PLAYBACK] Error automatically registering audition for release {release.release_id}: {e}")
 
         next_track = self._next_track(release, track)
+        extra = self._timeline_extras(now)
 
         if is_side_finished:
             # Se já passou o tempo limite em repouso após terminar o lado ou disco,
@@ -211,6 +235,7 @@ class PlaybackController:
                 "duration_estimated": not track.duration_seconds,
                 "last_recognition": self.last_recognition,
                 "alternatives": alternatives_payload,
+                **extra,
             }
 
         return {
@@ -224,6 +249,7 @@ class PlaybackController:
             "duration_estimated": not track.duration_seconds,
             "last_recognition": self.last_recognition,
             "alternatives": alternatives_payload,
+            **extra,
         }
 
     def refresh_release(self, latest: Release) -> None:
@@ -270,6 +296,136 @@ class PlaybackController:
             scrobbled=False,
             locked=True,
         )
+        self._changed()
+        return True
+
+    # ------------------------------------------------------------------ v3.5
+    def _side_timeline(self, release: Release, initial_track: Track) -> tuple[list[tuple[float, Track]], float]:
+        """Início de cada faixa (segundos desde started_at) no lado da faixa inicial, e o fim do lado.
+        Segue o mesmo modelo de _track_at_elapsed: duração do Discogs (ou 180 s) + 3 s de pausa."""
+        try:
+            start_index = release.tracks.index(initial_track)
+        except ValueError:
+            return [(0.0, initial_track)], float(initial_track.duration_seconds or 180)
+        side = get_track_side(initial_track.position)
+        timeline: list[tuple[float, Track]] = []
+        cursor = 0.0
+        for i, track in enumerate(release.tracks[start_index:]):
+            track_side = get_track_side(track.position)
+            if side and track_side and track_side != side:
+                break
+            if i > 0:
+                cursor += self.GAP_SECONDS
+            timeline.append((cursor, track))
+            cursor += track.duration_seconds or 180
+        return timeline, cursor
+
+    def _timeline_extras(self, now: float) -> dict[str, Any]:
+        """Dados para o detector de silêncio do celular decidir sem chamar o Shazam."""
+        if self.active is None:
+            return {}
+        elapsed = now - self.active.started_at
+        timeline, side_end = self._side_timeline(self.active.match.release, self.active.match.track)
+        anchored_elapsed = (self.active.anchored_at or self.active.started_at) - self.active.started_at
+        unconfirmed = sum(
+            1 for start, _ in timeline if anchored_elapsed + 1 < start <= elapsed - self.BOUNDARY_GRACE
+        )
+        return {
+            "side_remaining_seconds": round(max(0.0, side_end - elapsed), 1),
+            "unconfirmed_boundaries": unconfirmed,
+            "seconds_since_anchor": round(now - (self.active.anchored_at or self.active.started_at), 1),
+        }
+
+    def align_track_start(self, at: float, now: float | None = None) -> dict[str, Any]:
+        """O celular ouviu o som voltar depois de uma pausa curta em `at`. Se isso cair perto do
+        início previsto de uma faixa, reancora o tempo nessa faixa (sem chamar o Shazam)."""
+        now = now or time.time()
+        if self.active is None:
+            return {"aligned": False, "reason": "idle"}
+        elapsed = at - self.active.started_at
+        timeline, _ = self._side_timeline(self.active.match.release, self.active.match.track)
+        start, track = min(timeline, key=lambda item: abs(elapsed - item[0]))
+        shift = elapsed - start
+        if abs(shift) > self.BOUNDARY_TOLERANCE:
+            return {"aligned": False, "reason": "far", "nearest": track.position, "offset": round(shift, 1)}
+        self.active.started_at += shift
+        self.active.anchored_at = at
+        self._record_played_tracks(now)
+        self._changed()
+        return {"aligned": True, "track": track.position, "shift": round(shift, 1)}
+
+    def flip_to_next_side(self, at: float, now: float | None = None) -> dict[str, Any]:
+        """O celular ouviu silêncio longo e a agulha voltando no fim de um lado: segue para a
+        primeira faixa do próximo lado do mesmo disco, sem chamar o Shazam."""
+        now = now or time.time()
+        if self.active is None:
+            return {"flipped": False, "reason": "idle"}
+        release = self.active.match.release
+        self._record_played_tracks(now)
+        current, _, _, _ = self._track_at_elapsed(
+            release, self.active.match.track, int(now - self.active.started_at)
+        )
+        side = get_track_side(current.position)
+        if not side:
+            return {"flipped": False, "reason": "no_sides"}
+        try:
+            index = release.tracks.index(current)
+        except ValueError:
+            return {"flipped": False, "reason": "unknown_track"}
+        first = next(
+            (t for t in release.tracks[index + 1:] if get_track_side(t.position) not in ("", side)),
+            None,
+        )
+        if first is None:
+            return {"flipped": False, "reason": "last_side"}
+        self.active.match = replace(self.active.match, track=first)
+        self.active.started_at = at
+        self.active.anchored_at = at
+        self.active.played_tracks.add(first.position)
+        self.alternatives = []
+        self.status = "playing"
+        self.message = ""
+        self._changed()
+        return {"flipped": True, "track": first.position}
+
+    def snapshot(self, now: float | None = None) -> dict[str, Any] | None:
+        if self.active is None:
+            return None
+        return {
+            "release_id": self.active.match.release.release_id,
+            "track_position": self.active.match.track.position,
+            "score": self.active.match.score,
+            "reason": self.active.match.reason,
+            "started_at": self.active.started_at,
+            "anchored_at": self.active.anchored_at,
+            "played_tracks": sorted(self.active.played_tracks),
+            "scrobbled": self.active.scrobbled,
+            "locked": self.active.locked,
+            "saved_at": now or time.time(),
+        }
+
+    def restore(self, snapshot: dict[str, Any] | None, store: Any, now: float | None = None, max_age: float = 1800) -> bool:
+        """Recoloca o disco que tocava antes de um restart, se o estado tiver menos de `max_age` s."""
+        now = now or time.time()
+        if not snapshot or now - float(snapshot.get("saved_at", 0)) > max_age:
+            return False
+        release = store.get_release(int(snapshot["release_id"]))
+        if release is None:
+            return False
+        track = next((t for t in release.tracks if t.position == snapshot.get("track_position")), None)
+        if track is None:
+            return False
+        match = TrackMatch(release=release, track=track, score=int(snapshot.get("score") or 100), reason=str(snapshot.get("reason") or "restored"))
+        self.active = ActivePlayback(
+            match=match,
+            started_at=float(snapshot["started_at"]),
+            played_tracks=set(snapshot.get("played_tracks") or []),
+            scrobbled=bool(snapshot.get("scrobbled")),
+            locked=bool(snapshot.get("locked")),
+            anchored_at=float(snapshot.get("anchored_at") or snapshot["started_at"]),
+        )
+        self.status = "playing"
+        self.message = ""
         return True
 
     def _track_at_elapsed(
@@ -338,6 +494,8 @@ class PlaybackController:
         if next_track is not None:
             self.active.match = replace(self.active.match, track=next_track)
             self.active.started_at = now
+            self.active.anchored_at = now
+            self._changed()
 
     def skip_prev(self, now: float | None = None) -> None:
         if self.active is None:
@@ -353,6 +511,8 @@ class PlaybackController:
 
         if progress > 3:
             self.active.started_at = now
+            self.active.anchored_at = now
+            self._changed()
             return
 
         try:
@@ -364,10 +524,13 @@ class PlaybackController:
             prev_track = release.tracks[index - 1]
             self.active.match = replace(self.active.match, track=prev_track)
             self.active.started_at = now
+            self.active.anchored_at = now
+            self._changed()
 
     def stop(self) -> None:
         self.active = None
         self.alternatives = []
         self.status = "listening"
         self.message = ""
+        self._changed()
 
