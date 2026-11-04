@@ -19,6 +19,7 @@
     resumeRatio: 0.45,     // som voltou = acima de 45% do nível da música
     minGapMs: 900,         // pausa mais curta que conta
     resumeSustainMs: 1500, // som precisa durar isso para valer (ignora estalos da agulha)
+    onsetOverSilence: 2.5, // v3.6: início = som 2,5x acima do silêncio medido na pausa (pega intros suaves)
     levelAlpha: 0.03,      // velocidade com que o nível da música se adapta
     initialLevel: 0.05,
   };
@@ -32,6 +33,8 @@
       this.gapStartedAt = null;  // início do silêncio confirmado
       this.loudSince = null;     // início do som candidato (dentro de uma pausa)
       this.lastRms = 0;
+      this.silenceSum = 0;       // nível médio do silêncio durante a pausa atual
+      this.silenceCount = 0;
     }
 
     thresholds() {
@@ -57,6 +60,8 @@
             this.state = "gap";
             this.gapStartedAt = this.quietSince;
             this.loudSince = null;
+            this.silenceSum = rms;
+            this.silenceCount = 1;
           }
         } else {
           this.quietSince = null;
@@ -65,14 +70,27 @@
       }
 
       // state === "gap"
-      if (rms >= loud) {
-        if (this.loudSince === null) this.loudSince = nowMs;
+      // O som "voltou" quando sobe bem acima do silêncio medido nesta pausa — e não só quando
+      // chega perto do volume da música anterior. Assim uma introdução suave (piano, violão)
+      // marca o início certo da faixa em vez de esperar a parte alta, 20 s depois.
+      const onset = this.onsetThreshold(loud);
+      if (rms >= onset) {
+        if (this.loudSince === null) {
+          this.loudSince = nowMs;
+          this.onsetSum = 0;
+          this.onsetCount = 0;
+        }
+        this.onsetSum += rms;
+        this.onsetCount += 1;
         if (nowMs - this.loudSince >= this.opts.resumeSustainMs) {
           const event = {
             type: "resume",
             gapMs: this.loudSince - this.gapStartedAt,
             resumedAt: this.loudSince,
           };
+          // A referência passa a ser o volume deste começo (uma intro suave não pode virar
+          // "silêncio" de novo); depois ela sobe sozinha conforme a música cresce.
+          this.level = Math.max(this.opts.floor * 2, this.onsetSum / this.onsetCount);
           this.state = "sound";
           this.quietSince = null;
           this.gapStartedAt = null;
@@ -81,8 +99,17 @@
         }
       } else {
         this.loudSince = null;
+        this.silenceSum += rms;
+        this.silenceCount += 1;
       }
       return null;
+    }
+
+    /** Limiar de "som voltou" durante uma pausa. */
+    onsetThreshold(loud) {
+      const silence = this.silenceCount ? this.silenceSum / this.silenceCount : this.opts.floor;
+      const overSilence = Math.max(this.opts.floor * 2, silence * this.opts.onsetOverSilence);
+      return Math.min(loud, overSilence);
     }
 
     /** Duração do silêncio atual (0 se está tocando). */
@@ -95,6 +122,8 @@
       this.quietSince = null;
       this.gapStartedAt = null;
       this.loudSince = null;
+      this.silenceSum = 0;
+      this.silenceCount = 0;
     }
   }
 

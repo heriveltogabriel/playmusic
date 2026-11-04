@@ -155,6 +155,23 @@ feed(0.004, 12000); feed(0.2, 500); feed(0.003, 4000); feed(0.11, 4000);
 console.log(JSON.stringify(ev));""")
         self.assertEqual(events, [2500, 16500])
 
+    def test_soft_intro_marks_the_real_start_and_fires_once(self):
+        # Ex.: "Every Little Thing She Does Is Magic" começa com piano baixo por ~20 s
+        events = self.run_js("""
+const d = new m.SilenceDetector(); let t = 0; const ev = [];
+const feed = (rms, ms) => { for (let i = 0; i < ms; i += 250) { const e = d.push(rms, t); if (e) ev.push([e.gapMs, e.resumedAt]); t += 250; } };
+feed(0.12, 20000); feed(0.004, 10000); feed(0.02, 20000); feed(0.12, 60000); feed(0.006, 2500); feed(0.12, 3000);
+console.log(JSON.stringify(ev));""")
+        self.assertEqual(events, [[10000, 30000], [2500, 112500]])
+
+    def test_quiet_passage_is_not_a_gap(self):
+        events = self.run_js("""
+const d = new m.SilenceDetector(); let t = 0; const ev = [];
+const feed = (rms, ms) => { for (let i = 0; i < ms; i += 250) { const e = d.push(rms, t); if (e) ev.push(e.gapMs); t += 250; } };
+feed(0.12, 20000); feed(0.045, 8000); feed(0.12, 5000);
+console.log(JSON.stringify(ev));""")
+        self.assertEqual(events, [])
+
     def test_decisions(self):
         decisions = self.run_js("""
 const s = (o) => Object.assign({release: {}}, o);
