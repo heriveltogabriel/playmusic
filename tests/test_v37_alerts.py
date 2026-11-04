@@ -62,6 +62,11 @@ class AlertManagerTests(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
+    def test_without_channels_nothing_is_marked(self):
+        alerts = AlertManager(self.store, Notifier())
+        self.assertFalse(alerts.raise_alert("player_offline", "caiu"))
+        self.assertFalse(alerts.is_active("player_offline"))
+
     def test_cooldown_and_resolution(self):
         self.assertTrue(self.alerts.raise_alert("k", "caiu", cooldown=3600))
         self.assertFalse(self.alerts.raise_alert("k", "caiu", cooldown=3600))  # repetido: não envia

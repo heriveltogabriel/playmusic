@@ -203,6 +203,11 @@ class AlertManager:
         now = self.clock()
         if entry.get("active") and now - float(entry.get("sent_at", 0)) < cooldown:
             return False
+        if not self.notifier.enabled:
+            # Sem Telegram/ntfy configurado: só registra no log, sem marcar como avisado,
+            # para não bloquear o aviso real depois que você configurar um canal.
+            print(f"[ALERT] {key} (sem canal configurado): {text}")
+            return False
         quiet = self.quiet_now()
         if quiet and hold_in_quiet_hours:
             return False
