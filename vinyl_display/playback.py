@@ -344,7 +344,11 @@ class PlaybackController:
         unconfirmed = sum(
             1 for start, _ in timeline if anchored_elapsed + 1 < start <= elapsed - self.BOUNDARY_GRACE
         )
+        sides = {get_track_side(t.position) for t in self.active.match.release.tracks}
+        sides.discard("")
         return {
+            # LP duplo/caixa: na virada não dá para saber qual lado entrou (B->A ou B->C)
+            "release_sides": len(sides),
             "side_remaining_seconds": round(max(0.0, side_end - elapsed), 1),
             "unconfirmed_boundaries": unconfirmed,
             "seconds_since_anchor": round(now - (self.active.anchored_at or self.active.started_at), 1),

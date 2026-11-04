@@ -135,14 +135,19 @@
   function decideOnResume(event, state, opts) {
     const o = Object.assign({ longGapMs: 6000, flipGapMs: 2500, nearSideEndSeconds: 75 }, opts || {});
     if (!state || !state.release) return "ignore";
+    // Em LP duplo (ou caixa) a virada pode ir para qualquer lado (B->A no mesmo disco,
+    // ou B->C no outro): só o Shazam sabe qual entrou.
+    const manySides = (state.release_sides || 0) > 2;
     if (state.status === "waiting_flip") {
       if (event.gapMs < o.flipGapMs) return "ignore";
-      return state.next_track ? "flip" : "recognize"; // fim do disco + som = outro disco
+      if (!state.next_track) return "recognize"; // fim do disco + som = outro disco
+      return manySides ? "recognize" : "flip";
     }
     if (state.status !== "playing") return "ignore";
     if (event.gapMs >= o.longGapMs) {
       const sideLeft = typeof state.side_remaining_seconds === "number" ? state.side_remaining_seconds : Infinity;
-      return sideLeft <= o.nearSideEndSeconds ? "flip" : "recognize";
+      if (sideLeft > o.nearSideEndSeconds) return "recognize";
+      return manySides ? "recognize" : "flip";
     }
     return "boundary";
   }

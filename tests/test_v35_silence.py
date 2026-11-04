@@ -33,6 +33,7 @@ class TimelineExtrasTests(unittest.TestCase):
     def test_side_remaining_and_unconfirmed_boundaries(self):
         c, _ = playing()
         state = c.current_state(now=1000 + 50)
+        self.assertEqual(state["release_sides"], 2)
         self.assertEqual(state["side_remaining_seconds"], 253.0)  # 200 + 3 + 100 - 50
         self.assertEqual(state["unconfirmed_boundaries"], 0)
         # A2 começa em 203 s; 30 s depois ainda sem pausa -> 1 troca não confirmada
@@ -182,8 +183,13 @@ console.log(JSON.stringify([
   m.decideOnResume({gapMs: 9000}, s({status: 'waiting_flip', next_track: {}})),
   m.decideOnResume({gapMs: 9000}, s({status: 'waiting_flip', next_track: null})),
   m.decideOnResume({gapMs: 1000}, null),
+  m.decideOnResume({gapMs: 9000}, s({status: 'waiting_flip', next_track: {}, release_sides: 4})),
+  m.decideOnResume({gapMs: 16000}, s({status: 'playing', side_remaining_seconds: 40, release_sides: 4})),
+  m.decideOnResume({gapMs: 2500}, s({status: 'playing', side_remaining_seconds: 600, release_sides: 4})),
 ]));""")
-        self.assertEqual(decisions, ["boundary", "flip", "recognize", "flip", "recognize", "ignore"])
+        # LP duplo: a virada vai para o Shazam (B->A ou B->C); pausa entre faixas segue local
+        self.assertEqual(decisions, ["boundary", "flip", "recognize", "flip", "recognize", "ignore",
+                                     "recognize", "recognize", "boundary"])
 
 
 class StaticV352Tests(unittest.TestCase):

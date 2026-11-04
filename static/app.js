@@ -71,6 +71,8 @@ let waitingFlipSince = 0;
 let driftCheckBoundaries = 0;
 let pendingDriftListen = false;
 let lastDetectorAction = "";
+const FAR_GAP_CHECK_SECONDS = 2;
+let farGapChecked = false;
 
 async function handleSilenceResume(event) {
   if (recording || !silenceDetector || !lastServerState) return;
@@ -98,6 +100,14 @@ async function handleSilenceResume(event) {
       lastDetectorAction = `virou para ${result.track} sem Shazam`;
     } else if (result.aligned) {
       lastDetectorAction = `faixa ${result.track} confirmada pela pausa (ajuste ${result.shift}s)`;
+    } else if (result.reason === "far" && gapSeconds >= FAR_GAP_CHECK_SECONDS && !farGapChecked) {
+      // Pausa clara entre músicas longe de qualquer troca prevista: disco ou lado errado.
+      // O Shazam confere uma vez (até a próxima confirmação) em vez de esperar duas faixas.
+      farGapChecked = true;
+      lastDetectorAction = `pausa fora do previsto (${result.offset}s): conferindo com o Shazam`;
+      if (res && res.state) renderState(res.state);
+      recordClip(true, false);
+      return;
     }
     if (res && res.state) renderState(res.state);
   } catch (error) {
@@ -349,7 +359,10 @@ function renderState(state) {
       if (silenceDetector && !state.duration_estimated) {
         // v3.5: as pausas entre faixas mantêm o tempo certo; o Shazam só é chamado se
         // duas trocas de faixa seguidas passarem sem pausa (deriva ou disco trocado).
-        if ((state.seconds_since_anchor || 0) < 10) driftCheckBoundaries = 0;
+        if ((state.seconds_since_anchor || 0) < 10) {
+          driftCheckBoundaries = 0;
+          farGapChecked = false;
+        }
         const unconfirmed = state.unconfirmed_boundaries || 0;
         if (unconfirmed >= 2 && unconfirmed >= driftCheckBoundaries + 2) {
           driftCheckBoundaries = unconfirmed;
