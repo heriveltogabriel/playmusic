@@ -205,3 +205,12 @@ class StaticV37Tests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DeployScriptTests(unittest.TestCase):
+    def test_deploy_runs_tests_snapshots_and_rolls_back(self):
+        sh = (ROOT / "deploy.sh").read_text(encoding="utf-8")
+        self.assertIn("python3 -m unittest discover", sh)
+        self.assertIn("/home/opc/vinyl_releases", sh)
+        self.assertIn("restore_previous", sh)
+        self.assertIn('./deploy.sh [rollback] principal|bruno|todos', sh)
