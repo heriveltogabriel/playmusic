@@ -232,13 +232,7 @@ function renderState(state) {
       const duration = track.duration_seconds || state.duration_seconds || 0;
       if (duration && progress < duration) {
         const remaining = duration - progress;
-        let listenAt = Date.now() + (remaining * 1000);
-        if (state.duration_estimated && lastRecognitionAt) {
-          // Faixa sem duração no Discogs (estimada em 3 min): escuta de novo até 45s após o
-          // último reconhecimento para ressincronizar e o servidor aprender a duração real.
-          listenAt = Math.min(listenAt, lastRecognitionAt + 45000);
-        }
-        window.nextAutoListenAt = listenAt;
+        window.nextAutoListenAt = Date.now() + (remaining * 1000);
       } else {
         if (!window.nextAutoListenAt || window.nextAutoListenAt < Date.now()) {
           window.nextAutoListenAt = lastRecognitionAt + 90000;
