@@ -106,7 +106,7 @@ class PlaybackController:
         if self.active is None:
             return None
         release = self.active.match.release
-        track, _, _ = self._track_at_elapsed(
+        track, _, _, _ = self._track_at_elapsed(
             release,
             self.active.match.track,
             int(now - self.active.started_at),
@@ -138,7 +138,7 @@ class PlaybackController:
 
         release = self.active.match.release
         track = self._record_played_tracks(now)
-        _, progress, is_side_finished = self._track_at_elapsed(
+        _, progress, is_side_finished, overtime = self._track_at_elapsed(
             release,
             self.active.match.track,
             int(now - self.active.started_at),
@@ -152,6 +152,15 @@ class PlaybackController:
                     print(f"[PLAYBACK] Error automatically registering audition for release {release.release_id}: {e}")
 
         next_track = self._next_track(release, track)
+
+        if is_side_finished:
+            # Se já passou o tempo limite em repouso após terminar o lado ou disco,
+            # encerramos a sessão e voltamos automaticamente ao estado inicial (listening)
+            flip_timeout = 300 if next_track else 180  # 5 min para virar lado, 3 min para fim do disco
+            if overtime >= flip_timeout:
+                self.stop()
+                return self.current_state(now)
+
         alternatives_payload = [
             {
                 "release_id": alt.release.release_id,
@@ -235,11 +244,11 @@ class PlaybackController:
         release: Release,
         initial_track: Track,
         elapsed: int,
-    ) -> tuple[Track, int, bool]:
+    ) -> tuple[Track, int, bool, int]:
         try:
             start_index = release.tracks.index(initial_track)
         except ValueError:
-            return initial_track, max(0, elapsed), False
+            return initial_track, max(0, elapsed), False, 0
 
         initial_side = get_track_side(initial_track.position)
         remaining = max(0, elapsed)
@@ -251,25 +260,25 @@ class PlaybackController:
 
             # Se o lado mudou, significa que completamos todas as faixas do lado anterior
             if initial_side and track_side and track_side != initial_side:
-                return last_track_of_side, last_track_of_side.duration_seconds or 180, True
+                return last_track_of_side, last_track_of_side.duration_seconds or 180, True, remaining
 
             track_duration = track.duration_seconds or 180
 
-            # Se não for a primeira faixa da iteração, existe uma pausa de 10s antes dela
+            # Se não for a primeira faixa da iteração, existe uma pausa de 3s antes dela
             if i > 0:
                 if remaining < GAP_SECONDS:
                     # Estamos na pausa de transição; mostramos a faixa anterior concluída
-                    return last_track_of_side, last_track_of_side.duration_seconds or 180, False
+                    return last_track_of_side, last_track_of_side.duration_seconds or 180, False, 0
                 remaining -= GAP_SECONDS
 
             if remaining < track_duration:
-                return track, remaining, False
+                return track, remaining, False, 0
 
             remaining -= track_duration
             last_track_of_side = track
 
         # Se completou todas as faixas e ainda sobrou tempo
-        return last_track_of_side, last_track_of_side.duration_seconds or 180, True
+        return last_track_of_side, last_track_of_side.duration_seconds or 180, True, remaining
 
     def _next_track(self, release: Release, track: Track) -> Track | None:
         try:
@@ -287,7 +296,7 @@ class PlaybackController:
         now = now or time.time()
         self._record_played_tracks(now)
         release = self.active.match.release
-        current_track, _, _ = self._track_at_elapsed(
+        current_track, _, _, _ = self._track_at_elapsed(
             release,
             self.active.match.track,
             int(now - self.active.started_at),
@@ -303,7 +312,7 @@ class PlaybackController:
         now = now or time.time()
         self._record_played_tracks(now)
         release = self.active.match.release
-        current_track, progress, _ = self._track_at_elapsed(
+        current_track, progress, _, _ = self._track_at_elapsed(
             release,
             self.active.match.track,
             int(now - self.active.started_at),

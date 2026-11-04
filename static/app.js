@@ -151,7 +151,6 @@ function setCover(release) {
 
 function renderState(state) {
   if (!state) return;
-  if (recording) return;
 
   if (state.lyrics_latency_offset !== undefined) {
     lyricsLatencyOffset = parseFloat(state.lyrics_latency_offset);
@@ -433,7 +432,7 @@ async function startMicrophone() {
         const status = state === "suspended" ? "pausado (toque na tela para ativar)" : "ouvindo";
         const currentRms = rmsValue !== undefined ? rmsValue : 0;
         const volPct = Math.round(currentRms * 100);
-        elements.micDebug.textContent = `Microfone: ${status} | Vol: ${volPct}% | Limiar: 3.8% (${consecutiveLoudSeconds}/2s)`;
+        elements.micDebug.textContent = `Microfone: ${status} | Vol: ${volPct}% | Limiar: 3.0% (${consecutiveLoudSeconds}/2s)`;
       }
     };
 
@@ -441,7 +440,7 @@ async function startMicrophone() {
     setInterval(() => {
       if (!micAudioContext || micAudioContext.state === "suspended") {
         if (elements.micDebug && !recording) {
-          elements.micDebug.textContent = "Microfone: pausado (toque na tela para ativar) | Vol: 0% | Limiar: 3.8%";
+          elements.micDebug.textContent = "Microfone: pausado (toque na tela para ativar) | Vol: 0% | Limiar: 3.0%";
         }
         return;
       }
@@ -470,7 +469,7 @@ async function startMicrophone() {
         return sum + normalized * normalized;
       }, 0) / samples.length);
 
-      if (rms > 0.038) {
+      if (rms > 0.030) {
         consecutiveLoudSeconds++;
       } else {
         consecutiveLoudSeconds = 0;
@@ -496,7 +495,7 @@ async function startMicrophone() {
   }
 }
 
-function recordClip(isAutomatic = false, isManual = false) {
+function recordClip(isAutomatic = false, isManual = false, attempt = 1, maxAttempts = 3) {
   if (!mediaStream || !micAudioContext || recording) return;
   recording = true;
   if (elements.retryButton) {
@@ -504,22 +503,22 @@ function recordClip(isAutomatic = false, isManual = false) {
   }
   lastRecognitionAt = Date.now();
 
-  const isPlaying = (currentRelease !== null);
+  const isPlaying = (currentRelease !== null) || playbackTracker.active;
 
   // Update UI immediately to show active listening feedback
   if (elements.nextTrackTitle) {
-    elements.nextTrackTitle.textContent = "Ouvindo...";
+    elements.nextTrackTitle.textContent = isManual && attempt > 1 ? `Ouvindo (${attempt}/${maxAttempts})...` : "Ouvindo...";
     elements.nextTrack.style.display = "block";
   }
 
   if (isManual || !isPlaying) {
     elements.statusLabel.textContent = "Ouvindo";
-    elements.trackTitle.textContent = "Ouvindo novo disco...";
+    elements.trackTitle.textContent = isManual && attempt > 1 ? `Ouvindo o disco (tentativa ${attempt}/${maxAttempts})...` : "Ouvindo o disco...";
     elements.artistName.textContent = "Capturando áudio do microfone";
-    elements.albumLine.textContent = "Aguarde 5 segundos...";
+    elements.albumLine.textContent = "Aguarde 4 segundos...";
   }
   if (elements.micDebug) {
-    elements.micDebug.textContent = "Microfone: gravando trecho de 5 segundos...";
+    elements.micDebug.textContent = `Microfone: gravando trecho de 4 segundos...${isManual ? ` [${attempt}/${maxAttempts}]` : ''}`;
   }
 
   const processor = micAudioContext.createScriptProcessor(4096, 1, 1);
@@ -584,47 +583,85 @@ function recordClip(isAutomatic = false, isManual = false) {
         if (elements.micDebug) {
           elements.micDebug.textContent = `Shazam: identificada com sucesso! (${response.match.track.title})`;
         }
-      } else {
-        // Failed to match
-        if (!playbackTracker.active) {
-          consecutiveFailedListens++;
-          if (consecutiveFailedListens >= 3) {
-            micSuspended = true;
-            consecutiveFailedListens = 0;
-            if (elements.micDebug) {
-              elements.micDebug.textContent = "Microfone: em repouso (toque na tela ou no botão para reativar)";
-            }
+        recording = false;
+        if (elements.retryButton) {
+          elements.retryButton.classList.remove("recording");
+        }
+        await pollState();
+        return;
+      }
+
+      // Se não identificou:
+      recording = false;
+      if (elements.retryButton) {
+        elements.retryButton.classList.remove("recording");
+      }
+
+      if (isManual && attempt < maxAttempts) {
+        // Tentativa manual inteligente: se a agulha ainda estava caindo ou no lead-in silencioso,
+        // aguarda 2s e tenta automaticamente a próxima tentativa para pegar a faixa 1 de primeira!
+        if (elements.nextTrackTitle) {
+          elements.nextTrackTitle.textContent = `Tentativa ${attempt + 1}/${maxAttempts}...`;
+        }
+        elements.statusLabel.textContent = "Aguardando";
+        elements.trackTitle.textContent = "Aguardando áudio da agulha...";
+        elements.artistName.textContent = `Tentativa ${attempt + 1} de ${maxAttempts} em instantes...`;
+        elements.albumLine.textContent = "Ouvindo o disco novamente...";
+
+        window.setTimeout(() => {
+          if (!playbackTracker.active && !recording) {
+            recordClip(false, true, attempt + 1, maxAttempts);
+          }
+        }, 2200);
+        return;
+      }
+
+      // Se todas as tentativas manuais terminaram ou foi escuta automática sem match:
+      const stillPlaying = (currentRelease !== null) || playbackTracker.active;
+      if (!stillPlaying) {
+        // Ocioso esperando disco: cooldown curto (8s) para detectar a faixa 1 rapidamente
+        // sem pular direto para a faixa 2 ou 3!
+        window.nextAutoListenAt = Date.now() + 8000;
+        consecutiveFailedListens++;
+        if (consecutiveFailedListens >= 8) {
+          micSuspended = true;
+          consecutiveFailedListens = 0;
+          if (elements.micDebug) {
+            elements.micDebug.textContent = "Microfone: em repouso (toque na tela ou no botão para reativar)";
           }
         }
+      } else {
+        // Já está tocando: cooldown longo (60s) para economizar tokens Shazam
+        window.nextAutoListenAt = Date.now() + 60000;
+      }
 
+      if (isManual) {
+        elements.statusLabel.textContent = "Aguardando";
+        elements.trackTitle.textContent = "Música ainda não detectada";
+        elements.artistName.textContent = "O microfone continuará ouvindo automaticamente";
+        elements.albumLine.textContent = "Certifique-se de que a agulha já está tocando o disco";
+      } else {
         if (response && response.status === "recognition_unavailable") {
-          if (!isAutomatic) {
-            showError("Serviço de identificação indisponível: " + (response.message || "Erro desconhecido"));
-          }
           if (elements.micDebug && !micSuspended) {
             elements.micDebug.textContent = "Shazam: serviço indisponível (" + (response.message || "limite/erro") + ")";
           }
-          window.nextAutoListenAt = isManual ? (Date.now() + 4000) : (Date.now() + 90000);
         } else {
           if (elements.micDebug && !micSuspended) {
             elements.micDebug.textContent = "Shazam: música não identificada na coleção";
           }
-          window.nextAutoListenAt = isManual ? (Date.now() + 4000) : (Date.now() + 90000);
-        }
-
-        if (isManual) {
-          elements.statusLabel.textContent = "Aguardando";
-          elements.trackTitle.textContent = "Música ainda não detectada";
-          elements.artistName.textContent = "Certifique-se de que a agulha já está tocando o disco";
-          elements.albumLine.textContent = "Ouvindo novamente em instantes...";
         }
       }
+
       await pollState();
     } catch (error) {
       console.error("Erro na identificação da música:", error);
+      recording = false;
+      if (elements.retryButton) {
+        elements.retryButton.classList.remove("recording");
+      }
       if (!playbackTracker.active) {
         consecutiveFailedListens++;
-        if (consecutiveFailedListens >= 3) {
+        if (consecutiveFailedListens >= 8) {
           micSuspended = true;
           consecutiveFailedListens = 0;
           if (elements.micDebug) {
@@ -632,20 +669,13 @@ function recordClip(isAutomatic = false, isManual = false) {
           }
         }
       }
-      if (!isAutomatic) {
-        showError("Erro do servidor ao identificar a música: " + error.message);
-      }
       if (elements.micDebug && !micSuspended) {
         elements.micDebug.textContent = `Erro do servidor: ${error.message}`;
       }
-      window.nextAutoListenAt = isManual ? (Date.now() + 4000) : (Date.now() + 90000);
-    } finally {
-      recording = false;
-      if (elements.retryButton) {
-        elements.retryButton.classList.remove("recording");
-      }
+      window.nextAutoListenAt = Date.now() + 8000;
+      await pollState();
     }
-  }, 5000); // 5 seconds clip
+  }, 4000); // 4 seconds clip
 }
 
 function float32To16BitPCM(float32Array) {
@@ -808,7 +838,8 @@ if (elements.syncButton) {
 }
 
 async function handleFirstGesture() {
-  if (micSuspended) return;
+  micSuspended = false;
+  consecutiveFailedListens = 0;
   if (!micAudioContext && !isInitializingMic) {
     await startMicrophone();
   } else if (micAudioContext && micAudioContext.state === "suspended") {
@@ -860,7 +891,7 @@ elements.retryButton.addEventListener("click", async (e) => {
     setCover(null);
   }
 
-  recordClip(false, true);
+  recordClip(false, true, 1, 3);
 });
 
 // O clique na capa agora alterna a exibição das letras

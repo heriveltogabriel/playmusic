@@ -131,6 +131,12 @@ class PlaybackControllerTests(unittest.TestCase):
         self.assertEqual(state["next_track"]["position"], "B1")
         self.assertIn("Fim do Lado A. Por favor, vire o disco para o Lado B!", state["message"])
 
+        # When overtime exceeds 300s (5 minutes), playback automatically stops and resets to idle
+        state_after_timeout = controller.current_state(now=1447 + 301)
+        self.assertEqual(state_after_timeout["status"], "listening")
+        self.assertIsNone(state_after_timeout["release"])
+        self.assertIsNone(state_after_timeout["track"])
+
     def test_progress_reaches_end_of_last_side_shows_end_message(self):
         controller = PlaybackController()
         match = match_at_a1()
@@ -150,6 +156,12 @@ class PlaybackControllerTests(unittest.TestCase):
         self.assertEqual(state["progress_seconds"], 185)
         self.assertIsNone(state["next_track"])
         self.assertIn("Fim do disco! Por favor, recoloque o vinil ou troque de álbum.", state["message"])
+
+        # When overtime exceeds 180s (3 minutes), playback automatically stops and resets to idle
+        state_after_timeout = controller.current_state(now=1185 + 181)
+        self.assertEqual(state_after_timeout["status"], "listening")
+        self.assertIsNone(state_after_timeout["release"])
+        self.assertIsNone(state_after_timeout["track"])
 
     def test_progress_cd_numeric_positions_does_not_pause_on_side(self):
         # A CD has numeric positions like "1", "2"
