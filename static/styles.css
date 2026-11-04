@@ -208,7 +208,7 @@ button:hover {
 
 @media (orientation: landscape) and (max-height: 500px) {
   h1 {
-    font-size: 2.5rem;
+    font-size: calc(2.5rem * var(--title-scale, 1));
   }
   .artist-name {
     font-size: 1.65rem;
@@ -303,7 +303,7 @@ button:hover {
 h1 {
   margin: 0;
   max-width: 100%;
-  font-size: 3.2rem;
+  font-size: calc(3.2rem * var(--title-scale, 1));
   line-height: 1.05;
   font-weight: 750;
   letter-spacing: 0;
@@ -526,7 +526,7 @@ h1 {
   }
 
   h1 {
-    font-size: 2.6rem;
+    font-size: calc(2.6rem * var(--title-scale, 1));
   }
 
   .artist-name {
@@ -548,7 +548,7 @@ h1 {
   }
 
   h1 {
-    font-size: 2.2rem;
+    font-size: calc(2.2rem * var(--title-scale, 1));
   }
 
   .artist-name {
@@ -2396,4 +2396,30 @@ h1 {
 .alternatives-keep-hint {
   font-size: 0.78rem;
   text-align: center;
+}
+
+/* v3.6.3 — títulos longos não empurram mais os controles para fora da tela */
+#track-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+#track-title.title-long {
+  --title-scale: 0.82;
+}
+
+#track-title.title-xlong {
+  --title-scale: 0.68;
+}
+
+#artist-name,
+#album-line {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }

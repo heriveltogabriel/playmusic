@@ -155,6 +155,17 @@ document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible" && wantScreenAwake) setScreenAwake(true);
 });
 
+// v3.6.3: títulos longos ficam menores (e o CSS limita a 2 linhas), para o bloco do
+// título não crescer e empurrar o progresso e os botões para fora da tela.
+function fitTrackTitle() {
+  const el = elements.trackTitle;
+  if (!el) return;
+  const length = (el.textContent || "").trim().length;
+  el.classList.toggle("title-long", length > 26 && length <= 44);
+  el.classList.toggle("title-xlong", length > 44);
+  el.title = el.textContent || "";
+}
+
 function idleRetryDelayMs(failures) {
   const steps = Math.max(0, failures - 3);
   return Math.min(300000, 8000 * Math.pow(2, steps));
@@ -274,6 +285,14 @@ function setCover(release) {
 }
 
 function renderState(state) {
+  try {
+    renderStateInner(state);
+  } finally {
+    fitTrackTitle();
+  }
+}
+
+function renderStateInner(state) {
   lastServerState = state;
   setScreenAwake(Boolean(state && state.release));
   if (!state) return;

@@ -168,6 +168,16 @@ class HttpDeviceRequirementTests(unittest.TestCase):
         self.assertEqual(self.post("/api/admin/devices/require", b'{"enabled": true}')[0], 401)
 
 
+class LongTitleLayoutTests(unittest.TestCase):
+    def test_title_is_clamped_and_scaled(self):
+        css = (ROOT / "static" / "styles.css").read_text(encoding="utf-8")
+        self.assertIn("-webkit-line-clamp: 2", css)
+        self.assertEqual(css.count("var(--title-scale, 1)"), 4)
+        self.assertIn("#track-title.title-xlong", css)
+        app_js = (ROOT / "static" / "app.js").read_text(encoding="utf-8")
+        self.assertIn("function fitTrackTitle()", app_js)
+
+
 class StaticV36Tests(unittest.TestCase):
     def test_keep_button_and_devices_card_exist(self):
         index = (ROOT / "static" / "index.html").read_text(encoding="utf-8")
