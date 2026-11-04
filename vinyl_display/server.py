@@ -14,6 +14,7 @@ from vinyl_display.catalog import CatalogStore
 from vinyl_display.clients.discogs import DiscogsClient
 from vinyl_display.config import Config, load_config
 from vinyl_display.auth import AuthManager
+from vinyl_display.routes import ADMIN, DEVICE, access_for
 
 
 def build_app(config: Config) -> VinylDisplayApp:
@@ -103,14 +104,23 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _check_access(self, method: str, path: str) -> bool:
+        """Aplica a tabela de acesso de vinyl_display/routes.py. Responde 401 e devolve False
+        quando o pedido não pode seguir."""
+        level = access_for(method, path)
+        if level == ADMIN and not self._is_authenticated():
+            self._send_unauthorized()
+            return False
+        if level == DEVICE and not self._device_allowed():
+            self._send_device_required()
+            return False
+        return True
+
     def do_GET(self) -> None:
         path = urlparse(self.path).path
         
-        # Check authentication for protected GET routes
-        if path.startswith("/api/admin/") or path == "/api/config":
-            if not self._is_authenticated():
-                self._send_unauthorized()
-                return
+        if not self._check_access("GET", path):
+            return
 
         if path == "/api/health":
             self._json({"status": "ok"})
@@ -412,19 +422,8 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
     def do_POST(self) -> None:
         path = urlparse(self.path).path
         
-        # Rotas do player e do Ouvir: gastam Shazam ou mudam audições
-        if path == "/api/recognize" or path.startswith("/api/playback/") or (
-            path.startswith("/api/ouvir/releases/") and (path.endswith("/listen") or path.endswith("/unlisten"))
-        ):
-            if not self._device_allowed():
-                self._send_device_required()
-                return
-
-        # Check authentication for protected POST routes
-        if path.startswith("/api/admin/") or path == "/api/sync" or path == "/api/config" or path == "/api/auth/change_password":
-            if not self._is_authenticated():
-                self._send_unauthorized()
-                return
+        if not self._check_access("POST", path):
+            return
 
         # Public authentication routes
         if path == "/api/auth/login":

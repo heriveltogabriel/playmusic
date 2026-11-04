@@ -586,6 +586,7 @@ async function startMicrophone() {
     micAnalyserNode = micAudioContext.createAnalyser();
     micAnalyserNode.fftSize = 2048;
     micSourceNode.connect(micAnalyserNode);
+    preloadCaptureWorklet();
 
     if (elements.micDebug) {
       elements.micDebug.textContent = "Microfone: ativado com sucesso.";
@@ -680,6 +681,63 @@ async function startMicrophone() {
   }
 }
 
+// ---------- v4.0: captura com AudioWorklet (ScriptProcessor como reserva) ----------
+let captureWorkletReady = false;
+let captureWorkletLoading = null;
+
+function preloadCaptureWorklet() {
+  if (captureWorkletReady || captureWorkletLoading || !micAudioContext) return;
+  if (!micAudioContext.audioWorklet || typeof AudioWorkletNode === "undefined") return;
+  captureWorkletLoading = micAudioContext.audioWorklet
+    .addModule("/static/capture-worklet.js?v=4.0.0")
+    .then(() => {
+      captureWorkletReady = true;
+    })
+    .catch((error) => {
+      console.warn("AudioWorklet indisponível, usando ScriptProcessor:", error);
+    });
+}
+
+function startClipCapture(chunks) {
+  // Preferência: AudioWorklet (não trava a tela). Se ainda não carregou ou falhar,
+  // usa o ScriptProcessor de sempre, então a gravação nunca deixa de acontecer.
+  if (captureWorkletReady) {
+    try {
+      const node = new AudioWorkletNode(micAudioContext, "clip-capture", {
+        numberOfInputs: 1,
+        numberOfOutputs: 1,
+        outputChannelCount: [1],
+        channelCount: 1,
+        channelCountMode: "explicit",
+      });
+      node.port.onmessage = (event) => {
+        if (recording) chunks.push(event.data);
+      };
+      micSourceNode.connect(node);
+      node.connect(micAudioContext.destination);
+      return () => {
+        node.port.onmessage = null;
+        try { micSourceNode.disconnect(node); } catch (err) {}
+        try { node.disconnect(); } catch (err) {}
+      };
+    } catch (error) {
+      console.warn("Falha no AudioWorklet, usando ScriptProcessor:", error);
+      captureWorkletReady = false;
+    }
+  }
+  const processor = micAudioContext.createScriptProcessor(4096, 1, 1);
+  processor.onaudioprocess = (e) => {
+    if (!recording) return;
+    chunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+  };
+  micSourceNode.connect(processor);
+  processor.connect(micAudioContext.destination);
+  return () => {
+    try { processor.disconnect(); } catch (err) {}
+    try { micSourceNode.disconnect(processor); } catch (err) {}
+  };
+}
+
 function recordClip(isAutomatic = false, isManual = false, attempt = 1, maxAttempts = 3) {
   if (!mediaStream || !micAudioContext || recording) return;
   recording = true;
@@ -707,24 +765,11 @@ function recordClip(isAutomatic = false, isManual = false, attempt = 1, maxAttem
     elements.micDebug.textContent = `Microfone: gravando trecho de 4 segundos...${isManual ? ` [${attempt}/${maxAttempts}]` : ''}`;
   }
 
-  const processor = micAudioContext.createScriptProcessor(4096, 1, 1);
   const chunks = [];
-
-  processor.onaudioprocess = (e) => {
-    if (!recording) return;
-    const channelData = e.inputBuffer.getChannelData(0);
-    chunks.push(new Float32Array(channelData));
-  };
-
-  micSourceNode.connect(processor);
-  processor.connect(micAudioContext.destination);
+  const stopCapture = startClipCapture(chunks);
 
   window.setTimeout(async () => {
-    // Stop recording and close capturing context
-    processor.disconnect();
-    try {
-      micSourceNode.disconnect(processor);
-    } catch (err) {}
+    stopCapture();
 
     // Show processing status
     if (elements.nextTrackTitle) {

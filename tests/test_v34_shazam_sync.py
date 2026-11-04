@@ -26,6 +26,8 @@ BRT = timezone(timedelta(hours=-3))
 LOUD_PCM = b"\x00\x40" * 4000
 STATIC = Path(__file__).resolve().parent.parent / "static"
 
+from tests.helpers import admin_js_source
+
 
 def ok_response(payload):
     response = MagicMock()
@@ -197,7 +199,7 @@ class StaticV34Tests(unittest.TestCase):
         self.assertIn("budget_exceeded", app_js)
 
     def test_admin_no_longer_posts_debug_dom(self):
-        self.assertNotIn("/api/debug/dom", (STATIC / "admin.js").read_text(encoding="utf-8"))
+        self.assertNotIn("/api/debug/dom", admin_js_source())
 
 
 if __name__ == "__main__":

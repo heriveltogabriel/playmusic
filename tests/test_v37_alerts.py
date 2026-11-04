@@ -10,6 +10,8 @@ from vinyl_display.notify import AlertManager, Notifier, in_quiet_hours
 
 ROOT = Path(__file__).resolve().parent.parent
 
+from tests.helpers import admin_js_source
+
 
 class FakeTransport:
     def __init__(self, ok=True):
@@ -195,7 +197,7 @@ class StaticV37Tests(unittest.TestCase):
         self.assertIn("state.version !== pageVersion && !state.release && !recording", app_js)
         admin = (ROOT / "static" / "admin.html").read_text(encoding="utf-8")
         self.assertIn('id="alerts-card"', admin)
-        admin_js = (ROOT / "static" / "admin.js").read_text(encoding="utf-8")
+        admin_js = admin_js_source()
         self.assertNotIn("telegram_chats?token=", admin_js)  # token nunca na URL
 
     def test_backup_script_alerts_on_failure(self):

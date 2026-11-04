@@ -2,6 +2,15 @@
 
 Versões do PlayVinil / Vinyl Display. As mais recentes primeiro.
 
+## 4.0.0 — 2026-11-04 — Casa arrumada
+
+Sem mudança no jeito de usar; é a base para as próximas versões.
+
+- **Acesso declarado num lugar só** (`vinyl_display/routes.py`): cada rota da API diz se é pública, do player autorizado ou do admin. Rota nova que ninguém declarou fica fechada (exige admin), nunca aberta.
+- **Admin dividido por tela** (`static/admin/00-core.js` … `95-recognition.js`), com versão na URL para o navegador não usar arquivo velho.
+- **Captura do trecho com AudioWorklet**, fora da thread da tela; se o aparelho não suportar, usa o método antigo automaticamente.
+- `pyproject.toml` alinhado ao Python 3.9 dos servidores.
+
 ## 3.9.0 — 2026-11-04 — Menos Shazam, mais controle
 
 ### Plano B sem Shazam

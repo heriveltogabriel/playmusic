@@ -2,6 +2,8 @@ import re
 import unittest
 from pathlib import Path
 
+from tests.helpers import admin_js_source
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -39,7 +41,7 @@ class StaticAssetTests(unittest.TestCase):
         )
 
     def test_catalog_search_preserves_spaces_while_typing(self):
-        js = (ROOT / "static" / "admin.js").read_text()
+        js = admin_js_source()
 
         self.assertIn("handleSearchUpdate(e.target.value);", js)
         self.assertNotIn("handleSearchUpdate(e.target.value.trim());", js)
@@ -47,7 +49,7 @@ class StaticAssetTests(unittest.TestCase):
 
     def test_weekly_suggestion_screen_uses_focused_listening_layout(self):
         html = (ROOT / "static" / "admin.html").read_text()
-        js = (ROOT / "static" / "admin.js").read_text()
+        js = admin_js_source()
         css = (ROOT / "static" / "admin.css").read_text()
 
         self.assertIn("Escuta da Semana", html)
@@ -61,7 +63,7 @@ class StaticAssetTests(unittest.TestCase):
         self.assertIn(".suggestion-support-grid", css)
 
     def test_plays_ranking_bars_use_absolute_progress(self):
-        js = (ROOT / "static" / "admin.js").read_text()
+        js = admin_js_source()
 
         self.assertIn("function playsToProgressPercent(plays)", js)
         self.assertIn("function renderPlaysChart()", js)
@@ -72,7 +74,7 @@ class StaticAssetTests(unittest.TestCase):
 
     def test_plays_chart_lives_on_ranking_page_not_stats_page(self):
         html = (ROOT / "static" / "admin.html").read_text()
-        js = (ROOT / "static" / "admin.js").read_text()
+        js = admin_js_source()
 
         ranking_start = html.index('id="view-ranking"')
         stats_start = html.index('id="view-stats"')
@@ -84,7 +86,7 @@ class StaticAssetTests(unittest.TestCase):
         self.assertNotIn('getElementById("ranking-grid")', js)
 
     def test_catalog_cards_show_year_on_the_right_without_favorite_button(self):
-        js = (ROOT / "static" / "admin.js").read_text()
+        js = admin_js_source()
         css = (ROOT / "static" / "admin.css").read_text()
 
         self.assertIn('class="lp-card-year"', js)
@@ -103,7 +105,7 @@ class StaticAssetTests(unittest.TestCase):
         self.assertNotIn('artist-albums-dialog-content" style=', html)
 
     def test_timeline_does_not_show_manual_audition_button(self):
-        js = (ROOT / "static" / "admin.js").read_text()
+        js = admin_js_source()
         css = (ROOT / "static" / "admin.css").read_text()
 
         self.assertNotIn("timeline-scrobble-btn", js)
@@ -113,7 +115,7 @@ class StaticAssetTests(unittest.TestCase):
 
     def test_timeline_statistics_live_on_stats_page(self):
         html = (ROOT / "static" / "admin.html").read_text()
-        js = (ROOT / "static" / "admin.js").read_text()
+        js = admin_js_source()
         css = (ROOT / "static" / "admin.css").read_text()
 
         self.assertNotIn('id="timeline-stats-btn"', html)
@@ -128,7 +130,7 @@ class StaticAssetTests(unittest.TestCase):
 
     def test_stats_cards_use_listened_collection_and_total_plays(self):
         html = (ROOT / "static" / "admin.html").read_text()
-        js = (ROOT / "static" / "admin.js").read_text()
+        js = admin_js_source()
         css = (ROOT / "static" / "admin.css").read_text()
 
         self.assertNotIn("Média de Avaliação", html)
@@ -151,7 +153,7 @@ class StaticAssetTests(unittest.TestCase):
 
     def test_add_lp_uses_settings_token_and_locks_fields_until_discogs_selection(self):
         html = (ROOT / "static" / "admin.html").read_text()
-        js = (ROOT / "static" / "admin.js").read_text()
+        js = admin_js_source()
         css = (ROOT / "static" / "admin.css").read_text()
 
         self.assertNotIn("discogs-config-btn", html)
@@ -169,7 +171,7 @@ class StaticAssetTests(unittest.TestCase):
 
     def test_album_details_dialog_has_favorite_button(self):
         html = (ROOT / "static" / "admin.html").read_text()
-        js = (ROOT / "static" / "admin.js").read_text()
+        js = admin_js_source()
         css = (ROOT / "static" / "admin.css").read_text()
 
         self.assertIn('id="details-favorite-btn"', html)
