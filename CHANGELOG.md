@@ -2,6 +2,22 @@
 
 Versões do PlayVinil / Vinyl Display. As mais recentes primeiro.
 
+## 3.7.3 — 2026-11-04 — Player que se cuida
+
+### Alertas no Telegram (ou ntfy)
+- Card **Player e alertas** em Configurações: token do bot, botão **Detectar** (acha o chat depois do `/start`), tópico do ntfy opcional e **Enviar teste**.
+- Avisos: player sem sinal há 10 min, microfone pausado há 5 min, sync diário ou backup com falha, chave do Shazam em 80% ou esgotada. Cada aviso não se repete por algumas horas e há um aviso de "voltou" quando o problema se resolve.
+- **Não perturbe** (padrão 22:00–10:00): avisos do player esperam o fim do silêncio; os demais chegam sem som.
+
+### Player
+- Heartbeat a cada minuto; o admin mostra "Player online · visto há 20 s · microfone ouvindo · versão".
+- Recarrega sozinho quando sai versão nova no servidor, só sem disco tocando.
+- Tenta ligar o microfone sozinho ao abrir quando a permissão já existe.
+- Guia `docs/quiosque-android.md` para o celular abrir o player sozinho (Chrome instalado ou Fully Kiosk).
+
+### Admin
+- Chaves do Shazam e token do Telegram em campo de texto visível.
+
 ## 3.6.3 — 2026-11-04
 
 ### Coletâneas e discos ao vivo
