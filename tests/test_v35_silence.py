@@ -169,6 +169,14 @@ console.log(JSON.stringify([
         self.assertEqual(decisions, ["boundary", "flip", "recognize", "flip", "recognize", "ignore"])
 
 
+class StaticV352Tests(unittest.TestCase):
+    def test_screen_stays_awake_only_with_a_record_loaded(self):
+        app_js = (ROOT / "static" / "app.js").read_text(encoding="utf-8")
+        self.assertIn('navigator.wakeLock.request("screen")', app_js)
+        self.assertIn("setScreenAwake(Boolean(state && state.release))", app_js)
+        self.assertIn('document.addEventListener("visibilitychange"', app_js)
+
+
 class StaticV35Tests(unittest.TestCase):
     def test_player_loads_detector_before_app(self):
         html = (ROOT / "static" / "index.html").read_text(encoding="utf-8")

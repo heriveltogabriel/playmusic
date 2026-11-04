@@ -105,6 +105,46 @@ async function handleSilenceResume(event) {
   }
 }
 
+// ---------- v3.5.2: tela acesa enquanto um disco está no player ----------
+// Usa a Screen Wake Lock API (Chrome 84+). O sistema solta o pedido quando a página fica
+// oculta, então ele é refeito ao voltar. Sem disco, a tela pode apagar normalmente.
+let screenWakeLock = null;
+let wantScreenAwake = false;
+let wakeLockRequesting = false;
+
+async function setScreenAwake(want) {
+  wantScreenAwake = want;
+  if (!("wakeLock" in navigator)) return;
+  if (want) {
+    if (screenWakeLock || wakeLockRequesting || document.visibilityState !== "visible") return;
+    wakeLockRequesting = true;
+    try {
+      const lock = await navigator.wakeLock.request("screen");
+      lock.addEventListener("release", () => {
+        if (screenWakeLock === lock) screenWakeLock = null;
+      });
+      screenWakeLock = lock;
+      if (!wantScreenAwake) {
+        // o disco acabou enquanto o pedido estava em andamento
+        screenWakeLock = null;
+        lock.release().catch(() => {});
+      }
+    } catch (error) {
+      console.warn("Não foi possível manter a tela acesa:", error);
+    } finally {
+      wakeLockRequesting = false;
+    }
+  } else if (screenWakeLock) {
+    const lock = screenWakeLock;
+    screenWakeLock = null;
+    lock.release().catch(() => {});
+  }
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && wantScreenAwake) setScreenAwake(true);
+});
+
 function idleRetryDelayMs(failures) {
   const steps = Math.max(0, failures - 3);
   return Math.min(300000, 8000 * Math.pow(2, steps));
@@ -213,6 +253,7 @@ function setCover(release) {
 
 function renderState(state) {
   lastServerState = state;
+  setScreenAwake(Boolean(state && state.release));
   if (!state) return;
 
   if (state.lyrics_latency_offset !== undefined) {
