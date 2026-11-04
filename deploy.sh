@@ -16,6 +16,9 @@ esac
 for HOST in "${SERVERS[@]}"; do
   echo "--------------------------------------------------------"
   echo "📦 Packaging and deploying code to $HOST..."
+  ARCHIVE="$(mktemp -t vinyl-deploy.XXXXXX)"
+  # tar devolve 1 quando um arquivo muda durante a leitura (ex.: __pycache__): é só aviso
+  set +e
   tar --exclude="static-backup-*" \
       --exclude=".git" \
       --exclude="certs" \
@@ -30,7 +33,14 @@ for HOST in "${SERVERS[@]}"; do
       --exclude="collection.db" \
       --exclude=".env" \
       --exclude="*recovery_key*" \
-      -cf - . | ssh -o StrictHostKeyChecking=accept-new -i "$KEY" opc@"$HOST" "tar -C /home/opc/vinyl_display -xf - && find /home/opc/vinyl_display -name \"._*\" -delete && sudo systemctl restart vinyl-display"
+      -cf "$ARCHIVE" .
+  TAR_STATUS=$?
+  set -e
+  if [ "$TAR_STATUS" -gt 1 ]; then
+    echo "❌ tar failed with status $TAR_STATUS"; rm -f "$ARCHIVE"; exit 1
+  fi
+  ssh -o StrictHostKeyChecking=accept-new -i "$KEY" opc@"$HOST" "tar -C /home/opc/vinyl_display -xf - && find /home/opc/vinyl_display -name \"._*\" -delete && sudo systemctl restart vinyl-display" < "$ARCHIVE"
+  rm -f "$ARCHIVE"
 
   # Confere se o serviço voltou
   sleep 3
