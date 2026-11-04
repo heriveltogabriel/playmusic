@@ -741,7 +741,7 @@
               <p class="settings-card-desc">Opção alternativa / de backup para reconhecimento de áudio usando a API do Shazam via RapidAPI.</p>
               <div class="form-group">
                 <label for="setting-shazam-key">Chaves da RapidAPI (uma ou mais, separadas por vírgula)</label>
-                <input type="password" id="setting-shazam-key" placeholder="chave1,chave2 — a próxima é usada quando a cota da anterior acaba">
+                <input type="text" id="setting-shazam-key" placeholder="chave1,chave2 — a próxima é usada quando a cota da anterior acaba" autocomplete="off" autocapitalize="off" spellcheck="false">
               </div>
               <div class="form-group">
                 <label for="setting-shazam-host">Host da RapidAPI (Host)</label>
@@ -825,7 +825,7 @@
             <b style="display: block; margin-top: 12px; font-size: 0.85rem;">Telegram</b>
             <div class="form-group" style="margin-top: 6px;">
               <label for="alert-telegram-token">Token do bot (do @BotFather)</label>
-              <input type="password" id="alert-telegram-token" placeholder="123456789:ABC..." autocomplete="off">
+              <input type="text" id="alert-telegram-token" placeholder="123456789:ABC..." autocomplete="off" autocapitalize="off" spellcheck="false">
             </div>
             <div class="form-group">
               <label for="alert-telegram-chat">Seu chat</label>
