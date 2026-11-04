@@ -12,6 +12,7 @@ from vinyl_display.clients.shazam import (
 from vinyl_display.clients.discogs import DiscogsClient
 from vinyl_display.clients.musicbrainz import MusicBrainzClient
 from vinyl_display.matcher import CollectionMatcher, preference_key
+from vinyl_display.notify import AlertManager, Notifier
 from vinyl_display.playback import PlaybackController
 
 
@@ -46,6 +47,9 @@ class VinylDisplayApp:
         )
         self.store.initialize()
         self._restore_playback()
+        self.notifier = Notifier.from_config(config) if config else Notifier()
+        self.alerts = AlertManager(self.store, self.notifier)
+        self._audio_suspended_since: float | None = None
 
     @staticmethod
     def make_shazam_client(store: CatalogStore, config: Any) -> ShazamClient:
@@ -61,6 +65,104 @@ class VinylDisplayApp:
     def shazam_usage(self) -> dict[str, Any] | None:
         summary = getattr(self.shazam_client, "usage_summary", None)
         return summary() if callable(summary) else None
+
+    # ------------------------------------------------------------------ v3.7
+    HEARTBEAT_METADATA_KEY = "player_heartbeat"
+
+    def record_heartbeat(self, payload: dict[str, Any], user_agent: str = "") -> dict[str, Any]:
+        """O celular do player avisa a cada minuto que está vivo (e como está o microfone)."""
+        import json
+        import time
+
+        heartbeat = {
+            "at": time.time(),
+            "audio": str(payload.get("audio") or "unknown")[:20],
+            "visible": bool(payload.get("visible", True)),
+            "version": str(payload.get("version") or "")[:20],
+            "status": str(payload.get("status") or "")[:20],
+            "uptime": int(payload.get("uptime") or 0),
+            "user_agent": (user_agent or "")[:160],
+        }
+        self.store.set_metadata(self.HEARTBEAT_METADATA_KEY, json.dumps(heartbeat))
+        return {"status": "ok"}
+
+    def player_status(self, now: float | None = None) -> dict[str, Any]:
+        import json
+        import time
+
+        now = now or time.time()
+        raw = self.store.get_metadata(self.HEARTBEAT_METADATA_KEY)
+        try:
+            heartbeat = json.loads(raw) if raw else None
+        except ValueError:
+            heartbeat = None
+        if not heartbeat:
+            return {"seen": False, "online": False}
+        age = now - float(heartbeat.get("at", 0))
+        limit = 60 * int(getattr(self.config, "player_offline_minutes", 10) or 10)
+        return {
+            **heartbeat,
+            "seen": True,
+            "seconds_ago": int(age),
+            "online": age <= limit,
+        }
+
+    def run_watchdog(self, now: float | None = None) -> None:
+        """Roda a cada minuto: player fora do ar, microfone pausado e cota do Shazam."""
+        import time
+        from datetime import datetime, timedelta, timezone
+
+        now = now or time.time()
+        status = self.player_status(now)
+        if status.get("seen"):
+            if not status["online"]:
+                last = datetime.fromtimestamp(status["at"], timezone(timedelta(hours=-3))).strftime("%H:%M")
+                self.alerts.raise_alert(
+                    "player_offline",
+                    f"O player está sem sinal há {status['seconds_ago'] // 60} min (último contato às {last}). "
+                    "Confira se o celular está ligado, no carregador e no Wi-Fi.",
+                )
+                self._audio_suspended_since = None
+            else:
+                self.alerts.resolve("player_offline", "✅ O player voltou a responder.")
+                if status.get("audio") in ("running",):
+                    self._audio_suspended_since = None
+                    self.alerts.resolve("player_needs_tap", "✅ O microfone do player voltou a ouvir.")
+                else:
+                    if self._audio_suspended_since is None:
+                        self._audio_suspended_since = now
+                    if now - self._audio_suspended_since >= 300:
+                        self.alerts.raise_alert(
+                            "player_needs_tap",
+                            "O microfone do player está pausado. Toque uma vez na tela do celular para ele voltar a ouvir.",
+                            cooldown=3 * 3600,
+                        )
+
+        usage = self.shazam_usage()
+        if usage and usage.get("keys"):
+            month = usage.get("month", "")
+            keys = usage["keys"]
+            for key in keys:
+                label = key["key"]
+                pct = (key["calls"] / key["limit"] * 100) if key.get("limit") else 0
+                if key.get("exhausted"):
+                    self.alerts.raise_alert(
+                        f"shazam_exhausted_{month}_{label}",
+                        f"A chave {label} do Shazam esgotou a cota de {month}. O servidor já passou para a próxima.",
+                        cooldown=40 * 86400,
+                    )
+                elif pct >= 80:
+                    self.alerts.raise_alert(
+                        f"shazam_80_{month}_{label}",
+                        f"A chave {label} do Shazam já usou {key['calls']} de {key['limit']} chamadas em {month}.",
+                        cooldown=40 * 86400,
+                    )
+            if all(k.get("exhausted") for k in keys):
+                self.alerts.raise_alert(
+                    f"shazam_all_exhausted_{month}",
+                    "Todas as chaves do Shazam esgotaram a cota do mês: o player não reconhece discos novos até o mês virar.",
+                    cooldown=40 * 86400,
+                )
 
     PLAYBACK_METADATA_KEY = "active_playback"
 
@@ -154,6 +256,8 @@ class VinylDisplayApp:
         )
         self.shazam_client = self.make_shazam_client(self.store, self.config)
         self.store.favorite_threshold = self.config.favorite_threshold
+        self.notifier = Notifier.from_config(self.config)
+        self.alerts = AlertManager(self.store, self.notifier)
         print("[SERVER] Hot-swapped config to use Shazam for music recognition.")
 
     def state(self) -> dict[str, Any]:

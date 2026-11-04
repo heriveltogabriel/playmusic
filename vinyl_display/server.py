@@ -142,6 +142,9 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                 "lyrics_latency_offset": self.app.config.lyrics_latency_offset if self.app.config else 1.3,
                 "favorite_threshold": self.app.config.favorite_threshold if self.app.config else 5,
                 "shazam_daily_budget": getattr(self.app.config, "shazam_daily_budget", 0) if self.app.config else 0,
+                "telegram_bot_token": getattr(self.app.config, "telegram_bot_token", "") if self.app.config else "",
+                "telegram_chat_id": getattr(self.app.config, "telegram_chat_id", "") if self.app.config else "",
+                "ntfy_topic": getattr(self.app.config, "ntfy_topic", "") if self.app.config else "",
                 "shazam_usage": self.app.shazam_usage(),
             }
             self._json(config_data)
@@ -217,6 +220,9 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
         if path == "/api/ouvir/history":
             history = self.app.get_listening_history()
             self._json(history)
+            return
+        if path == "/api/admin/player_status":
+            self._json(self.app.player_status())
             return
         if path == "/api/admin/devices":
             this_device = self.auth.validate_device(self._get_cookie(self.DEVICE_COOKIE))
@@ -565,6 +571,9 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             }
             if "shazam_daily_budget" in payload:
                 updates["SHAZAM_DAILY_BUDGET"] = str(int(payload.get("shazam_daily_budget") or 0))
+            for field, env in (("telegram_bot_token", "TELEGRAM_BOT_TOKEN"), ("telegram_chat_id", "TELEGRAM_CHAT_ID"), ("ntfy_topic", "NTFY_TOPIC")):
+                if field in payload:
+                    updates[env] = str(payload.get(field) or "").strip()
             
             try:
                 self.app.update_config(updates)
@@ -636,6 +645,27 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             enabled = bool(payload.get("enabled"))
             self.app.update_config({"REQUIRE_DEVICE_TOKEN": "1" if enabled else "0"})
             self._json({"status": "ok", "require_device_token": enabled})
+            return
+        if path == "/api/player/heartbeat":
+            self._json(self.app.record_heartbeat(self._read_json_body(), self.headers.get("User-Agent", "")))
+            return
+        if path == "/api/admin/alerts/telegram_chats":
+            # token no corpo (POST), nunca na URL: URLs ficam nos logs do nginx
+            token = (str(self._read_json_body().get("token") or "") or self.app.config.telegram_bot_token or "").strip()
+            from vinyl_display.notify import Notifier
+            try:
+                chats = Notifier(telegram_bot_token=token).telegram_chats()
+                self._json({"status": "ok", "chats": chats})
+            except Exception as error:
+                self._json({"status": "error", "message": f"Não foi possível falar com o Telegram: {str(error).replace(token, '***') if token else error}"})
+            return
+        if path == "/api/admin/alerts/test":
+            if not self.app.notifier.enabled:
+                self._json({"status": "error", "message": "Configure o Telegram (token e chat) ou um tópico do ntfy e salve antes de testar."})
+                return
+            sent = self.app.notifier.send("Teste de alerta: se você está lendo isto, os avisos do player vão chegar aqui. 👍")
+            self._json({"status": "ok" if sent else "error", "channels": sent,
+                        "message": "" if sent else "Nenhum canal aceitou a mensagem. Confira o token, o chat e o tópico."})
             return
         if path == "/api/playback/keep_release":
             self._json(self.app.keep_playback_release())
@@ -894,6 +924,20 @@ def serve(config: Config | None = None) -> None:
     Handler.app = app
     Handler.static_dir = config.static_dir
     Handler.auth = auth
+
+    def watchdog_loop() -> None:
+        import time as _time
+
+        while True:
+            _time.sleep(60)
+            try:
+                app.run_watchdog()
+            except Exception as error:
+                print(f"[WATCHDOG] {error}")
+
+    import threading as _threading
+
+    _threading.Thread(target=watchdog_loop, daemon=True, name="watchdog").start()
 
     server = ThreadingHTTPServer((config.host, config.port), Handler)
     if config.cert_file and config.key_file:

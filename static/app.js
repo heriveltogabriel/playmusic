@@ -294,6 +294,7 @@ function renderState(state) {
 
 function renderStateInner(state) {
   lastServerState = state;
+  checkForNewVersion(state);
   setScreenAwake(Boolean(state && state.release));
   if (!state) return;
 
@@ -1181,6 +1182,69 @@ elements.nextButton.addEventListener("click", async () => {
 
 pollState();
 setInterval(pollState, 2000);
+
+// ---------- v3.7: o player se cuida sozinho ----------
+const pageLoadedAt = Date.now();
+let pageVersion = null;
+
+function audioState() {
+  if (!micAudioContext) return "none";
+  return micAudioContext.state; // "running" | "suspended" | "closed"
+}
+
+// Avisa o servidor a cada minuto que o player está vivo (e se o microfone ouve).
+// Se ele sumir por 10 min, ou o microfone ficar pausado, chega um alerta no seu celular.
+async function sendHeartbeat() {
+  try {
+    await fetch("/api/player/heartbeat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        audio: audioState(),
+        visible: document.visibilityState === "visible",
+        version: pageVersion || "",
+        status: (lastServerState && lastServerState.status) || "",
+        uptime: Math.round((Date.now() - pageLoadedAt) / 1000),
+      }),
+    });
+  } catch (error) {
+    // sem rede: o servidor percebe pela falta de sinal
+  }
+}
+setInterval(sendHeartbeat, 60000);
+setTimeout(sendHeartbeat, 5000);
+
+// Saiu versão nova no servidor: recarrega sozinho, mas só sem disco no player
+function checkForNewVersion(state) {
+  if (!state || !state.version) return;
+  if (pageVersion === null) {
+    pageVersion = state.version;
+    return;
+  }
+  if (state.version !== pageVersion && !state.release && !recording) {
+    console.log(`Nova versão ${state.version} (página em ${pageVersion}): recarregando.`);
+    window.location.reload();
+  }
+}
+
+// Ao abrir a página, tenta ligar o microfone sem esperar um toque, quando o navegador já
+// deu permissão (ex.: app instalado na tela inicial ou navegador de quiosque).
+async function autoStartMicrophone() {
+  try {
+    if (!navigator.permissions || !navigator.permissions.query) return;
+    const permission = await navigator.permissions.query({ name: "microphone" });
+    if (permission.state !== "granted") return;
+    if (!micAudioContext && !isInitializingMic) {
+      await startMicrophone();
+    }
+    if (micAudioContext && micAudioContext.state === "suspended") {
+      await micAudioContext.resume().catch(() => {});
+    }
+  } catch (error) {
+    console.warn("Microfone não iniciou sozinho; aguardando um toque na tela.", error);
+  }
+}
+setTimeout(autoStartMicrophone, 1500);
 setInterval(updateProgressBar, 250);
 
 if (elements.micDebug) {

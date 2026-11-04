@@ -125,7 +125,16 @@ fi
 
 mkdir -p "$BACKUP_ROOT"
 WORK_DIR="$(mktemp -d "${BACKUP_ROOT}/work.XXXXXX")"
-trap 'rm -rf "$WORK_DIR"' EXIT
+on_exit() {
+  status=$?
+  rm -rf "$WORK_DIR"
+  # v3.7: avisa por Telegram/ntfy quando o backup falha (no máximo 1 vez a cada 20 h)
+  if [ "$status" -ne 0 ]; then
+    (cd "$PROJECT_DIR" && /usr/bin/python3.9 -m vinyl_display.notify --key backup_failed --cooldown 72000 \
+      "O backup diário para o OCI falhou (código $status). Veja: sudo journalctl -u vinyl-display-backup -n 50") || true
+  fi
+}
+trap on_exit EXIT
 
 STAMP="$(date -u +%Y%m%d-%H%M%S)"
 HOSTNAME_VALUE="$(hostname 2>/dev/null || echo unknown-host)"

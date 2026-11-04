@@ -810,6 +810,43 @@
             
           </form>
 
+          <!-- v3.7: status do player e alertas -->
+          <div class="settings-card" style="margin-top: 24px;" id="alerts-card">
+            <div class="settings-card-header">
+              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+              </svg>
+              <h3>Player e alertas</h3>
+            </div>
+            <div id="player-status" style="margin-top: 8px; font-size: 0.85rem;">Carregando status do player...</div>
+            <p class="settings-card-desc" style="margin-top: 14px;">Você recebe um aviso quando o player fica fora do ar, o microfone precisa de um toque, o sync ou o backup falham, ou uma chave do Shazam chega a 80% ou esgota.</p>
+
+            <b style="display: block; margin-top: 12px; font-size: 0.85rem;">Telegram</b>
+            <div class="form-group" style="margin-top: 6px;">
+              <label for="alert-telegram-token">Token do bot (do @BotFather)</label>
+              <input type="password" id="alert-telegram-token" placeholder="123456789:ABC..." autocomplete="off">
+            </div>
+            <div class="form-group">
+              <label for="alert-telegram-chat">Seu chat</label>
+              <div style="display: flex; gap: 8px;">
+                <input type="text" id="alert-telegram-chat" placeholder="Mande /start para o bot e toque em Detectar" style="flex: 1;">
+                <button type="button" id="alert-telegram-detect" class="btn">Detectar</button>
+              </div>
+            </div>
+
+            <b style="display: block; margin-top: 12px; font-size: 0.85rem;">ntfy (opcional)</b>
+            <div class="form-group" style="margin-top: 6px;">
+              <label for="alert-ntfy-topic">Tópico (um nome difícil de adivinhar)</label>
+              <input type="text" id="alert-ntfy-topic" placeholder="ex.: playvinil-herivelto-a8k3" autocomplete="off">
+            </div>
+
+            <div style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
+              <button type="button" id="alert-save" class="btn btn-primary">Salvar alertas</button>
+              <button type="button" id="alert-test" class="btn">Enviar teste</button>
+            </div>
+          </div>
+
           <!-- v3.6: aparelhos autorizados (player / Ouvir) -->
           <div class="settings-card" style="margin-top: 24px;" id="devices-card">
             <div class="settings-card-header">

@@ -25,6 +25,11 @@ class Config:
     shazam_daily_budget: int = 60
     shazam_monthly_limit: int = 500
     require_device_token: bool = False
+    telegram_bot_token: str = ""
+    telegram_chat_id: str = ""
+    ntfy_topic: str = ""
+    ntfy_server: str = "https://ntfy.sh"
+    player_offline_minutes: int = 10
 
 
 
@@ -93,6 +98,11 @@ def load_config() -> Config:
         shazam_daily_budget=int(os.environ.get("SHAZAM_DAILY_BUDGET", "60")),
         shazam_monthly_limit=int(os.environ.get("SHAZAM_MONTHLY_LIMIT", "500")),
         require_device_token=os.environ.get("REQUIRE_DEVICE_TOKEN", "0").strip().lower() in {"1", "true", "sim", "yes"},
+        telegram_bot_token=os.environ.get("TELEGRAM_BOT_TOKEN", ""),
+        telegram_chat_id=os.environ.get("TELEGRAM_CHAT_ID", ""),
+        ntfy_topic=os.environ.get("NTFY_TOPIC", ""),
+        ntfy_server=os.environ.get("NTFY_SERVER", "https://ntfy.sh"),
+        player_offline_minutes=int(os.environ.get("PLAYER_OFFLINE_MINUTES", "10")),
     )
 
 

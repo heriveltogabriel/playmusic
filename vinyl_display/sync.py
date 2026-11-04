@@ -40,9 +40,26 @@ def _discogs_client(config: Config) -> DiscogsClient:
     return DiscogsClient(config.discogs_user, config.discogs_user_agent, token=config.discogs_token)
 
 
+def notify_result(result: dict[str, Any], config: Config) -> None:
+    """Avisa por Telegram/ntfy quando o sync falha (no máximo 1 vez por dia) e quando volta."""
+    from vinyl_display.notify import AlertManager, Notifier
+
+    store = CatalogStore(config.database_path)
+    alerts = AlertManager(store, Notifier.from_config(config))
+    if result["status"] == "ok":
+        alerts.resolve("sync_failed", f"✅ O sync do Discogs voltou a funcionar ({result.get('count', 0)} discos).")
+    else:
+        alerts.raise_alert("sync_failed", f"O sync diário do Discogs falhou: {result.get('message')}", cooldown=20 * 3600)
+
+
 def main() -> int:
-    result = run_sync()
+    config = load_config()
+    result = run_sync(config)
     print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} {json.dumps(result, ensure_ascii=False)}", flush=True)
+    try:
+        notify_result(result, config)
+    except Exception as error:
+        print(f"[ALERT] Could not send sync alert: {error}", flush=True)
     return 0 if result["status"] == "ok" else 1
 
 
