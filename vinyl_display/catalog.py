@@ -509,6 +509,79 @@ class CatalogStore:
                 params,
             )
 
+    def recognition_report(self, since: float, recent_limit: int = 40) -> dict:
+        """Painel de reconhecimento: chamadas ao Shazam por dia e por disco, o que o detector
+        de silêncio resolveu sozinho e os últimos eventos."""
+        from datetime import datetime, timedelta, timezone
+
+        brt = timezone(timedelta(hours=-3))
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT e.at, e.status, e.shazam_called, e.shazam_key, e.title, e.artist,
+                       COALESCE(e.release_id, e.active_release_id) AS rid, e.track_position, e.score, e.detail,
+                       r.title AS release_title, r.artist AS release_artist
+                FROM recognition_events e
+                LEFT JOIN releases r ON r.release_id = COALESCE(e.release_id, e.active_release_id)
+                WHERE e.at >= ?
+                ORDER BY e.at
+                """,
+                (since,),
+            ).fetchall()
+
+        by_status: dict[str, int] = {}
+        per_day: dict[str, int] = {}
+        per_disc: dict[int, dict] = {}
+        for row in rows:
+            status = row["status"]
+            by_status[status] = by_status.get(status, 0) + 1
+            day = datetime.fromtimestamp(row["at"], brt).strftime("%Y-%m-%d")
+            per_day.setdefault(day, 0)
+            if row["shazam_called"]:
+                per_day[day] += 1
+            if row["rid"] is not None and row["release_title"]:
+                disc = per_disc.setdefault(
+                    int(row["rid"]),
+                    {"release_id": int(row["rid"]), "title": row["release_title"], "artist": row["release_artist"],
+                     "shazam_calls": 0, "flips_local": 0, "gaps_aligned": 0, "gaps_ignored": 0, "last_at": 0.0},
+                )
+                disc["shazam_calls"] += 1 if row["shazam_called"] else 0
+                disc["flips_local"] += 1 if status == "flip_local" else 0
+                disc["gaps_aligned"] += 1 if status == "gap_aligned" else 0
+                disc["gaps_ignored"] += 1 if status == "gap_ignored" else 0
+                disc["last_at"] = max(disc["last_at"], float(row["at"]))
+
+        recent = [
+            {
+                "at": row["at"],
+                "status": row["status"],
+                "shazam_called": bool(row["shazam_called"]),
+                "shazam_key": row["shazam_key"],
+                "title": row["title"],
+                "artist": row["artist"],
+                "release_title": row["release_title"],
+                "track_position": row["track_position"],
+                "detail": row["detail"],
+            }
+            for row in rows[-recent_limit:]
+        ][::-1]
+
+        shazam_calls = sum(1 for row in rows if row["shazam_called"])
+        identified = by_status.get("matched", 0)
+        attempts = identified + by_status.get("no_result", 0) + by_status.get("not_found", 0)
+        discs = sorted(per_disc.values(), key=lambda d: d["last_at"], reverse=True)
+        return {
+            "since": since,
+            "shazam_calls": shazam_calls,
+            "by_status": by_status,
+            "per_day": [{"day": day, "shazam_calls": calls} for day, calls in sorted(per_day.items())],
+            "discs": discs,
+            "recent": recent,
+            "match_rate": round(identified / attempts * 100) if attempts else None,
+            "calls_per_disc": round(shazam_calls / len(discs), 1) if discs else None,
+            "solved_locally": by_status.get("flip_local", 0) + by_status.get("gap_aligned", 0),
+        }
+
     def recognition_stats(self, since: float) -> dict[str, int]:
         """Contagem de eventos por status desde `since` e total de chamadas ao Shazam."""
         with self._connect() as connection:

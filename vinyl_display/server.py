@@ -219,9 +219,35 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             ]
             self._json(clean_data)
             return
+        if path.startswith("/api/ouvir/sides/"):
+            try:
+                release_id = int(path.rsplit("/", 1)[-1])
+            except ValueError:
+                self.send_error(HTTPStatus.BAD_REQUEST)
+                return
+            sides = self.app.release_sides(release_id)
+            if sides is None:
+                self.send_error(HTTPStatus.NOT_FOUND)
+                return
+            self._json(sides)
+            return
         if path == "/api/ouvir/history":
             history = self.app.get_listening_history()
             self._json(history)
+            return
+        if path == "/api/admin/recognition":
+            from urllib.parse import parse_qs
+            import time as _time
+
+            days = parse_qs(urlparse(self.path).query).get("days", ["30"])[0]
+            try:
+                days_value = max(1, min(365, int(days)))
+            except ValueError:
+                days_value = 30
+            report = self.app.store.recognition_report(since=_time.time() - days_value * 86400)
+            report["days"] = days_value
+            report["shazam_usage"] = self.app.shazam_usage()
+            self._json(report)
             return
         if path == "/api/admin/player_status":
             self._json(self.app.player_status())
@@ -670,6 +696,15 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             self._json({"status": "ok" if sent else "error", "channels": sent,
                         "message": "" if sent else "Nenhum canal aceitou a mensagem. Confira o token, o chat e o tópico."})
             return
+        if path == "/api/playback/start_manual":
+            payload = self._read_json_body()
+            try:
+                release_id = int(payload.get("release_id"))
+            except (TypeError, ValueError):
+                self.send_error(HTTPStatus.BAD_REQUEST)
+                return
+            self._json(self.app.start_manual_playback(release_id, str(payload.get("side") or "")))
+            return
         if path == "/api/playback/keep_release":
             self._json(self.app.keep_playback_release())
             return
@@ -941,6 +976,10 @@ def serve(config: Config | None = None) -> None:
     import threading as _threading
 
     _threading.Thread(target=watchdog_loop, daemon=True, name="watchdog").start()
+
+    from vinyl_display.assistant import TelegramCommands
+
+    _threading.Thread(target=TelegramCommands(app).run_forever, daemon=True, name="telegram-commands").start()
 
     server = ThreadingHTTPServer((config.host, config.port), Handler)
     if config.cert_file and config.key_file:

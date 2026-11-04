@@ -819,6 +819,9 @@ function recordClip(isAutomatic = false, isManual = false, attempt = 1, maxAttem
         // Orçamento diário ou cota mensal esgotados: o servidor recusa sem gastar chamadas,
         // então espera bem mais antes de tentar de novo.
         window.nextAutoListenAt = Date.now() + shazamPause;
+        if (isManual || !currentRelease) {
+          showError("O Shazam está sem cota agora. Toque no botão do disco (ao lado do microfone) para escolher o disco à mão.");
+        }
         if (elements.micDebug) {
           elements.micDebug.textContent = "Shazam pausado: " + (response.message || response.status);
         }
@@ -1682,3 +1685,151 @@ if (elements.coverPanel) {
 setLyricsVisibility(lyricsVisible);
 
 
+
+
+// ---------- v3.9: escolher o disco à mão (plano B quando o Shazam esgota) ----------
+const pickPopup = document.getElementById("pick-popup");
+const pickList = document.getElementById("pick-list");
+const pickSearch = document.getElementById("pick-search");
+const pickSubtitle = document.getElementById("pick-popup-subtitle");
+let pickReleases = null;
+
+function normalizeForSearch(text) {
+  return (text || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
+function pickCard(release, onClick, subtitle) {
+  const card = document.createElement("div");
+  card.className = "alternative-card";
+  const cover = document.createElement("img");
+  cover.className = "alternative-card-cover";
+  cover.alt = release.title || "Capa";
+  cover.src = release.cover_url || "/static/logo_lp_da_semana.png";
+  cover.loading = "lazy";
+  const info = document.createElement("div");
+  info.className = "alternative-card-info";
+  const title = document.createElement("span");
+  title.className = "alternative-card-title";
+  title.textContent = release.title;
+  const artist = document.createElement("span");
+  artist.className = "alternative-card-artist";
+  artist.textContent = `${release.artist}${release.year ? " (" + release.year + ")" : ""}`;
+  info.append(title, artist);
+  if (subtitle) {
+    const extra = document.createElement("span");
+    extra.className = "alternative-card-track";
+    extra.textContent = subtitle;
+    info.appendChild(extra);
+  }
+  card.append(cover, info);
+  card.addEventListener("click", onClick);
+  return card;
+}
+
+async function renderPickList() {
+  if (!pickList) return;
+  if (!pickReleases) {
+    const [agenda, all] = await Promise.all([
+      fetchJson("/api/ouvir/agenda").catch(() => []),
+      fetchJson("/api/ouvir/releases").catch(() => []),
+    ]);
+    const agendaIds = new Set(agenda.map((r) => r.id));
+    pickReleases = { agenda, all, agendaIds };
+  }
+  const query = normalizeForSearch(pickSearch ? pickSearch.value : "");
+  pickList.replaceChildren();
+  let items;
+  if (query) {
+    items = pickReleases.all.filter((r) => normalizeForSearch(`${r.title} ${r.artist}`).includes(query)).slice(0, 30);
+  } else {
+    const recent = [...pickReleases.all].sort((a, b) => (b.synced_at || 0) - (a.synced_at || 0));
+    items = [...pickReleases.agenda, ...recent.filter((r) => !pickReleases.agendaIds.has(r.id))].slice(0, 30);
+  }
+  if (!items.length) {
+    const empty = document.createElement("p");
+    empty.className = "alternatives-popup-subtitle";
+    empty.textContent = "Nenhum disco encontrado.";
+    pickList.appendChild(empty);
+  }
+  items.forEach((release) => {
+    const tag = pickReleases.agendaIds.has(release.id) && !query ? "Escuta da Semana" : "";
+    pickList.appendChild(pickCard(release, () => showPickSides(release), tag));
+  });
+}
+
+async function showPickSides(release) {
+  const info = await fetchJson(`/api/ouvir/sides/${release.id}`);
+  if (pickSearch) pickSearch.style.display = "none";
+  if (pickSubtitle) pickSubtitle.textContent = `${release.artist} — ${release.title}: qual lado está na vitrola?`;
+  pickList.replaceChildren();
+  const sides = document.createElement("div");
+  sides.className = "pick-sides";
+  info.sides.forEach((side) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "pick-side-btn";
+    btn.textContent = side.side ? `Lado ${side.side}` : "Começar";
+    btn.title = `${side.position} · ${side.title}`;
+    btn.addEventListener("click", () => startManual(release.id, side.side));
+    sides.appendChild(btn);
+  });
+  pickList.appendChild(sides);
+  const back = document.createElement("button");
+  back.type = "button";
+  back.className = "btn-popup-close";
+  back.textContent = "Voltar";
+  back.addEventListener("click", resetPickPopup);
+  pickList.appendChild(back);
+}
+
+async function startManual(releaseId, side) {
+  try {
+    const res = await fetchJson("/api/playback/start_manual", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ release_id: releaseId, side }),
+    });
+    hidePickPopup();
+    if (res && res.state) renderState(res.state);
+    lastDetectorAction = "disco escolhido à mão: acompanhando pelo silêncio";
+  } catch (error) {
+    showError("Não foi possível começar o disco: " + error.message);
+  }
+}
+
+function resetPickPopup() {
+  if (pickSearch) {
+    pickSearch.style.display = "";
+  }
+  if (pickSubtitle) {
+    pickSubtitle.textContent = "Escolha o disco e o lado: o player acompanha as faixas e as viradas pelo silêncio, sem usar o Shazam.";
+  }
+  renderPickList();
+}
+
+function showPickPopup() {
+  if (!pickPopup) return;
+  pickPopup.classList.remove("hidden");
+  resetPickPopup();
+}
+
+function hidePickPopup() {
+  if (pickPopup) pickPopup.classList.add("hidden");
+  if (pickSearch) pickSearch.value = "";
+}
+
+const pickButton = document.getElementById("pick-button");
+if (pickButton) {
+  pickButton.addEventListener("click", (e) => {
+    e.stopPropagation();
+    showPickPopup();
+  });
+}
+const pickClose = document.getElementById("pick-popup-close");
+if (pickClose) pickClose.addEventListener("click", hidePickPopup);
+if (pickPopup) {
+  pickPopup.addEventListener("click", (e) => {
+    if (e.target === e.currentTarget) hidePickPopup();
+  });
+}
+if (pickSearch) pickSearch.addEventListener("input", () => renderPickList());

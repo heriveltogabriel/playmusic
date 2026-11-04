@@ -139,6 +139,13 @@ class VinylDisplayApp:
                             hold_in_quiet_hours=True,
                         )
 
+        try:
+            from vinyl_display.assistant import maybe_send_weekly_summary
+
+            maybe_send_weekly_summary(self, now)
+        except Exception as error:
+            print(f"[WATCHDOG] weekly summary failed: {error}")
+
         usage = self.shazam_usage()
         if usage and usage.get("keys"):
             month = usage.get("month", "")
@@ -776,6 +783,47 @@ class VinylDisplayApp:
         self.playback.active.recognition_key = track_key
         self.store.save_preferred_release(track_key, release_id)
         self._save_playback(self.playback)
+        return {"status": "ok", "state": self.state()}
+
+    def release_sides(self, release_id: int) -> dict[str, Any] | None:
+        """Lados do disco com a primeira faixa de cada um (para escolher o disco à mão)."""
+        from vinyl_display.playback import get_track_side
+
+        release = self.store.get_release(release_id)
+        if release is None:
+            return None
+        sides: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        for track in release.tracks:
+            side = get_track_side(track.position)
+            if side and side not in seen:
+                seen.add(side)
+                sides.append({"side": side, "position": track.position, "title": track.title})
+        if not sides and release.tracks:
+            first = release.tracks[0]
+            sides.append({"side": "", "position": first.position, "title": first.title})
+        return {"release_id": release.release_id, "title": release.title, "artist": release.artist, "sides": sides}
+
+    def start_manual_playback(self, release_id: int, side: str = "") -> dict[str, Any]:
+        """Plano B sem Shazam: você escolhe o disco e o lado; o tempo começa agora (a agulha
+        acabou de descer) e o detector de silêncio acompanha faixas e viradas a partir daí."""
+        import time
+
+        from vinyl_display.models import TrackMatch
+        from vinyl_display.playback import get_track_side
+
+        release = self.store.get_release(release_id)
+        if release is None or not release.tracks:
+            return {"status": "error", "message": "Disco não encontrado ou sem faixas."}
+        track = next((t for t in release.tracks if side and get_track_side(t.position) == side), release.tracks[0])
+        now = time.time()
+        self.playback.handle_match(
+            TrackMatch(release=release, track=track, score=100, reason="manual"),
+            now=now,
+            alternatives=[],
+            locked=True,
+        )
+        self._log_event("manual_start", release_id=release.release_id, track_position=track.position)
         return {"status": "ok", "state": self.state()}
 
     def keep_playback_release(self) -> dict[str, Any]:

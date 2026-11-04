@@ -99,6 +99,14 @@ class Notifier:
     def enabled(self) -> bool:
         return bool(self.channels)
 
+    def reply_telegram(self, text: str) -> bool:
+        """Resposta a um comando do bot: só no Telegram e sem o cabeçalho dos alertas."""
+        if "telegram" not in self.channels:
+            return False
+        url = f"https://api.telegram.org/bot{self.telegram_bot_token}/sendMessage"
+        payload = json.dumps({"chat_id": self.telegram_chat_id, "text": text}).encode("utf-8")
+        return bool(self.post(url, payload, {"Content-Type": "application/json"}).get("ok", True))
+
     def send(self, text: str, title: str = PREFIX, silent: bool = False) -> list[str]:
         """Envia por todos os canais configurados. Devolve os canais que funcionaram.
         silent=True: chega sem som (Telegram disable_notification, ntfy prioridade baixa)."""

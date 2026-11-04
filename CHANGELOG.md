@@ -2,6 +2,25 @@
 
 Versões do PlayVinil / Vinyl Display. As mais recentes primeiro.
 
+## 3.9.0 — 2026-11-04 — Menos Shazam, mais controle
+
+### Plano B sem Shazam
+- Botão do disco no topo do player: escolha o disco (Escuta da Semana primeiro, ou busque na coleção) e o lado. O tempo começa ali e o detector de silêncio acompanha faixas e viradas, sem nenhuma chamada ao Shazam.
+- Quando o Shazam fica sem cota, o player sugere usar esse botão.
+
+### Painel de reconhecimento (admin → Reconhecimento)
+- Chamadas ao Shazam por dia e por disco, chamadas por disco, trocas resolvidas pelo silêncio, taxa de acerto e os últimos eventos.
+
+### Bot do Telegram
+- Comandos `/tocando`, `/semana`, `/status` e `/ajuda`, respondidos só para o seu chat.
+- Resumo da semana no domingo, a partir das 10:05: discos ouvidos, Escuta da Semana, uso do Shazam e a nova agenda.
+
+## 3.8.0 — 2026-11-04 — Operação
+
+- `deploy.sh principal|bruno|todos`: roda os testes, guarda a versão no ar em `~/vinyl_releases` (5 últimas), confere saúde e versão e volta sozinho se algo falhar. `./deploy.sh rollback principal` volta para a anterior.
+- Sync diário do Discogs (04:00) com aviso no Telegram se falhar; backup avisa se falhar.
+- Logs do serviço guardados por 90 dias.
+
 ## 3.7.3 — 2026-11-04 — Player que se cuida
 
 ### Alertas no Telegram (ou ntfy)
