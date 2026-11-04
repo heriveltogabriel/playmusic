@@ -45,7 +45,7 @@ def notify_result(result: dict[str, Any], config: Config) -> None:
     from vinyl_display.notify import AlertManager, Notifier
 
     store = CatalogStore(config.database_path)
-    alerts = AlertManager(store, Notifier.from_config(config))
+    alerts = AlertManager.from_config(store, config, Notifier.from_config(config))
     if result["status"] == "ok":
         alerts.resolve("sync_failed", f"✅ O sync do Discogs voltou a funcionar ({result.get('count', 0)} discos).")
     else:

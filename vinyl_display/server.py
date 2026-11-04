@@ -145,6 +145,8 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                 "telegram_bot_token": getattr(self.app.config, "telegram_bot_token", "") if self.app.config else "",
                 "telegram_chat_id": getattr(self.app.config, "telegram_chat_id", "") if self.app.config else "",
                 "ntfy_topic": getattr(self.app.config, "ntfy_topic", "") if self.app.config else "",
+                "alert_quiet_start": getattr(self.app.config, "alert_quiet_start", "") if self.app.config else "",
+                "alert_quiet_end": getattr(self.app.config, "alert_quiet_end", "") if self.app.config else "",
                 "shazam_usage": self.app.shazam_usage(),
             }
             self._json(config_data)
@@ -571,7 +573,8 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             }
             if "shazam_daily_budget" in payload:
                 updates["SHAZAM_DAILY_BUDGET"] = str(int(payload.get("shazam_daily_budget") or 0))
-            for field, env in (("telegram_bot_token", "TELEGRAM_BOT_TOKEN"), ("telegram_chat_id", "TELEGRAM_CHAT_ID"), ("ntfy_topic", "NTFY_TOPIC")):
+            for field, env in (("telegram_bot_token", "TELEGRAM_BOT_TOKEN"), ("telegram_chat_id", "TELEGRAM_CHAT_ID"), ("ntfy_topic", "NTFY_TOPIC"),
+                               ("alert_quiet_start", "ALERT_QUIET_START"), ("alert_quiet_end", "ALERT_QUIET_END")):
                 if field in payload:
                     updates[env] = str(payload.get(field) or "").strip()
             

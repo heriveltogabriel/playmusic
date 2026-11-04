@@ -4992,6 +4992,8 @@ async function loadAlertsCard() {
     set('alert-telegram-token', config.telegram_bot_token);
     set('alert-telegram-chat', config.telegram_chat_id);
     set('alert-ntfy-topic', config.ntfy_topic);
+    set('alert-quiet-start', config.alert_quiet_start);
+    set('alert-quiet-end', config.alert_quiet_end);
   } catch (error) {
     console.error('Error loading alert settings:', error);
   }
@@ -5012,6 +5014,8 @@ async function saveAlertSettings() {
     telegram_bot_token: document.getElementById('alert-telegram-token').value.trim(),
     telegram_chat_id: document.getElementById('alert-telegram-chat').value.trim(),
     ntfy_topic: document.getElementById('alert-ntfy-topic').value.trim(),
+    alert_quiet_start: document.getElementById('alert-quiet-start').value.trim(),
+    alert_quiet_end: document.getElementById('alert-quiet-end').value.trim(),
   };
   const res = await fetch('/api/config', {
     method: 'POST',

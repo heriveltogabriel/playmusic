@@ -48,7 +48,7 @@ class VinylDisplayApp:
         self.store.initialize()
         self._restore_playback()
         self.notifier = Notifier.from_config(config) if config else Notifier()
-        self.alerts = AlertManager(self.store, self.notifier)
+        self.alerts = AlertManager.from_config(self.store, self.config, self.notifier)
         self._audio_suspended_since: float | None = None
 
     @staticmethod
@@ -118,9 +118,9 @@ class VinylDisplayApp:
             if not status["online"]:
                 last = datetime.fromtimestamp(status["at"], timezone(timedelta(hours=-3))).strftime("%H:%M")
                 self.alerts.raise_alert(
-                    "player_offline",
+                    "player_offline", hold_in_quiet_hours=True, text=(
                     f"O player está sem sinal há {status['seconds_ago'] // 60} min (último contato às {last}). "
-                    "Confira se o celular está ligado, no carregador e no Wi-Fi.",
+                    "Confira se o celular está ligado, no carregador e no Wi-Fi."),
                 )
                 self._audio_suspended_since = None
             else:
@@ -136,6 +136,7 @@ class VinylDisplayApp:
                             "player_needs_tap",
                             "O microfone do player está pausado. Toque uma vez na tela do celular para ele voltar a ouvir.",
                             cooldown=3 * 3600,
+                            hold_in_quiet_hours=True,
                         )
 
         usage = self.shazam_usage()
@@ -257,7 +258,7 @@ class VinylDisplayApp:
         self.shazam_client = self.make_shazam_client(self.store, self.config)
         self.store.favorite_threshold = self.config.favorite_threshold
         self.notifier = Notifier.from_config(self.config)
-        self.alerts = AlertManager(self.store, self.notifier)
+        self.alerts = AlertManager.from_config(self.store, self.config, self.notifier)
         print("[SERVER] Hot-swapped config to use Shazam for music recognition.")
 
     def state(self) -> dict[str, Any]:

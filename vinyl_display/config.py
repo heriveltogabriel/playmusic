@@ -30,6 +30,8 @@ class Config:
     ntfy_topic: str = ""
     ntfy_server: str = "https://ntfy.sh"
     player_offline_minutes: int = 10
+    alert_quiet_start: str = "22:00"
+    alert_quiet_end: str = "10:00"
 
 
 
@@ -103,6 +105,8 @@ def load_config() -> Config:
         ntfy_topic=os.environ.get("NTFY_TOPIC", ""),
         ntfy_server=os.environ.get("NTFY_SERVER", "https://ntfy.sh"),
         player_offline_minutes=int(os.environ.get("PLAYER_OFFLINE_MINUTES", "10")),
+        alert_quiet_start=os.environ.get("ALERT_QUIET_START", "22:00"),
+        alert_quiet_end=os.environ.get("ALERT_QUIET_END", "10:00"),
     )
 
 

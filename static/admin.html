@@ -841,6 +841,19 @@
               <input type="text" id="alert-ntfy-topic" placeholder="ex.: playvinil-herivelto-a8k3" autocomplete="off">
             </div>
 
+            <b style="display: block; margin-top: 12px; font-size: 0.85rem;">Não perturbe</b>
+            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 6px;">
+              <div class="form-group" style="margin: 0;">
+                <label for="alert-quiet-start">Das</label>
+                <input type="time" id="alert-quiet-start" value="22:00">
+              </div>
+              <div class="form-group" style="margin: 0;">
+                <label for="alert-quiet-end">Até</label>
+                <input type="time" id="alert-quiet-end" value="10:00">
+              </div>
+            </div>
+            <p class="settings-card-desc" style="margin-top: 6px; font-size: 0.78rem;">Nesse horário os avisos do player (sem sinal, microfone pausado) esperam até o fim do silêncio; os demais (sync, backup, Shazam) chegam sem som. Deixe os dois campos vazios para desligar.</p>
+
             <div style="display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap;">
               <button type="button" id="alert-save" class="btn btn-primary">Salvar alertas</button>
               <button type="button" id="alert-test" class="btn">Enviar teste</button>

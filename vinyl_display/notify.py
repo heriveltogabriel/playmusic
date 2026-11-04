@@ -17,7 +17,31 @@ import urllib.parse
 import urllib.request
 from typing import Any, Callable
 
+from datetime import datetime, timedelta, timezone
+
 ALERTS_METADATA_KEY = "alerts_state"
+_BRT = timezone(timedelta(hours=-3))
+
+
+def _minutes(value: str | None) -> int | None:
+    try:
+        hours, minutes = str(value or "").strip().split(":")
+        return int(hours) * 60 + int(minutes)
+    except ValueError:
+        return None
+
+
+def in_quiet_hours(now: float, start: str | None, end: str | None) -> bool:
+    """Horário de silêncio (Brasília). Aceita faixas que passam da meia-noite (23:00-08:00).
+    Vazio ou inválido = sem horário de silêncio."""
+    start_m, end_m = _minutes(start), _minutes(end)
+    if start_m is None or end_m is None or start_m == end_m:
+        return False
+    local = datetime.fromtimestamp(now, _BRT)
+    current = local.hour * 60 + local.minute
+    if start_m < end_m:
+        return start_m <= current < end_m
+    return current >= start_m or current < end_m
 PREFIX = "🎵 PlayVinil"
 
 
@@ -75,13 +99,16 @@ class Notifier:
     def enabled(self) -> bool:
         return bool(self.channels)
 
-    def send(self, text: str, title: str = PREFIX) -> list[str]:
-        """Envia por todos os canais configurados. Devolve os canais que funcionaram."""
+    def send(self, text: str, title: str = PREFIX, silent: bool = False) -> list[str]:
+        """Envia por todos os canais configurados. Devolve os canais que funcionaram.
+        silent=True: chega sem som (Telegram disable_notification, ntfy prioridade baixa)."""
         sent = []
         if "telegram" in self.channels:
             try:
                 url = f"https://api.telegram.org/bot{self.telegram_bot_token}/sendMessage"
-                payload = json.dumps({"chat_id": self.telegram_chat_id, "text": f"{title}\n{text}"}).encode("utf-8")
+                payload = json.dumps(
+                    {"chat_id": self.telegram_chat_id, "text": f"{title}\n{text}", "disable_notification": silent}
+                ).encode("utf-8")
                 result = self.post(url, payload, {"Content-Type": "application/json"})
                 if result.get("ok", True):
                     sent.append("telegram")
@@ -92,7 +119,11 @@ class Notifier:
         if "ntfy" in self.channels:
             try:
                 url = f"{self.ntfy_server}/{urllib.parse.quote(self.ntfy_topic)}"
-                headers = {"Title": title.encode("ascii", "ignore").decode().strip() or "PlayVinil", "Tags": "musical_note"}
+                headers = {
+                    "Title": title.encode("ascii", "ignore").decode().strip() or "PlayVinil",
+                    "Tags": "musical_note",
+                    "Priority": "2" if silent else "3",
+                }
                 self.post(url, text.encode("utf-8"), headers)
                 sent.append("ntfy")
             except Exception as error:
@@ -120,10 +151,31 @@ class Notifier:
 class AlertManager:
     """Evita repetir o mesmo alerta: cada chave tem um intervalo mínimo entre envios."""
 
-    def __init__(self, store: Any, notifier: Notifier, clock: Callable[[], float] = time.time):
+    def __init__(
+        self,
+        store: Any,
+        notifier: Notifier,
+        clock: Callable[[], float] = time.time,
+        quiet_start: str | None = None,
+        quiet_end: str | None = None,
+    ):
         self.store = store
         self.notifier = notifier
         self.clock = clock
+        self.quiet_start = quiet_start
+        self.quiet_end = quiet_end
+
+    @classmethod
+    def from_config(cls, store: Any, config: Any, notifier: "Notifier | None" = None) -> "AlertManager":
+        return cls(
+            store,
+            notifier or Notifier.from_config(config),
+            quiet_start=getattr(config, "alert_quiet_start", None),
+            quiet_end=getattr(config, "alert_quiet_end", None),
+        )
+
+    def quiet_now(self) -> bool:
+        return in_quiet_hours(self.clock(), self.quiet_start, self.quiet_end)
 
     def _state(self) -> dict[str, Any]:
         raw = self.store.get_metadata(ALERTS_METADATA_KEY) if self.store else None
@@ -139,14 +191,22 @@ class AlertManager:
     def is_active(self, key: str) -> bool:
         return bool(self._state().get(key, {}).get("active"))
 
-    def raise_alert(self, key: str, text: str, cooldown: float = 6 * 3600) -> bool:
-        """Envia o alerta se ainda não foi enviado dentro do intervalo. Marca como ativo."""
+    def raise_alert(
+        self, key: str, text: str, cooldown: float = 6 * 3600, hold_in_quiet_hours: bool = False
+    ) -> bool:
+        """Envia o alerta se ainda não foi enviado dentro do intervalo. Marca como ativo.
+
+        No horário de silêncio: com hold_in_quiet_hours o alerta espera (nada é enviado nem
+        marcado, e ele sai quando o silêncio acabar se o problema continuar); sem, chega sem som."""
         state = self._state()
         entry = state.get(key) or {}
         now = self.clock()
         if entry.get("active") and now - float(entry.get("sent_at", 0)) < cooldown:
             return False
-        sent = self.notifier.send(text) if self.notifier.enabled else []
+        quiet = self.quiet_now()
+        if quiet and hold_in_quiet_hours:
+            return False
+        sent = self.notifier.send(text, silent=quiet) if self.notifier.enabled else []
         state[key] = {"active": True, "sent_at": now, "channels": sent}
         self._save(state)
         print(f"[ALERT] {key}: {text} -> {sent or 'nenhum canal configurado'}")
@@ -161,7 +221,7 @@ class AlertManager:
         state[key] = {"active": False, "resolved_at": self.clock()}
         self._save(state)
         if text and entry.get("channels") and self.notifier.enabled:
-            self.notifier.send(text)
+            self.notifier.send(text, silent=self.quiet_now())
         return True
 
 
@@ -183,9 +243,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.key:
         store = CatalogStore(config.database_path)
         store.initialize()
-        AlertManager(store, notifier).raise_alert(args.key, args.message, cooldown=args.cooldown)
+        AlertManager.from_config(store, config, notifier).raise_alert(args.key, args.message, cooldown=args.cooldown)
         return 0
-    return 0 if notifier.send(args.message) else 1
+    quiet = in_quiet_hours(time.time(), config.alert_quiet_start, config.alert_quiet_end)
+    return 0 if notifier.send(args.message, silent=quiet) else 1
 
 
 if __name__ == "__main__":

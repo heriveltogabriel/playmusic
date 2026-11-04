@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 
 from vinyl_display.app import VinylDisplayApp
 from vinyl_display.catalog import CatalogStore
-from vinyl_display.notify import AlertManager, Notifier
+from vinyl_display.notify import AlertManager, Notifier, in_quiet_hours
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -78,11 +78,12 @@ class WatchdogTests(unittest.TestCase):
         store.initialize()
         config = MagicMock(player_offline_minutes=10, favorite_threshold=3, shazam_daily_budget=0,
                            shazam_monthly_limit=500, rapidapi_shazam_key="", rapidapi_shazam_host="h",
-                           telegram_bot_token="", telegram_chat_id="", ntfy_topic="", ntfy_server="https://ntfy.sh")
+                           telegram_bot_token="", telegram_chat_id="", ntfy_topic="", ntfy_server="https://ntfy.sh",
+                           alert_quiet_start="", alert_quiet_end="")
         app = VinylDisplayApp(store, None, MagicMock(usage_summary=lambda: None), config=config, musicbrainz_client=MagicMock())
         self.t = FakeTransport()
         app.notifier = notifier(self.t, telegram_bot_token="T", telegram_chat_id="1")
-        app.alerts = AlertManager(store, app.notifier)
+        app.alerts = AlertManager(store, app.notifier)  # sem silêncio: os testes rodam a qualquer hora
         return app
 
     def texts(self):
@@ -127,13 +128,45 @@ class WatchdogTests(unittest.TestCase):
             self.assertTrue(any("…bbbb" in t and "esgotou" in t for t in texts))
 
 
+def brt(hour, minute=0):
+    from datetime import datetime, timedelta, timezone
+    return datetime(2026, 11, 4, hour, minute, tzinfo=timezone(timedelta(hours=-3))).timestamp()
+
+
+class QuietHoursTests(unittest.TestCase):
+    def test_overnight_window(self):
+        self.assertTrue(in_quiet_hours(brt(22, 0), "22:00", "10:00"))
+        self.assertTrue(in_quiet_hours(brt(3, 30), "22:00", "10:00"))
+        self.assertTrue(in_quiet_hours(brt(9, 59), "22:00", "10:00"))
+        self.assertFalse(in_quiet_hours(brt(10, 0), "22:00", "10:00"))
+        self.assertFalse(in_quiet_hours(brt(15, 0), "22:00", "10:00"))
+        self.assertFalse(in_quiet_hours(brt(3, 0), "", ""))  # desligado
+
+    def test_player_alerts_wait_and_others_arrive_silently(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            store = CatalogStore(Path(tmp) / "c.sqlite3")
+            store.initialize()
+            t = FakeTransport()
+            now = [brt(2, 0)]
+            alerts = AlertManager(store, notifier(t, telegram_bot_token="T", telegram_chat_id="1"),
+                                  clock=lambda: now[0], quiet_start="22:00", quiet_end="10:00")
+            self.assertFalse(alerts.raise_alert("player_offline", "caiu", hold_in_quiet_hours=True))
+            self.assertTrue(alerts.raise_alert("sync_failed", "sync falhou"))
+            self.assertEqual(len(t.posts), 1)
+            self.assertTrue(json.loads(t.posts[0][1])["disable_notification"])
+            now[0] = brt(10, 1)  # acabou o silêncio e o player continua fora
+            self.assertTrue(alerts.raise_alert("player_offline", "caiu", hold_in_quiet_hours=True))
+            self.assertFalse(json.loads(t.posts[-1][1])["disable_notification"])
+
+
 class SyncAlertTests(unittest.TestCase):
     def test_sync_failure_alerts_and_recovery(self):
         from vinyl_display import sync
 
         with tempfile.TemporaryDirectory() as tmp:
             config = MagicMock(database_path=Path(tmp) / "c.sqlite3", favorite_threshold=3,
-                               telegram_bot_token="T", telegram_chat_id="1", ntfy_topic="", ntfy_server="")
+                               telegram_bot_token="T", telegram_chat_id="1", ntfy_topic="", ntfy_server="",
+                               alert_quiet_start="", alert_quiet_end="")
             CatalogStore(config.database_path).initialize()
             t = FakeTransport()
             original = Notifier.from_config
