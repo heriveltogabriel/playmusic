@@ -167,7 +167,19 @@ const playbackTracker = {
 async function fetchJson(url, options = {}) {
   const response = await fetch(url, options);
   if (!response.ok) {
-    throw new Error(`${response.status} ${response.statusText}`);
+    let message = `${response.status} ${response.statusText}`;
+    try {
+      const body = await response.json();
+      if (body && body.error === "device_not_authorized") {
+        // v3.6: aparelho sem autorização — avisa uma vez e não insiste
+        window.nextAutoListenAt = Date.now() + 10 * 60000;
+        showError(body.message);
+        message = body.message;
+      }
+    } catch (e) {
+      // corpo não é JSON
+    }
+    throw new Error(message);
   }
   return response.json();
 }
@@ -950,6 +962,25 @@ if (elements.alternativesBtn) {
 }
 if (elements.alternativesPopupClose) {
   elements.alternativesPopupClose.addEventListener("click", hideAlternatives);
+}
+
+// v3.6: "Manter este disco" trava o disco atual e lembra a escolha para esta música
+const alternativesKeepButton = document.getElementById("alternatives-keep");
+if (alternativesKeepButton) {
+  alternativesKeepButton.addEventListener("click", async () => {
+    try {
+      const res = await fetchJson("/api/playback/keep_release", { method: "POST" });
+      hideAlternatives();
+      if (res && res.state) {
+        renderState(res.state);
+      } else {
+        await pollState();
+      }
+    } catch (err) {
+      console.error("Erro ao manter disco:", err);
+      showError("Não foi possível manter o disco: " + err.message);
+    }
+  });
 }
 if (elements.alternativesPopup) {
   elements.alternativesPopup.addEventListener("click", (e) => {

@@ -2386,3 +2386,14 @@ h1 {
 
 
 
+
+/* v3.6 — "Manter este disco" no popup de alternativas */
+.alternatives-keep {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.alternatives-keep-hint {
+  font-size: 0.78rem;
+  text-align: center;
+}

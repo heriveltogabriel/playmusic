@@ -176,6 +176,10 @@ async function registerAgendaAudition(lp, dayIndex, buttonEl) {
       }
     });
     
+    if (response.status === 401) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.message || 'Este aparelho não está autorizado a registrar audições.');
+    }
     if (!response.ok) throw new Error('Erro ao registrar audição');
     
     const result = await response.json();
@@ -214,7 +218,7 @@ async function registerAgendaAudition(lp, dayIndex, buttonEl) {
     
   } catch (error) {
     console.error('Error registering agenda audition:', error);
-    showToast(`Falha ao registrar audição para "${lp.title}".`, 'error');
+    showToast(/autorizado/.test(error.message) ? error.message : `Falha ao registrar audição para "${lp.title}".`, 'error');
     buttonEl.disabled = false;
     buttonEl.style.opacity = '1';
   }

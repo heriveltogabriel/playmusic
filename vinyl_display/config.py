@@ -24,6 +24,7 @@ class Config:
     favorite_threshold: int
     shazam_daily_budget: int = 60
     shazam_monthly_limit: int = 500
+    require_device_token: bool = False
 
 
 
@@ -91,6 +92,7 @@ def load_config() -> Config:
         favorite_threshold=int(os.environ.get("FAVORITE_THRESHOLD", "5")),
         shazam_daily_budget=int(os.environ.get("SHAZAM_DAILY_BUDGET", "60")),
         shazam_monthly_limit=int(os.environ.get("SHAZAM_MONTHLY_LIMIT", "500")),
+        require_device_token=os.environ.get("REQUIRE_DEVICE_TOKEN", "0").strip().lower() in {"1", "true", "sim", "yes"},
     )
 
 

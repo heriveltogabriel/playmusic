@@ -246,6 +246,7 @@ function initializeViews() {
       } else if (targetView === 'settings') {
         viewTitle.textContent = 'Configurações';
         loadSettingsFromServer();
+        loadDevices();
       }
       
       // Trigger special animations or renders
@@ -4836,3 +4837,122 @@ function renderWeeklyHistorySvg(svg, weeksData) {
     svg.appendChild(g);
   });
 }
+
+
+// ==================== v3.6: APARELHOS AUTORIZADOS ====================
+function formatDeviceDate(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts * 1000);
+  return `${d.toLocaleDateString('pt-BR')} ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+}
+
+async function loadDevices() {
+  const list = document.getElementById('devices-list');
+  if (!list) return;
+  try {
+    const res = await fetch('/api/admin/devices');
+    if (!res.ok) throw new Error('Não foi possível carregar os aparelhos.');
+    const data = await res.json();
+
+    const thisBox = document.getElementById('devices-this');
+    const authorizeBtn = document.getElementById('device-authorize-btn');
+    const labelInput = document.getElementById('device-label');
+    if (thisBox) {
+      thisBox.textContent = data.this_device
+        ? 'Este aparelho já está autorizado.'
+        : 'Este aparelho ainda não está autorizado.';
+    }
+    if (authorizeBtn) authorizeBtn.style.display = data.this_device ? 'none' : '';
+    if (labelInput) labelInput.parentElement.style.display = data.this_device ? 'none' : '';
+
+    list.replaceChildren();
+    if (!data.devices.length) {
+      const empty = document.createElement('div');
+      empty.style.color = 'var(--text-muted)';
+      empty.textContent = 'Nenhum aparelho autorizado ainda.';
+      list.appendChild(empty);
+    }
+    data.devices.forEach((device) => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 10px; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px;';
+      const info = document.createElement('div');
+      const name = document.createElement('b');
+      name.textContent = device.label + (device.id === data.this_device ? ' (este)' : '');
+      const meta = document.createElement('div');
+      meta.style.color = 'var(--text-muted)';
+      meta.style.fontSize = '0.78rem';
+      meta.textContent = `Autorizado em ${formatDeviceDate(device.created_at)} · visto ${formatDeviceDate(device.last_seen)}`;
+      info.appendChild(name);
+      info.appendChild(meta);
+      const revoke = document.createElement('button');
+      revoke.type = 'button';
+      revoke.className = 'btn';
+      revoke.textContent = 'Revogar';
+      revoke.addEventListener('click', async () => {
+        if (!confirm(`Revogar o acesso de "${device.label}"?`)) return;
+        await fetch('/api/admin/devices/revoke', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: device.id }),
+        });
+        loadDevices();
+      });
+      row.appendChild(info);
+      row.appendChild(revoke);
+      list.appendChild(row);
+    });
+
+    const toggle = document.getElementById('device-require-toggle');
+    const hint = document.getElementById('device-require-hint');
+    if (toggle) toggle.checked = !!data.require_device_token;
+    if (hint) {
+      hint.textContent = data.require_device_token
+        ? 'Ativo: aparelhos sem autorização não usam o Shazam nem registram audições.'
+        : (data.devices.length
+          ? 'Desligado: qualquer aparelho com o endereço ainda pode usar o player. Ative depois de autorizar o celular do player.'
+          : 'Autorize o celular do player antes de ativar, senão ele deixa de reconhecer os discos.');
+    }
+  } catch (error) {
+    console.error('Error loading devices:', error);
+    showToast(error.message, 'error');
+  }
+}
+
+function setupDevicesCard() {
+  const authorizeBtn = document.getElementById('device-authorize-btn');
+  if (authorizeBtn) {
+    authorizeBtn.addEventListener('click', async () => {
+      const labelInput = document.getElementById('device-label');
+      const label = (labelInput && labelInput.value.trim()) || (/Android|iPhone|iPad/i.test(navigator.userAgent) ? 'Celular' : 'Computador');
+      const res = await fetch('/api/admin/devices/authorize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label }),
+      });
+      if (res.ok) {
+        showToast('Aparelho autorizado!', 'success');
+      } else {
+        showToast('Não foi possível autorizar o aparelho.', 'error');
+      }
+      loadDevices();
+    });
+  }
+  const toggle = document.getElementById('device-require-toggle');
+  if (toggle) {
+    toggle.addEventListener('change', async () => {
+      if (toggle.checked && !confirm('Só aparelhos autorizados vão conseguir usar o player e o Ouvir. O celular do player já está autorizado?')) {
+        toggle.checked = false;
+        return;
+      }
+      const res = await fetch('/api/admin/devices/require', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: toggle.checked }),
+      });
+      showToast(res.ok ? 'Configuração salva.' : 'Falha ao salvar.', res.ok ? 'success' : 'error');
+      loadDevices();
+    });
+  }
+}
+
+document.addEventListener('DOMContentLoaded', setupDevicesCard);

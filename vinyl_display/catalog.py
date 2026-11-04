@@ -69,6 +69,16 @@ class CatalogStore:
             )
             connection.execute(
                 """
+                CREATE TABLE IF NOT EXISTS release_preferences (
+                    track_key TEXT PRIMARY KEY,
+                    release_id INTEGER NOT NULL,
+                    chosen_at REAL NOT NULL,
+                    times INTEGER NOT NULL DEFAULT 1
+                )
+                """
+            )
+            connection.execute(
+                """
                 CREATE TABLE IF NOT EXISTS sync_metadata (
                     key TEXT PRIMARY KEY,
                     value TEXT NOT NULL
@@ -453,6 +463,35 @@ class CatalogStore:
         with self._connect() as connection:
             connection.execute("DELETE FROM releases WHERE release_id = ?", (release_id,))
             connection.execute("DELETE FROM release_stats WHERE release_id = ?", (release_id,))
+
+    def get_preferred_release(self, track_key: str) -> int | None:
+        """Disco que você escolheu da última vez para esta música (coletâneas, ao vivo...)."""
+        if not track_key:
+            return None
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT release_id FROM release_preferences WHERE track_key = ?", (track_key,)
+            ).fetchone()
+        return int(row["release_id"]) if row else None
+
+    def save_preferred_release(self, track_key: str, release_id: int) -> None:
+        if not track_key:
+            return
+        with self._connect() as connection:
+            cur = connection.execute(
+                """
+                UPDATE release_preferences
+                SET release_id = ?, chosen_at = ?,
+                    times = CASE WHEN release_id = ? THEN times + 1 ELSE 1 END
+                WHERE track_key = ?
+                """,
+                (release_id, time.time(), release_id, track_key),
+            )
+            if cur.rowcount == 0:
+                connection.execute(
+                    "INSERT INTO release_preferences (track_key, release_id, chosen_at, times) VALUES (?, ?, ?, 1)",
+                    (track_key, release_id, time.time()),
+                )
 
     def log_recognition_event(self, status: str, **fields) -> None:
         """Registra cada tentativa de reconhecimento (com ou sem chamada ao Shazam)."""

@@ -11,7 +11,7 @@ from vinyl_display.clients.shazam import (
 )
 from vinyl_display.clients.discogs import DiscogsClient
 from vinyl_display.clients.musicbrainz import MusicBrainzClient
-from vinyl_display.matcher import CollectionMatcher
+from vinyl_display.matcher import CollectionMatcher, preference_key
 from vinyl_display.playback import PlaybackController
 
 
@@ -136,7 +136,9 @@ class VinylDisplayApp:
             field_name = k.lower()
             if hasattr(self.config, field_name):
                 orig_val = getattr(self.config, field_name)
-                if isinstance(orig_val, float):
+                if isinstance(orig_val, bool):
+                    new_fields[field_name] = str(v).strip().lower() in {"1", "true", "sim", "yes"}
+                elif isinstance(orig_val, float):
                     new_fields[field_name] = float(v)
                 elif isinstance(orig_val, int):
                     new_fields[field_name] = int(v)
@@ -257,7 +259,13 @@ class VinylDisplayApp:
             active_release_id = self.playback.active.match.release.release_id
             is_locked = getattr(self.playback.active, "locked", False)
 
-        matches = self.matcher.match_all(recognition, active_release_id=active_release_id)
+        track_key = preference_key(recognition.title, recognition.artist)
+        preferred_release_id = self.store.get_preferred_release(track_key)
+        matches = self.matcher.match_all(
+            recognition,
+            active_release_id=active_release_id,
+            preferred_release_id=preferred_release_id,
+        )
         if is_locked and active_release_id:
             locked_match = next((m for m in matches if m.release.release_id == active_release_id), None)
             if locked_match is not None:
@@ -305,7 +313,17 @@ class VinylDisplayApp:
             latency = client_elapsed_seconds + (now_recon - server_receive_time) + 4.0
             print(f"[RECOGNIZE] Latency compensation: client_elapsed={client_elapsed_seconds:.2f}s, server_processing={now_recon - server_receive_time:.2f}s, total_latency={latency:.2f}s (including 4.0s constant offset)")
         
-        self.playback.handle_match(match, offset=offset, latency=latency, alternatives=alternatives)
+        # Só sugere outros discos que têm exatamente a mesma faixa (sem "Help" x "Help Me Rhonda")
+        alternatives = [alt for alt in alternatives if "track title exact" in alt.reason]
+        use_preference = preferred_release_id is not None and match.release.release_id == preferred_release_id
+        self.playback.handle_match(
+            match,
+            offset=offset,
+            latency=latency,
+            alternatives=alternatives,
+            locked=use_preference,
+            recognition_key=track_key,
+        )
         self._learn_missing_duration(match, recognition)
         self._log_event(
             "matched", shazam_called=True, shazam_key=shazam_key, rms=rms,
@@ -638,10 +656,30 @@ class VinylDisplayApp:
         return {"status": "ok", "favorite": favorite}
 
     def switch_playback_release(self, release_id: int) -> dict[str, Any]:
+        previous = self.playback.active
+        old_release_id = previous.match.release.release_id if previous else None
+        already_counted = bool(previous and previous.scrobbled)
+        track_key = previous.recognition_key if previous else ""
         success = self.playback.switch_release(release_id, self.store)
-        if success:
-            return {"status": "ok", "state": self.state()}
-        return {"status": "error", "message": "Não foi possível alternar o disco ativo"}
+        if not success:
+            return {"status": "error", "message": "Não foi possível alternar o disco ativo"}
+        # A audição já contada vai junto para o disco certo
+        if already_counted and old_release_id is not None and old_release_id != release_id:
+            self.store.decrement_auditions(old_release_id)
+            self.store.increment_auditions(release_id)
+            self.playback.active.scrobbled = True
+        self.playback.active.recognition_key = track_key
+        self.store.save_preferred_release(track_key, release_id)
+        self._save_playback(self.playback)
+        return {"status": "ok", "state": self.state()}
+
+    def keep_playback_release(self) -> dict[str, Any]:
+        """'Manter este disco': trava e lembra a escolha para a próxima vez."""
+        if not self.playback.keep_current():
+            return {"status": "error", "message": "Nenhum disco tocando"}
+        active = self.playback.active
+        self.store.save_preferred_release(active.recognition_key, active.match.release.release_id)
+        return {"status": "ok", "state": self.state()}
 
     def stop_playback(self) -> dict[str, Any]:
         self.playback.stop()

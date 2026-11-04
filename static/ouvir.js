@@ -210,6 +210,10 @@ async function registerAudition(lp, buttonEl) {
       }
     });
     
+    if (response.status === 401) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.message || 'Este aparelho não está autorizado a registrar audições.');
+    }
     if (!response.ok) throw new Error('Erro ao registrar audição');
     
     const result = await response.json();
@@ -235,7 +239,7 @@ async function registerAudition(lp, buttonEl) {
     
   } catch (error) {
     console.error('Error registering audition:', error);
-    showToast(`Falha ao registrar audição para "${lp.title}".`, 'error');
+    showToast(/autorizado/.test(error.message) ? error.message : `Falha ao registrar audição para "${lp.title}".`, 'error');
   } finally {
     // Re-enable button
     buttonEl.disabled = false;

@@ -15,6 +15,7 @@ class AuthManager:
         self.data_dir = data_dir
         self.auth_file = data_dir / "auth.json"
         self.sessions_file = data_dir / "sessions.json"
+        self.devices_file = data_dir / "devices.json"
         
         self.password_hash = ""
         self.password_salt = ""
@@ -198,3 +199,73 @@ class AuthManager:
             
     def is_first_access(self) -> bool:
         return self.is_default
+
+    # ------------------------------------------------------------------ v3.6
+    # Aparelhos autorizados (o celular do player, o do Ouvir...). O token vai num cookie
+    # de longa duração no aparelho; aqui só fica o hash SHA-256 dele.
+    def _load_devices(self) -> list[dict]:
+        if not self.devices_file.exists():
+            return []
+        try:
+            with open(self.devices_file, "r", encoding="utf-8") as f:
+                return list(json.load(f).get("devices", []))
+        except Exception as e:
+            print(f"[AUTH] Error loading devices: {e}")
+            return []
+
+    def _save_devices(self, devices: list[dict]) -> None:
+        with open(self.devices_file, "w", encoding="utf-8") as f:
+            json.dump({"devices": devices}, f, indent=2)
+
+    @staticmethod
+    def _token_hash(token: str) -> str:
+        return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+    def authorize_device(self, label: str) -> tuple[str, str]:
+        """Cria um aparelho autorizado. Devolve (id, token); o token só existe no cookie."""
+        token = secrets.token_hex(32)
+        device_id = secrets.token_hex(4)
+        devices = self._load_devices()
+        now = time.time()
+        devices.append(
+            {
+                "id": device_id,
+                "label": (label or "Aparelho").strip()[:60],
+                "token_hash": self._token_hash(token),
+                "created_at": now,
+                "last_seen": now,
+            }
+        )
+        self._save_devices(devices)
+        return device_id, token
+
+    def validate_device(self, token: str | None) -> dict | None:
+        if not token:
+            return None
+        token_hash = self._token_hash(token)
+        devices = self._load_devices()
+        for device in devices:
+            if secrets.compare_digest(device.get("token_hash", ""), token_hash):
+                # Atualiza "visto por último" no máximo a cada 10 min, para não gravar a cada poll
+                if time.time() - float(device.get("last_seen", 0)) > 600:
+                    device["last_seen"] = time.time()
+                    try:
+                        self._save_devices(devices)
+                    except Exception as e:
+                        print(f"[AUTH] Error saving devices: {e}")
+                return device
+        return None
+
+    def list_devices(self) -> list[dict]:
+        return [
+            {k: v for k, v in device.items() if k != "token_hash"}
+            for device in self._load_devices()
+        ]
+
+    def revoke_device(self, device_id: str) -> bool:
+        devices = self._load_devices()
+        remaining = [d for d in devices if d.get("id") != device_id]
+        if len(remaining) == len(devices):
+            return False
+        self._save_devices(remaining)
+        return True

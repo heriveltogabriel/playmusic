@@ -33,6 +33,14 @@ def normalize_text(value: str | None) -> str:
     return " ".join(ascii_text.lower().split())
 
 
+def preference_key(title: str | None, artist: str | None) -> str:
+    """Chave estável de uma música reconhecida, para lembrar o disco escolhido."""
+    title_key = normalize_text(title)
+    if not title_key:
+        return ""
+    return f"{title_key}|{normalize_text(artist)}"
+
+
 def _contains_or_equals(left: str, right: str) -> bool:
     return bool(left and right and (left == right or left in right or right in left))
 
@@ -65,6 +73,7 @@ class CollectionMatcher:
         self,
         recognition: RecognitionResult,
         active_release_id: int | None = None,
+        preferred_release_id: int | None = None,
     ) -> list[TrackMatch]:
         recognized_title = normalize_text(recognition.title)
         recognized_artist = normalize_text(recognition.artist)
@@ -99,6 +108,11 @@ class CollectionMatcher:
                 score += 25
                 reasons.append("active album boost")
 
+            # Disco escolhido por você da última vez que esta música tocou
+            if preferred_release_id is not None and release.release_id == preferred_release_id and score >= self.minimum_score:
+                score += 40
+                reasons.append("preferred release")
+
             # Side Start Boost: Extra weight if matching the beginning of a side/album
             if is_first_track_of_side(release, track):
                 score += 15
@@ -122,6 +136,9 @@ class CollectionMatcher:
         self,
         recognition: RecognitionResult,
         active_release_id: int | None = None,
+        preferred_release_id: int | None = None,
     ) -> TrackMatch | None:
-        matches = self.match_all(recognition, active_release_id=active_release_id)
+        matches = self.match_all(
+            recognition, active_release_id=active_release_id, preferred_release_id=preferred_release_id
+        )
         return matches[0] if matches else None

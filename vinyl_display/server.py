@@ -32,6 +32,43 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
     static_dir: Path
     auth: AuthManager
 
+    DEVICE_COOKIE = "vinyl_device"
+
+    def _get_cookie(self, name: str) -> str | None:
+        cookie_header = self.headers.get("Cookie")
+        if not cookie_header:
+            return None
+        cookie = SimpleCookie()
+        try:
+            cookie.load(cookie_header)
+        except Exception:
+            return None
+        return cookie[name].value if name in cookie else None
+
+    def _device_allowed(self) -> bool:
+        """Player e Ouvir: liberados se a exigência estiver desligada, se houver login do
+        admin ou se este aparelho foi autorizado em Configurações."""
+        if not getattr(self.app.config, "require_device_token", False):
+            return True
+        if self._is_authenticated():
+            return True
+        return self.auth.validate_device(self._get_cookie(self.DEVICE_COOKIE)) is not None
+
+    def _send_device_required(self) -> None:
+        body = json.dumps(
+            {
+                "error": "device_not_authorized",
+                "message": "Este aparelho não está autorizado. Abra /admin nele, faça login e toque em "
+                "\"Autorizar este aparelho\" em Configurações.",
+            },
+            ensure_ascii=False,
+        ).encode("utf-8")
+        self.send_response(HTTPStatus.UNAUTHORIZED)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
     def _get_session_token(self) -> str | None:
         cookie_header = self.headers.get("Cookie")
         if not cookie_header:
@@ -180,6 +217,16 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
         if path == "/api/ouvir/history":
             history = self.app.get_listening_history()
             self._json(history)
+            return
+        if path == "/api/admin/devices":
+            this_device = self.auth.validate_device(self._get_cookie(self.DEVICE_COOKIE))
+            self._json(
+                {
+                    "require_device_token": bool(getattr(self.app.config, "require_device_token", False)),
+                    "this_device": this_device["id"] if this_device else None,
+                    "devices": self.auth.list_devices(),
+                }
+            )
             return
         if path == "/api/admin/releases":
             self._json(self.app.list_admin_releases())
@@ -331,6 +378,14 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
     def do_POST(self) -> None:
         path = urlparse(self.path).path
         
+        # Rotas do player e do Ouvir: gastam Shazam ou mudam audições
+        if path == "/api/recognize" or path.startswith("/api/playback/") or (
+            path.startswith("/api/ouvir/releases/") and (path.endswith("/listen") or path.endswith("/unlisten"))
+        ):
+            if not self._device_allowed():
+                self._send_device_required()
+                return
+
         # Check authentication for protected POST routes
         if path.startswith("/api/admin/") or path == "/api/sync" or path == "/api/config" or path == "/api/auth/change_password":
             if not self._is_authenticated():
@@ -558,6 +613,33 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             else:
                 self._json(self.app.playback_flip(ago, gap))
             return
+        if path == "/api/admin/devices/authorize":
+            payload = self._read_json_body()
+            device_id, token = self.auth.authorize_device(str(payload.get("label") or "Aparelho"))
+            body = json.dumps({"status": "ok", "id": device_id}).encode("utf-8")
+            self.send_response(HTTPStatus.OK)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header(
+                "Set-Cookie",
+                f"{self.DEVICE_COOKIE}={token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=63072000{self._secure_flag()}",
+            )
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
+        if path == "/api/admin/devices/revoke":
+            payload = self._read_json_body()
+            self._json({"status": "ok" if self.auth.revoke_device(str(payload.get("id") or "")) else "not_found"})
+            return
+        if path == "/api/admin/devices/require":
+            payload = self._read_json_body()
+            enabled = bool(payload.get("enabled"))
+            self.app.update_config({"REQUIRE_DEVICE_TOKEN": "1" if enabled else "0"})
+            self._json({"status": "ok", "require_device_token": enabled})
+            return
+        if path == "/api/playback/keep_release":
+            self._json(self.app.keep_playback_release())
+            return
         if path == "/api/playback/stop":
             result = self.app.stop_playback()
             self._json(result)
@@ -763,6 +845,16 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             self._json(self.app.decrement_release_auditions(release_id))
             return
         self.send_error(HTTPStatus.NOT_FOUND)
+
+    def _read_json_body(self) -> dict:
+        length = int(self.headers.get("Content-Length", "0") or 0)
+        if not length:
+            return {}
+        try:
+            payload = json.loads(self.rfile.read(length).decode("utf-8"))
+        except ValueError:
+            return {}
+        return payload if isinstance(payload, dict) else {}
 
     def _send_static(self, relative_path: str) -> None:
         target = (self.static_dir / relative_path).resolve()

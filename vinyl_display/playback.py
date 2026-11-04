@@ -16,6 +16,7 @@ class ActivePlayback:
     scrobbled: bool = False
     locked: bool = False
     anchored_at: float = 0.0  # última vez que o tempo foi confirmado (Shazam, pausa entre faixas ou virada)
+    recognition_key: str = ""  # música reconhecida (título|artista), para lembrar o disco escolhido
 
 
 # Prefixos de disco usados pelo Discogs em LPs duplos/box sets: "LP-A1", "LP1-B2", "Disc 2-C1", "1-A1"
@@ -83,6 +84,8 @@ class PlaybackController:
         now: float | None = None,
         latency: float = 0.0,
         alternatives: list[TrackMatch] | None = None,
+        locked: bool = False,
+        recognition_key: str = "",
     ) -> None:
         now = now or time.time()
         started_at = now - offset - latency
@@ -91,7 +94,7 @@ class PlaybackController:
             self.active is not None
             and self.active.match.release.release_id == match.release.release_id
         )
-        is_locked = is_same_release and getattr(self.active, "locked", False)
+        is_locked = (is_same_release and getattr(self.active, "locked", False)) or locked
 
         if is_locked:
             self.alternatives = []
@@ -105,6 +108,7 @@ class PlaybackController:
                 started_at=started_at,
                 locked=is_locked,
                 anchored_at=now,
+                recognition_key=recognition_key or self.active.recognition_key,
             )
         else:
             self.active = ActivePlayback(
@@ -112,8 +116,9 @@ class PlaybackController:
                 started_at=started_at,
                 played_tracks=set(),
                 scrobbled=False,
-                locked=False,
+                locked=is_locked,
                 anchored_at=now,
+                recognition_key=recognition_key,
             )
         self.status = "playing"
         self.message = ""
@@ -266,6 +271,15 @@ class PlaybackController:
             new_track = next((t for t in latest.tracks if t.title == old_track.title), old_track)
         self.active.match = replace(self.active.match, release=latest, track=new_track)
 
+    def keep_current(self) -> bool:
+        """'Manter este disco': trava o disco atual e esconde as alternativas."""
+        if self.active is None:
+            return False
+        self.active.locked = True
+        self.alternatives = []
+        self._changed()
+        return True
+
     def switch_release(self, release_id: int, store: Any) -> bool:
         if self.active is None:
             return False
@@ -401,6 +415,7 @@ class PlaybackController:
             "played_tracks": sorted(self.active.played_tracks),
             "scrobbled": self.active.scrobbled,
             "locked": self.active.locked,
+            "recognition_key": self.active.recognition_key,
             "saved_at": now or time.time(),
         }
 
@@ -423,6 +438,7 @@ class PlaybackController:
             scrobbled=bool(snapshot.get("scrobbled")),
             locked=bool(snapshot.get("locked")),
             anchored_at=float(snapshot.get("anchored_at") or snapshot["started_at"]),
+            recognition_key=str(snapshot.get("recognition_key") or ""),
         )
         self.status = "playing"
         self.message = ""
