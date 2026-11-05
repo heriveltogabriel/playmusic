@@ -2,6 +2,10 @@
 
 Versões do PlayVinil / Vinyl Display. As mais recentes primeiro.
 
+## 4.5.1 — 2026-11-05
+
+- Shazam: trechos quietos no meio de uma música não contam mais como troca de disco (no meio do lado, só pausa de 20s ou mais); faixa já confirmada pela pausa não dispara outra conferência.
+
 ## 4.5.0 — 2026-11-05
 
 - Novo nome: PlayVinil, com ícone próprio (toca-discos laranja) no celular, na aba do navegador e no app instalado.
