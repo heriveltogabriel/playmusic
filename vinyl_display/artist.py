@@ -34,15 +34,20 @@ def clean_profile(text: str, limit: int = 900) -> str:
 
 
 def _owned_matches(entry_title: str, owned: list[tuple[int, str]]) -> list[int]:
-    wanted = norm_title(entry_title)
+    """Discos da coleção com o mesmo título (sem parênteses, acentos e pontuação). Só
+    título igual conta: "As Quatro Estações" não é "As Quatro Estações Ao Vivo"."""
+    wanted = _core(entry_title)
     if not wanted:
         return []
-    hits = []
-    for release_id, title in owned:
-        mine = norm_title(title)
-        if mine == wanted or (len(wanted) > 5 and len(mine) > 5 and (wanted in mine or mine in wanted)):
-            hits.append(release_id)
-    return hits
+    return [release_id for release_id, title in owned if _core(title) == wanted]
+
+
+def _core(title: str) -> str:
+    """Título sem anos/números no fim: "Que País É Este 1978/1987" → "que pais e este"."""
+    words = norm_title(title).split()
+    while len(words) > 1 and words[-1].isdigit():
+        words.pop()
+    return " ".join(words)
 
 
 def discography(app: Any, release_ids: list[int], refresh: bool = False, now: float | None = None) -> dict[str, Any]:
@@ -79,7 +84,7 @@ def discography(app: Any, release_ids: list[int], refresh: bool = False, now: fl
             cached = json.loads(raw)
         except ValueError:
             cached = None
-    if not cached or "album_ids" not in cached or now - float(cached.get("fetched_at", 0)) > CACHE_SECONDS:
+    if not cached or cached.get("version") != 2 or now - float(cached.get("fetched_at", 0)) > CACHE_SECONDS:
         if client is None:
             return {"status": "error", "message": "Discogs não configurado."}
         try:
@@ -100,7 +105,14 @@ def discography(app: Any, release_ids: list[int], refresh: bool = False, now: fl
             masters = [i for i in items if i["type"] == "master"]
             singles = [i for i in items if i["type"] != "master"]
             master_titles = {norm_title(m["title"]) for m in masters}
-            works = masters + [i for i in singles if norm_title(i["title"]) not in master_titles]
+            works = []
+            seen_titles: set[str] = set()
+            for item in masters + [i for i in singles if norm_title(i["title"]) not in master_titles]:
+                key = norm_title(item["title"])
+                if key in seen_titles:
+                    continue  # o Discogs às vezes tem dois masters da mesma obra
+                seen_titles.add(key)
+                works.append(item)
             works.sort(key=lambda w: (w["year"] or 9999, w["title"]))
             cached = {
                 "fetched_at": now,
@@ -108,6 +120,7 @@ def discography(app: Any, release_ids: list[int], refresh: bool = False, now: fl
                            "profile": clean_profile(profile["profile"]), "uri": profile["uri"]},
                 "works": works,
                 "album_ids": album_ids,
+                "version": 2,
             }
             store.set_metadata(cache_key, json.dumps(cached, ensure_ascii=False))
 
@@ -118,9 +131,7 @@ def discography(app: Any, release_ids: list[int], refresh: bool = False, now: fl
     album_set = set(album_ids) if album_ids else None
     works = []
     for work in cached["works"]:
-        owned_ids = _owned_matches(work["title"], mine_first) or (
-            _owned_matches(work["title"], all_owned) if len(norm_title(work["title"])) > 8 else []
-        )
+        owned_ids = _owned_matches(work["title"], mine_first) or _owned_matches(work["title"], all_owned)
         url = f"https://www.discogs.com/{'master' if work['type'] == 'master' else 'release'}/{work['id']}"
         if album_set is None:
             is_album = True

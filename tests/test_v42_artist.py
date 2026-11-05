@@ -29,6 +29,8 @@ class FakeDiscogs:
             {"id": 1, "type": "master", "title": "Que País É Este 1978/1987", "year": 1987, "format": "", "thumb": "", "main_release": 10},
             {"id": 9, "type": "release", "title": "Dois", "year": 1986, "format": "", "thumb": "", "main_release": None},
             {"id": 2, "type": "master", "title": "Mais Do Mesmo", "year": 1998, "format": "", "thumb": "", "main_release": 20},
+            {"id": 4, "type": "master", "title": "Mais Do Mesmo", "year": 2005, "format": "", "thumb": "", "main_release": 40},
+            {"id": 5, "type": "master", "title": "Que País É Este 1978/1987 Ao Vivo", "year": 2010, "format": "", "thumb": "", "main_release": 50},
         ]
 
 
@@ -39,13 +41,16 @@ class ArtistTests(unittest.TestCase):
             app.discogs_client = FakeDiscogs()
             result = discography(app, [1, 2])
             self.assertEqual(result["status"], "ok")
-            self.assertEqual([w["title"] for w in result["works"]], ["Dois", "Que País É Este 1978/1987", "Mais Do Mesmo"])
+            self.assertEqual([w["title"] for w in result["works"]],
+                             ["Dois", "Que País É Este 1978/1987", "Mais Do Mesmo", "Que País É Este 1978/1987 Ao Vivo"])
             owned = {w["title"]: w["owned_release_ids"] for w in result["works"]}
             self.assertEqual(owned["Que País É Este 1978/1987"], [1])
             self.assertEqual(owned["Mais Do Mesmo"], [2])
             self.assertEqual(owned["Dois"], [])
             albums = {w["title"]: w["album"] for w in result["works"]}
-            self.assertEqual(albums, {"Dois": True, "Que País É Este 1978/1987": True, "Mais Do Mesmo": True})  # coletânea sua conta
+            self.assertEqual(owned["Que País É Este 1978/1987 Ao Vivo"], [])  # título diferente não conta
+            self.assertEqual(albums, {"Dois": True, "Que País É Este 1978/1987": True, "Mais Do Mesmo": True,
+                                      "Que País É Este 1978/1987 Ao Vivo": False})  # coletânea sua conta
             self.assertEqual((result["owned_count"], result["total"]), (2, 3))
             self.assertEqual(result["artist"]["profile"], "Banda de Renato Russo e amigos.")
             self.assertTrue(result["works"][0]["url"].endswith("/master/3"))
