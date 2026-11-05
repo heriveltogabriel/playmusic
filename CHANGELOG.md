@@ -2,6 +2,10 @@
 
 Versões do PlayVinil / Vinyl Display. As mais recentes primeiro.
 
+## 4.4.5 — 2026-11-05
+
+- Página do artista: biografia em português pela Wikipédia (achada pelo número do artista no Discogs, via Wikidata), com a fonte e o link. Sem página em português, fica o texto do Discogs em inglês.
+
 ## 4.4.4 — 2026-11-05
 
 - Ranking: histórico de audições com atalhos de período (1 mês, 3 meses, 6 meses, 1 ano, tudo) no lugar das duas listas de meses.
