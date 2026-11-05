@@ -915,6 +915,7 @@ function recordClip(isAutomatic = false, isManual = false, attempt = 1, maxAttem
           elements.retryButton.classList.remove("recording");
         }
         await pollState();
+        farGapChecked = true; // v4.5.4: faixa acabou de ser confirmada pelo Shazam
         return;
       }
 

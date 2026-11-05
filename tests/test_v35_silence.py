@@ -190,7 +190,7 @@ console.log(JSON.stringify([
 ]));""")
         # LP duplo: a virada vai para o Shazam (B->A ou B->C); pausa entre faixas segue local
         self.assertEqual(decisions, ["boundary", "flip", "boundary", "flip", "recognize", "ignore",
-                                     "recognize", "recognize", "boundary", "recognize"])
+                                     "recognize", "recognize", "boundary", "boundary"])
 
 
 class StaticV352Tests(unittest.TestCase):
