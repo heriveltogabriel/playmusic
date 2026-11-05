@@ -5469,3 +5469,16 @@ dialog::backdrop {
   .artist-disc-sub { align-self: start; }
   .artist-mosaic.big { width: 120px; }
 }
+
+/* v4.5: PlayVinil + nome da coleção no menu */
+.logo-text-wrap { display: flex; flex-direction: column; line-height: 1.1; min-width: 0; }
+.logo-collection {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 170px;
+}
+.logo-collection:empty { display: none; }

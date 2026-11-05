@@ -2,7 +2,7 @@
 // Scripts clássicos carregados em ordem pelo admin.html; compartilham o escopo global.
 
 const DIARY_WEEKDAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-const DIARY_DEFAULT_COVER = '/static/logo_lp_da_semana.png';
+const DIARY_DEFAULT_COVER = '/static/playvinil-cover.svg';
 
 function dcEsc(text) {
   const div = document.createElement('div');

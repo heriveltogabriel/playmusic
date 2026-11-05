@@ -25,3 +25,23 @@ class LyricsSyncAdjustTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class BrandTests(unittest.TestCase):
+    def test_old_brand_is_gone_from_app_screens(self):
+        for name in ("index.html", "admin.html", "ouvir.html", "app.js", "manifest.json"):
+            text = (ROOT / "static" / name).read_text(encoding="utf-8")
+            self.assertNotIn("LP da Semana", text, name)
+            self.assertNotIn("LP DA SEMANA", text, name)
+            self.assertNotIn("Conversas em Vinil", text, name)
+        self.assertTrue((ROOT / "static" / "playvinil-cover.svg").exists())
+        self.assertTrue((ROOT / "static" / "playvinil-icon.png").exists())
+
+    def test_collection_name_config(self):
+        import os
+        from unittest import mock
+
+        from vinyl_display.config import load_config
+
+        with mock.patch.dict(os.environ, {"VINYL_DISABLE_DOTENV": "1", "COLLECTION_NAME": " Discoteca do Herivelto "}):
+            self.assertEqual(load_config().collection_name, "Discoteca do Herivelto")

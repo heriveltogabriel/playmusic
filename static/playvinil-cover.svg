@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="PlayVinil">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="40%" r="75%">
+      <stop offset="0" stop-color="#2a1d14"/>
+      <stop offset="1" stop-color="#0c0c0c"/>
+    </radialGradient>
+    <radialGradient id="disc" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#1b1b1b"/>
+      <stop offset="1" stop-color="#050505"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <circle cx="256" cy="232" r="176" fill="url(#disc)"/>
+  <g fill="none" stroke="#262626" stroke-width="1.5">
+    <circle cx="256" cy="232" r="164"/><circle cx="256" cy="232" r="150"/>
+    <circle cx="256" cy="232" r="136"/><circle cx="256" cy="232" r="122"/>
+    <circle cx="256" cy="232" r="108"/><circle cx="256" cy="232" r="94"/>
+  </g>
+  <path d="M150 140 A140 140 0 0 1 300 98" fill="none" stroke="#3a3a3a" stroke-width="6" stroke-linecap="round" opacity="0.6"/>
+  <circle cx="256" cy="232" r="62" fill="#e65c00"/>
+  <circle cx="256" cy="232" r="54" fill="none" stroke="#ff8a3d" stroke-width="1.5" opacity="0.7"/>
+  <polygon points="244,212 244,252 276,232" fill="#eae5d9"/>
+  <circle cx="256" cy="232" r="5" fill="#0c0c0c"/>
+  <text x="256" y="456" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="58" font-weight="700" fill="#eae5d9">Play<tspan fill="#e65c00">Vinil</tspan></text>
+</svg>

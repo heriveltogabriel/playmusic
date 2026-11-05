@@ -436,7 +436,7 @@ async function renderWeeklyHistory() {
       div.textContent = text == null ? '' : String(text);
       return div.innerHTML;
     };
-    const defaultCover = '/static/logo_lp_da_semana.png';
+    const defaultCover = '/static/playvinil-cover.svg';
 
     wd.lpsData.forEach((item, dayIndex) => {
       const lp = item.lp;

@@ -7,15 +7,15 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Coleção LP">
-  <link rel="apple-touch-icon" href="/static/logo_lp_da_semana.png">
-  <link rel="icon" href="/static/favicon.png" type="image/png">
+  <link rel="apple-touch-icon" href="/static/playvinil-icon-180.png">
+  <link rel="icon" href="/static/playvinil-favicon.png" type="image/png">
 
-  <title>LP da Semana - Catálogo</title>
+  <title>PlayVinil · Catálogo</title>
   <!-- Google Fonts: Outfit for sleek modern UI, JetBrains Mono for metadata -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/admin.css?v=4.4.8">
+  <link rel="stylesheet" href="/static/admin.css?v=4.5.0">
 </head>
 <body>
   <!-- Ambient background glow representing album colors -->
@@ -33,7 +33,7 @@
             <div class="logo-vinyl">
               <div class="logo-vinyl-label"></div>
             </div>
-            <span class="logo-text">LP da Semana</span>
+            <span class="logo-text-wrap"><span class="logo-text">PlayVinil</span><span id="logo-collection" class="logo-collection"></span></span>
           </div>
           <button id="sidebar-close-btn" class="sidebar-close-btn" type="button" aria-label="Fechar Menu" title="Fechar Menu">
             <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
@@ -943,6 +943,15 @@
 
             <!-- Favorites Settings Card -->
             <div data-settings-tab="colecao" class="settings-card">
+              <div class="settings-card-header"><h3>Nome da coleção</h3></div>
+              <p class="settings-card-desc">Aparece embaixo de "PlayVinil" no player e no menu do admin.</p>
+              <div class="form-group">
+                <label for="setting-collection-name">Nome</label>
+                <input type="text" id="setting-collection-name" maxlength="60" placeholder="Ex.: Discoteca do Herivelto">
+              </div>
+            </div>
+
+            <div data-settings-tab="colecao" class="settings-card">
               <div class="settings-card-header">
                 <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
@@ -1373,23 +1382,23 @@
   <div id="toast-container" class="toast-container"></div>
 
   <!-- Database & Logic Scripts -->
-  <script src="/static/admin/00-core.js?v=4.3.0" defer></script>
-  <script src="/static/admin/10-agenda.js?v=4.4.1" defer></script>
-  <script src="/static/admin/20-collection.js?v=4.2.4" defer></script>
-  <script src="/static/admin/25-filters.js?v=4.3.1" defer></script>
-  <script src="/static/admin/30-timeline.js?v=4.2.4" defer></script>
-  <script src="/static/admin/40-stats.js?v=4.4.4" defer></script>
-  <script src="/static/admin/45-profile.js?v=4.2.4" defer></script>
-  <script src="/static/admin/50-dialogs.js?v=4.3.0" defer></script>
-  <script src="/static/admin/60-ranking.js?v=4.2.4" defer></script>
-  <script src="/static/admin/70-settings.js?v=4.2.4" defer></script>
-  <script src="/static/admin/80-history.js?v=4.4.4" defer></script>
-  <script src="/static/admin/90-devices-alerts.js?v=4.2.4" defer></script>
-  <script src="/static/admin/95-recognition.js?v=4.2.4" defer></script>
-  <script src="/static/admin/96-diary-care.js?v=4.2.4" defer></script>
-  <script src="/static/admin/97-shelves.js?v=4.2.4" defer></script>
-  <script src="/static/admin/98-settings-tabs.js?v=4.2.5" defer></script>
-  <script src="/static/admin/99-artists.js?v=4.4.5" defer></script>
-  <script src="/static/admin/99b-vinyl-edition.js?v=4.3.0" defer></script>
+  <script src="/static/admin/00-core.js?v=4.5.0" defer></script>
+  <script src="/static/admin/10-agenda.js?v=4.5.0" defer></script>
+  <script src="/static/admin/20-collection.js?v=4.5.0" defer></script>
+  <script src="/static/admin/25-filters.js?v=4.5.0" defer></script>
+  <script src="/static/admin/30-timeline.js?v=4.5.0" defer></script>
+  <script src="/static/admin/40-stats.js?v=4.5.0" defer></script>
+  <script src="/static/admin/45-profile.js?v=4.5.0" defer></script>
+  <script src="/static/admin/50-dialogs.js?v=4.5.0" defer></script>
+  <script src="/static/admin/60-ranking.js?v=4.5.0" defer></script>
+  <script src="/static/admin/70-settings.js?v=4.5.0" defer></script>
+  <script src="/static/admin/80-history.js?v=4.5.0" defer></script>
+  <script src="/static/admin/90-devices-alerts.js?v=4.5.0" defer></script>
+  <script src="/static/admin/95-recognition.js?v=4.5.0" defer></script>
+  <script src="/static/admin/96-diary-care.js?v=4.5.0" defer></script>
+  <script src="/static/admin/97-shelves.js?v=4.5.0" defer></script>
+  <script src="/static/admin/98-settings-tabs.js?v=4.5.0" defer></script>
+  <script src="/static/admin/99-artists.js?v=4.5.0" defer></script>
+  <script src="/static/admin/99b-vinyl-edition.js?v=4.5.0" defer></script>
 </body>
 </html>

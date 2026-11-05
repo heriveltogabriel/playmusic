@@ -295,11 +295,11 @@ function setCover(release) {
     elements.albumCover.replaceChildren();
     const image = document.createElement("img");
     image.className = "cover-image";
-    image.alt = "LOGO LP DA SEMANA";
-    image.src = "/static/logo_lp_da_semana.png";
+    image.alt = "PlayVinil";
+    image.src = "/static/playvinil-cover.svg";
     elements.albumCover.appendChild(image);
     if (elements.vinylLabel) {
-      elements.vinylLabel.style.backgroundImage = "url(/static/logo_lp_da_semana.png)";
+      elements.vinylLabel.style.backgroundImage = "url(/static/playvinil-label.svg)";
     }
     return;
   }
@@ -490,7 +490,7 @@ function renderStateInner(state) {
     elements.alternativesWrapper.classList.add("hidden");
   }
   hideAlternatives();
-  setCover(null); // Renderiza a logo do LP DA SEMANA
+  setCover(null); // Renderiza o logo do PlayVinil
   currentRelease = null;
   nextTrack = null;
   currentTrackKey = null;
@@ -538,8 +538,8 @@ function renderStateInner(state) {
   }
 
   // Caso padrão (listening / ocioso ou waiting_flip sem próxima música)
-  elements.trackTitle.textContent = "LP DA SEMANA";
-  elements.artistName.textContent = "Conversas em Vinil";
+  elements.trackTitle.textContent = "PlayVinil";
+  elements.artistName.textContent = state.collection_name || "Sua coleção de vinil";
   
   if (state.status === "waiting_flip" && !state.next_track) {
     elements.albumLine.textContent = state.message || "Fim do disco!";
@@ -1033,7 +1033,7 @@ function showAlternatives() {
     const cover = document.createElement("img");
     cover.className = "alternative-card-cover";
     cover.alt = alt.title || "Capa";
-    cover.src = alt.cover_url || "/static/logo_lp_da_semana.png";
+    cover.src = alt.cover_url || "/static/playvinil-cover.svg";
 
     const info = document.createElement("div");
     info.className = "alternative-card-info";
@@ -1902,7 +1902,7 @@ function pickCard(release, onClick, subtitle) {
   const cover = document.createElement("img");
   cover.className = "alternative-card-cover";
   cover.alt = release.title || "Capa";
-  cover.src = release.cover_url || "/static/logo_lp_da_semana.png";
+  cover.src = release.cover_url || "/static/playvinil-cover.svg";
   cover.loading = "lazy";
   const info = document.createElement("div");
   info.className = "alternative-card-info";

@@ -130,3 +130,23 @@ function setupSettingsTabs() {
 }
 
 document.addEventListener('DOMContentLoaded', setupSettingsTabs);
+
+
+// v4.5: nome da coleção embaixo de "PlayVinil" no menu (e no título da aba)
+async function loadBrand() {
+  try {
+    const data = await fetch('/api/state').then(r => r.json());
+    const name = (data && data.collection_name) || '';
+    const el = document.getElementById('logo-collection');
+    if (el) el.textContent = name;
+    document.title = name ? `PlayVinil · ${name}` : 'PlayVinil · Catálogo';
+  } catch (e) {
+    // sem nome: fica só "PlayVinil"
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadBrand();
+  const form = document.getElementById('settings-form');
+  if (form) form.addEventListener('submit', () => setTimeout(loadBrand, 1500));
+});

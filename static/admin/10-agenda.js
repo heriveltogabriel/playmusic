@@ -306,7 +306,7 @@ function renderWeeklyAgenda() {
   // Atualiza a barra de progresso
   renderWeeklyProgressBar(completedCount, cardStates, todayIdx);
 
-  const defaultCover = '/static/logo_lp_da_semana.png';
+  const defaultCover = '/static/playvinil-cover.svg';
   container.classList.add('agenda-list');
 
   // Data de cada dia desta semana (para mostrar "Qui, 05/11" e quando foi ouvido)

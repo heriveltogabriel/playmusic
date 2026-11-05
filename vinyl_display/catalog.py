@@ -458,7 +458,7 @@ class CatalogStore:
                 title=title,
                 artist=artist,
                 year=original_year,
-                cover_url=cover_url or "/static/logo_lp_da_semana.png",
+                cover_url=cover_url or "/static/playvinil-cover.svg",
                 country="Local",
                 labels=labels if labels is not None else ["Self-Released"],
                 catalog_numbers=catalog_numbers if catalog_numbers is not None else ["LOCAL"],

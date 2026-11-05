@@ -87,6 +87,8 @@ async function loadSettingsFromServer() {
     
     document.getElementById('setting-lyrics-latency').value = config.lyrics_latency_offset !== undefined ? config.lyrics_latency_offset : 1.3;
     document.getElementById('setting-favorite-threshold').value = config.favorite_threshold !== undefined ? config.favorite_threshold : 5;
+    const collectionInput = document.getElementById('setting-collection-name');
+    if (collectionInput) collectionInput.value = config.collection_name || '';
     
     updateSyncStatusUI(config);
   } catch (error) {
@@ -158,6 +160,8 @@ function initializeSettingsForm() {
     const rapidapi_shazam_host = document.getElementById('setting-shazam-host').value.trim();
     const lyrics_latency_offset = parseFloat(document.getElementById('setting-lyrics-latency').value) || 1.3;
     const favorite_threshold = parseInt(document.getElementById('setting-favorite-threshold').value) || 5;
+    const collectionInput = document.getElementById('setting-collection-name');
+    const collection_name = collectionInput ? collectionInput.value.trim() : undefined;
     const budgetInput = document.getElementById('setting-shazam-budget');
     const shazam_daily_budget = budgetInput ? Math.max(0, parseInt(budgetInput.value) || 0) : 60;
     
@@ -169,7 +173,8 @@ function initializeSettingsForm() {
       rapidapi_shazam_key,
       rapidapi_shazam_host,
       lyrics_latency_offset,
-      favorite_threshold
+      favorite_threshold,
+      ...(collection_name !== undefined ? { collection_name } : {})
     };
     
     try {

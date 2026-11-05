@@ -92,7 +92,7 @@ async function openVinylVersions(lp) {
     const rows = data.versions.filter(v => !q || `${v.country} ${v.label} ${v.catno} ${v.year} ${v.format} ${v.title}`.toLowerCase().includes(q));
     list.innerHTML = rows.map(v => `
       <div class="ve-row ${data.chosen === v.id ? 'chosen' : ''}">
-        <img src="${veEsc(v.thumb || '/static/logo_lp_da_semana.png')}" alt="" loading="lazy" onerror="this.onerror=null; this.src='/static/logo_lp_da_semana.png'">
+        <img src="${veEsc(v.thumb || '/static/playvinil-cover.svg')}" alt="" loading="lazy" onerror="this.onerror=null; this.src='/static/playvinil-cover.svg'">
         <div class="ve-row-info">
           <div class="ve-row-title">${veEsc(v.label || 'Selo não informado')} · ${veEsc(v.catno || 's/ nº')}</div>
           <div class="ve-row-sub">${veEsc(v.country || '?')} · ${veEsc(v.year || 'ano ?')} · ${veEsc(v.format)}</div>

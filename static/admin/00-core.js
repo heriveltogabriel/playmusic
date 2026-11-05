@@ -1,5 +1,5 @@
 /**
- * LP da Semana - Catálogo
+ * PlayVinil - Catálogo
  * Core Application Logic
  */
 

@@ -292,6 +292,7 @@ class VinylDisplayApp:
         state["collection_count"] = self.store.collection_count()
         state["last_sync_at"] = self.store.get_metadata("discogs_last_sync_at")
         state["lyrics_latency_offset"] = self.config.lyrics_latency_offset if self.config else 1.3
+        state["collection_name"] = getattr(self.config, "collection_name", "") if self.config else ""
         
         # Get version
         version_str = "1.0.0"

@@ -32,6 +32,7 @@ class Config:
     player_offline_minutes: int = 10
     alert_quiet_start: str = "22:00"
     alert_quiet_end: str = "10:00"
+    collection_name: str = ""  # v4.5: nome que aparece embaixo de "PlayVinil" (ex.: "Discoteca do Herivelto")
 
 
 
@@ -99,6 +100,7 @@ def load_config() -> Config:
         favorite_threshold=int(os.environ.get("FAVORITE_THRESHOLD", "5")),
         shazam_daily_budget=int(os.environ.get("SHAZAM_DAILY_BUDGET", "60")),
         shazam_monthly_limit=int(os.environ.get("SHAZAM_MONTHLY_LIMIT", "500")),
+        collection_name=os.environ.get("COLLECTION_NAME", "").strip(),
         require_device_token=os.environ.get("REQUIRE_DEVICE_TOKEN", "0").strip().lower() in {"1", "true", "sim", "yes"},
         telegram_bot_token=os.environ.get("TELEGRAM_BOT_TOKEN", ""),
         telegram_chat_id=os.environ.get("TELEGRAM_CHAT_ID", ""),

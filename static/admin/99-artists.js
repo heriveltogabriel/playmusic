@@ -14,7 +14,7 @@ const ARTIST_RULES = [
   { pattern: /maria bethania|maria bethânia/i, canonical: 'Maria Bethânia' },
   { pattern: /^marina$|^marina lima$/i, canonical: 'Marina Lima' },
 ];
-const ARTIST_DEFAULT_COVER = '/static/logo_lp_da_semana.png';
+const ARTIST_DEFAULT_COVER = '/static/playvinil-cover.svg';
 let artistOnlyMissing = false;
 let artistShowAll = false; // singles e compactos ficam escondidos por padrão
 let artistOnlyVinyl = true; // a coleção é de vinil: por padrão só o que saiu em vinil

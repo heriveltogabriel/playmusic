@@ -1,15 +1,20 @@
 {
-  "name": "Vinyl Display",
-  "short_name": "Vinyl",
+  "name": "PlayVinil",
+  "short_name": "PlayVinil",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#050505",
   "theme_color": "#050505",
-  "description": "Vinyl now-playing display",
+  "description": "O disco que está tocando na sua vitrola",
   "icons": [
     {
-      "src": "/static/logo_lp_da_semana.png",
+      "src": "/static/playvinil-icon.png",
       "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/playvinil-icon-180.png",
+      "sizes": "180x180",
       "type": "image/png"
     }
   ]

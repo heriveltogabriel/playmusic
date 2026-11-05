@@ -56,14 +56,14 @@ function updateAmbientGlow(imageUrl) {
     } catch (e) {
       // Fallback: Generate a nice deterministic color based on the title string
       const activeLp = state.agenda[state.selectedAgendaIndex];
-      const stringColor = hashStringToColor(activeLp ? activeLp.title : 'LP da Semana');
+      const stringColor = hashStringToColor(activeLp ? activeLp.title : 'PlayVinil');
       ambientGlow.style.background = `radial-gradient(circle at 65% 35%, ${stringColor} 0%, rgba(12, 12, 12, 0) 65%)`;
     }
   };
   
   img.onerror = () => {
     const activeLp = state.agenda[state.selectedAgendaIndex];
-    const stringColor = hashStringToColor(activeLp ? activeLp.title : 'LP da Semana');
+    const stringColor = hashStringToColor(activeLp ? activeLp.title : 'PlayVinil');
     ambientGlow.style.background = `radial-gradient(circle at 65% 35%, ${stringColor} 0%, rgba(12, 12, 12, 0) 65%)`;
   };
   

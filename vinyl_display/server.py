@@ -151,6 +151,7 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                 "last_sync_error": self.app.store.get_metadata("discogs_last_sync_error") or "",
                 "lyrics_latency_offset": self.app.config.lyrics_latency_offset if self.app.config else 1.3,
                 "favorite_threshold": self.app.config.favorite_threshold if self.app.config else 5,
+                "collection_name": getattr(self.app.config, "collection_name", "") if self.app.config else "",
                 "shazam_daily_budget": getattr(self.app.config, "shazam_daily_budget", 0) if self.app.config else 0,
                 "telegram_bot_token": getattr(self.app.config, "telegram_bot_token", "") if self.app.config else "",
                 "telegram_chat_id": getattr(self.app.config, "telegram_chat_id", "") if self.app.config else "",
@@ -180,10 +181,10 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             self._send_static("herivelto.html")
             return
         if path in ("/apple-touch-icon.png", "/apple-touch-icon-precomposed.png"):
-            self._send_static("logo_lp_da_semana.png")
+            self._send_static("playvinil-icon-180.png")
             return
         if path == "/favicon.ico":
-            self._send_static("favicon.png")
+            self._send_static("playvinil-favicon.png")
             return
         if path == "/api/ouvir/releases":
             releases = self.app.list_admin_releases()
@@ -643,6 +644,8 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             }
             if "shazam_daily_budget" in payload:
                 updates["SHAZAM_DAILY_BUDGET"] = str(int(payload.get("shazam_daily_budget") or 0))
+            if "collection_name" in payload:
+                updates["COLLECTION_NAME"] = str(payload.get("collection_name") or "").strip()[:60]
             for field, env in (("telegram_bot_token", "TELEGRAM_BOT_TOKEN"), ("telegram_chat_id", "TELEGRAM_CHAT_ID"), ("ntfy_topic", "NTFY_TOPIC"),
                                ("alert_quiet_start", "ALERT_QUIET_START"), ("alert_quiet_end", "ALERT_QUIET_END")):
                 if field in payload:
