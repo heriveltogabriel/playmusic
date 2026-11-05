@@ -2,7 +2,7 @@
 
 Versões do PlayVinil / Vinyl Display. As mais recentes primeiro.
 
-## 4.2.0 — em teste (branch feature/admin-cuidados-diario)
+## 4.2.0 — 2026-11-05 — Letra para ler, admin novo e menos Shazam
 
 ### Player
 - Letra em modo leitura: tela cheia, texto corrido e rolagem que acompanha a faixa; só aceita letra com a mesma duração da faixa.
