@@ -43,6 +43,7 @@ class ArtistTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             app, store = make_app(tmp)
             app.discogs_client = FakeDiscogs()
+            app.wiki_http_json = lambda url: {"query": {"search": []}}  # sem rede nos testes
             result = discography(app, [1, 2])
             self.assertEqual(result["status"], "ok")
             self.assertEqual([w["title"] for w in result["works"]],
@@ -68,6 +69,39 @@ class ArtistTests(unittest.TestCase):
             discography(app, [1, 2])  # segunda visita: do cache
             self.assertEqual(len(app.discogs_client.calls), calls)
 
+    def test_portuguese_bio_from_wikipedia_with_fallback(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            app, store = make_app(tmp)
+            app.discogs_client = FakeDiscogs()
+            calls = []
+
+            def wiki(url):
+                calls.append(url)
+                if "list=search" in url:
+                    return {"query": {"search": [{"title": "Q738110"}]}}
+                if "wbgetentities" in url:
+                    return {"entities": {"Q738110": {"sitelinks": {"ptwiki": {"title": "Legião Urbana"}}}}}
+                return {"extract": "Legião Urbana foi uma banda brasileira de rock.",
+                        "content_urls": {"desktop": {"page": "https://pt.wikipedia.org/wiki/Legi%C3%A3o_Urbana"}}}
+
+            app.wiki_http_json = wiki
+            artist = discography(app, [1, 2])["artist"]
+            self.assertEqual(artist["bio"], "Legião Urbana foi uma banda brasileira de rock.")
+            self.assertEqual((artist["bio_source"], artist["bio_lang"]), ("Wikipédia", "pt"))
+            self.assertIn("P1953%3D77", calls[0])
+            n = len(calls)
+            discography(app, [1, 2])  # guardado: não consulta de novo
+            self.assertEqual(len(calls), n)
+
+    def test_bio_falls_back_to_discogs_in_english(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            app, store = make_app(tmp)
+            app.discogs_client = FakeDiscogs()
+            app.wiki_http_json = lambda url: {"query": {"search": []}}
+            artist = discography(app, [1, 2])["artist"]
+            self.assertEqual((artist["bio_source"], artist["bio_lang"]), ("Discogs", "en"))
+            self.assertEqual(artist["bio"], "Banda de Renato Russo e amigos.")
+
     def test_errors_without_discogs(self):
         with tempfile.TemporaryDirectory() as tmp:
             app, _ = make_app(tmp)
@@ -87,6 +121,7 @@ class ArtistTests(unittest.TestCase):
 
     def test_helpers_and_route(self):
         self.assertEqual(norm_title("Dois (Remastered)"), "dois")
+        self.assertEqual(clean_profile("Brother of [a=Maria Bethânia]. Uncle of [a12345]."), "Brother of Maria Bethânia.")
         self.assertTrue(clean_profile("x " * 1000).endswith("…"))
         self.assertEqual(access_for("GET", "/api/admin/artist"), ADMIN)
 

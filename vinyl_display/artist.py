@@ -10,6 +10,8 @@ import unicodedata
 from typing import Any
 
 CACHE_SECONDS = 30 * 86400
+BIO_MISS_SECONDS = 7 * 86400  # artista sem página na Wikipédia em português: tenta de novo em 7 dias
+WIKI_UA = {"User-Agent": "PlayVinil/4.4 (https://github.com/heriveltogabriel/playmusic)"}
 _PARENS = re.compile(r"\s*[\(\[][^\)\]]*[\)\]]")
 _DISCOGS_MARKUP = re.compile(r"\[(?:a|l|m|r)=?([^\]]*)\]")
 
@@ -29,8 +31,67 @@ def clean_profile(text: str, limit: int = 900) -> str:
         return "" if value.isdigit() else value  # [a12345] é só o código do artista
 
     text = _DISCOGS_MARKUP.sub(_name, text)
+    text = re.sub(r"[^.\n]*\b(?:of|de|with|and|e)\s*\.", "", text)  # "Uncle of ." sobrou de um [a123]
+    text = re.sub(r"[ \t]+\n", "\n", text)
     text = re.sub(r"\s+\n", "\n", text).strip()
     return text if len(text) <= limit else text[:limit].rsplit(" ", 1)[0] + "…"
+
+
+def _http_json(url: str, timeout: float = 8.0) -> dict:
+    import urllib.request
+
+    request = urllib.request.Request(url, headers=WIKI_UA)
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        return json.loads(response.read().decode("utf-8"))
+
+
+def wikipedia_pt_bio(discogs_artist_id: int, http_json=None) -> dict | None:
+    """Resumo da Wikipédia em português do artista. A Wikidata liga o artista ao Discogs
+    pelo número dele (propriedade P1953), então não confunde homônimos."""
+    import urllib.parse
+
+    http_json = http_json or _http_json
+    search = http_json("https://www.wikidata.org/w/api.php?" + urllib.parse.urlencode({
+        "action": "query", "list": "search", "srsearch": f"haswbstatement:P1953={int(discogs_artist_id)}",
+        "format": "json", "srlimit": 1,
+    }))
+    hits = (search.get("query") or {}).get("search") or []
+    if not hits:
+        return None
+    qid = hits[0]["title"]
+    entity = http_json("https://www.wikidata.org/w/api.php?" + urllib.parse.urlencode({
+        "action": "wbgetentities", "ids": qid, "props": "sitelinks", "sitefilter": "ptwiki", "format": "json",
+    }))
+    title = (((entity.get("entities") or {}).get(qid) or {}).get("sitelinks") or {}).get("ptwiki", {}).get("title")
+    if not title:
+        return None
+    summary = http_json("https://pt.wikipedia.org/api/rest_v1/page/summary/" + urllib.parse.quote(title.replace(" ", "_")))
+    text = str(summary.get("extract") or "").strip()
+    if not text:
+        return None
+    url = ((summary.get("content_urls") or {}).get("desktop") or {}).get("page") or \
+        f"https://pt.wikipedia.org/wiki/{urllib.parse.quote(title.replace(' ', '_'))}"
+    return {"text": text, "url": url, "source": "Wikipédia"}
+
+
+def cached_pt_bio(store: Any, discogs_artist_id: int, now: float, http_json=None) -> dict | None:
+    key = f"artist_bio_pt:{discogs_artist_id}"
+    raw = store.get_metadata(key)
+    if raw:
+        try:
+            cached = json.loads(raw)
+            limit = CACHE_SECONDS if cached.get("bio") else BIO_MISS_SECONDS
+            if now - float(cached.get("fetched_at", 0)) < limit:
+                return cached.get("bio")
+        except ValueError:
+            pass
+    try:
+        bio = wikipedia_pt_bio(discogs_artist_id, http_json)
+    except Exception as error:  # sem rede para a Wikipédia: fica o texto do Discogs desta vez
+        print(f"[ARTIST] Wikipedia bio failed for {discogs_artist_id}: {error}")
+        return None
+    store.set_metadata(key, json.dumps({"fetched_at": now, "bio": bio}, ensure_ascii=False))
+    return bio
 
 
 def _owned_matches(entry_title: str, owned: list[tuple[int, str]]) -> list[int]:
@@ -160,9 +221,16 @@ def discography(app: Any, release_ids: list[int], refresh: bool = False, now: fl
     albums = [w for w in works if w["album"]]
     owned_count = sum(1 for w in albums if w["owned_release_ids"])
     vinyl_albums = [w for w in albums if w["vinyl"]]
+    artist_info = dict(cached["artist"])
+    bio = cached_pt_bio(store, int(artist_info["id"]), now, getattr(app, "wiki_http_json", None))
+    if bio:
+        artist_info.update({"bio": bio["text"], "bio_source": bio["source"], "bio_url": bio["url"], "bio_lang": "pt"})
+    elif artist_info.get("profile"):
+        artist_info.update({"bio": artist_info["profile"], "bio_source": "Discogs",
+                            "bio_url": f"https://www.discogs.com/artist/{artist_info['id']}", "bio_lang": "en"})
     return {
         "status": "ok",
-        "artist": cached["artist"],
+        "artist": artist_info,
         "works": works,
         "owned_count": owned_count,
         "total": len(albums),

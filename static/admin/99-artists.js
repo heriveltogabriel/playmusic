@@ -208,10 +208,11 @@ async function openArtistPage(name, refresh = false) {
   const disco = data && data.discography;
   page._discography = disco;
   const profile = document.getElementById('artist-profile');
-  if (profile && disco && disco.status === 'ok' && disco.artist.profile) {
-    profile.textContent = disco.artist.profile;
-    // Texto longo: mostra o começo e um "ler mais" (o perfil do Discogs ocupa a tela toda no celular)
-    if (disco.artist.profile.length > 320) {
+  const bioText = disco && disco.status === 'ok' ? (disco.artist.bio || disco.artist.profile || '') : '';
+  if (profile && bioText) {
+    profile.textContent = bioText;
+    // Texto longo: mostra o começo e um "ler mais"
+    if (bioText.length > 320) {
       profile.classList.add('clamped');
       const more = document.createElement('button');
       more.type = 'button';
@@ -222,6 +223,19 @@ async function openArtistPage(name, refresh = false) {
         more.textContent = clamped ? 'ler mais' : 'ler menos';
       });
       profile.after(more);
+    }
+    // De onde veio o texto (a Wikipédia pede o crédito com link)
+    if (disco.artist.bio_source) {
+      const source = document.createElement('div');
+      source.className = 'artist-profile-source';
+      const link = document.createElement('a');
+      link.href = disco.artist.bio_url || '#';
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.textContent = disco.artist.bio_source;
+      source.append('Fonte: ', link, disco.artist.bio_lang === 'en' ? ' (em inglês: não há página na Wikipédia em português)' : '');
+      (profile.nextElementSibling && profile.nextElementSibling.classList.contains('artist-profile-more')
+        ? profile.nextElementSibling : profile).after(source);
     }
   }
   renderArtistDiscography(disco);

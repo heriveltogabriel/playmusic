@@ -5446,3 +5446,7 @@ dialog::backdrop {
   .plays-history-filter-row { justify-content: flex-start !important; }
   .plays-history-filter-row > span { display: none; }
 }
+
+/* v4.4.5: crédito da biografia do artista */
+.artist-profile-source { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+.artist-profile-source a { color: var(--text-secondary); }
