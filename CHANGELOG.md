@@ -2,6 +2,10 @@
 
 Versões do PlayVinil / Vinyl Display. As mais recentes primeiro.
 
+## 4.5.2 — 2026-11-05
+
+- Letra: a barra de sincronia aparece ao abrir a letra e apaga sozinha (4s sem uso, 3s depois de um ajuste); tocar no lugar dela acende de novo.
+
 ## 4.5.1 — 2026-11-05
 
 - Shazam: trechos quietos no meio de uma música não contam mais como troca de disco (no meio do lado, só pausa de 20s ou mais); faixa já confirmada pela pausa não dispara outra conferência.
