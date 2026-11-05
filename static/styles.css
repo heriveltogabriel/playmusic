@@ -2496,6 +2496,15 @@ h1 {
 
 .plain-lyrics-mode .lyrics-sync-bar { display: none; }
 
+/* v4.5.2: apaga sozinha; continua tocável no mesmo lugar para acender de novo */
+.lyrics-sync-bar { transition: opacity 0.4s ease; }
+.lyrics-sync-bar.faded { opacity: 0; }
+.lyrics-sync-bar.faded::before {
+  content: "";
+  position: absolute;
+  inset: -14px -10px;
+}
+
 .lyrics-sync-btn,
 .lyrics-sync-label {
   min-height: 34px;

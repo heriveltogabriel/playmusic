@@ -1784,8 +1784,10 @@ function setLyricsVisibility(visible) {
     if (visible) {
       sizeLyricsOverlay();
       elements.lyricsOverlay.classList.remove("hidden");
+      showLyricsSyncBar(SYNC_BAR_FIRST_MS);
     } else {
       elements.lyricsOverlay.classList.add("hidden");
+      hideLyricsSyncBar();
     }
   }
 }
@@ -1824,11 +1826,33 @@ if (elements.lyricsOverlay) {
     });
   syncBar.addEventListener("click", (e) => {
     e.stopPropagation(); // tocar na barra não fecha a letra
+    // v4.5.2: apagada, o toque no lugar dela só acende a barra (não mexe no ajuste)
+    const wasHidden = syncBar.classList.contains("faded");
+    showLyricsSyncBar(SYNC_BAR_IDLE_MS);
+    if (wasHidden) return;
     const step = e.target.dataset && e.target.dataset.step;
     if (step) setLyricsTrackOffset(lyricsTrackOffset + Number(step));
     else if (e.target.classList.contains("lyrics-sync-label")) setLyricsTrackOffset(0);
   });
   elements.lyricsOverlay.appendChild(syncBar);
+}
+
+// v4.5.2: a barra de sincronia aparece ao abrir a letra e apaga sozinha depois de uns
+// segundos sem uso; tocar onde ela fica acende de novo.
+const SYNC_BAR_FIRST_MS = 4000;
+const SYNC_BAR_IDLE_MS = 3000;
+let syncBarTimer = null;
+function showLyricsSyncBar(ms) {
+  const bar = document.querySelector(".lyrics-sync-bar");
+  if (!bar) return;
+  bar.classList.remove("faded");
+  clearTimeout(syncBarTimer);
+  syncBarTimer = setTimeout(() => bar.classList.add("faded"), ms);
+}
+function hideLyricsSyncBar() {
+  const bar = document.querySelector(".lyrics-sync-bar");
+  clearTimeout(syncBarTimer);
+  if (bar) bar.classList.add("faded");
 }
 
 // v4.3.3: com o celular deitado, a letra ocupa a capa e também o disco que sai de trás dela,
