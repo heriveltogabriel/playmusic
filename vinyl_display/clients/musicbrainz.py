@@ -95,6 +95,30 @@ class MusicBrainzClient:
             return None
         return round(lengths[len(lengths) // 2] / 1000)
 
+    def recording_length_by_title(self, artist: str, title: str) -> int | None:
+        """Duração (segundos) de uma música procurada por título e artista: mediana das
+        gravações com o mesmo título. Ignora ao vivo, demo e remix quando o título pedido
+        não é dessas versões. Usado quando o disco inteiro não bate com nenhum lançamento."""
+        wanted = _norm(title)
+        if not wanted or not artist:
+            return None
+        query = f'recording:"{_lucene_escape(title)}" AND artist:"{_lucene_escape(artist)}"'
+        payload = self._get("recording", {"query": query, "limit": "25"})
+        skip = [w for w in ("live", "demo", "remix", "ao vivo", "instrumental") if w not in wanted]
+        lengths = []
+        for rec in payload.get("recordings") or []:
+            if int(rec.get("score", 0)) < 90 or not rec.get("length"):
+                continue
+            got = _norm(rec.get("title"))
+            disambiguation = _norm(rec.get("disambiguation"))
+            if got != wanted or any(w in disambiguation or w in got for w in skip):
+                continue
+            lengths.append(int(rec["length"]))
+        if len(lengths) < 2:
+            return None  # uma gravação só é pouco para confiar
+        lengths.sort()
+        return round(lengths[len(lengths) // 2] / 1000)
+
     def release_tracklist(
         self, artist: str, title: str, track_titles: list[str]
     ) -> list[dict[str, Any]] | None:

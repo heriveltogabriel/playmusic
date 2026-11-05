@@ -229,7 +229,17 @@ class VinylDisplayApp:
         )
         return {"status": "ok", "result": result, "state": self.state()}
 
+    # Reconhecimento automático logo depois de o Shazam confirmar o disco tocando é
+    # desperdício: o servidor recusa sem chamar o Shazam (o botão manual sempre passa).
+    RECENT_MATCH_GUARD_SECONDS = 120
+    MANUAL_TRIGGERS = {"manual"}
+
     def _log_event(self, status: str, **fields: Any) -> None:
+        if status == "matched":
+            self._last_match_at = time.time()
+        trigger = getattr(self, "_current_trigger", None)
+        if trigger and "trigger" not in fields:
+            fields["trigger"] = trigger
         try:
             self.store.log_recognition_event(status, **fields)
         except Exception as error:  # o registro nunca pode derrubar o reconhecimento
@@ -384,9 +394,34 @@ class VinylDisplayApp:
         audio_bytes: bytes,
         filename: str = "clip.webm",
         client_elapsed_seconds: float | None = None,
+        trigger: str | None = None,
+    ) -> dict[str, Any]:
+        self._current_trigger = (trigger or "")[:32] or None
+        try:
+            return self._recognize_audio(audio_bytes, filename, client_elapsed_seconds)
+        finally:
+            self._current_trigger = None
+
+    def _recognize_audio(
+        self,
+        audio_bytes: bytes,
+        filename: str,
+        client_elapsed_seconds: float | None,
     ) -> dict[str, Any]:
         import time
         server_receive_time = time.time()
+        trigger = self._current_trigger
+        last_match = getattr(self, "_last_match_at", 0.0)
+        if (
+            trigger
+            and trigger not in self.MANUAL_TRIGGERS
+            and self.playback.active is not None
+            and server_receive_time - last_match < self.RECENT_MATCH_GUARD_SECONDS
+        ):
+            active_id = self.playback.active.match.release.release_id
+            self._log_event("skipped_recent", active_release_id=active_id,
+                            detail=f'{{"since_match_seconds": {int(server_receive_time - last_match)}}}')
+            return {"status": "skipped_recent", "message": "O Shazam acabou de confirmar este disco.", "state": self.state()}
         self.playback.set_identifying()
         import struct
         import math

@@ -217,3 +217,26 @@ class RefreshReleaseTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RecordingLengthByTitleTests(unittest.TestCase):
+    def test_median_of_matching_studio_recordings(self):
+        from vinyl_display.clients.musicbrainz import MusicBrainzClient
+
+        payload = {"recordings": [
+            {"score": 100, "title": "Driven to Tears", "length": 200000},
+            {"score": 100, "title": "Driven to Tears", "length": 202000},
+            {"score": 100, "title": "Driven to Tears", "length": 260000, "disambiguation": "live"},
+            {"score": 95, "title": "Driven to Tears (remix)", "length": 300000},
+            {"score": 60, "title": "Driven to Tears", "length": 100000},
+            {"score": 100, "title": "Driven to Tears", "length": 204000},
+        ]}
+        mb = MusicBrainzClient(request_json=lambda url, headers: payload, sleep_func=lambda s: None)
+        self.assertEqual(mb.recording_length_by_title("The Police", "Driven to Tears"), 202)
+
+    def test_needs_at_least_two_recordings(self):
+        from vinyl_display.clients.musicbrainz import MusicBrainzClient
+
+        payload = {"recordings": [{"score": 100, "title": "Rara", "length": 200000}]}
+        mb = MusicBrainzClient(request_json=lambda url, headers: payload, sleep_func=lambda s: None)
+        self.assertIsNone(mb.recording_length_by_title("Alguém", "Rara"))

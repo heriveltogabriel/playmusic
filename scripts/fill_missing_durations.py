@@ -71,6 +71,21 @@ def improve_tracks(release: Release, mb: MusicBrainzClient) -> tuple[list[Track]
             for track, mb in zip(tracks, mb_tracks)
         ]
 
+    # Faixa a faixa: o disco não bateu com nenhum lançamento, mas a música existe
+    if any(not t.duration_seconds for t in tracks):
+        filled = []
+        for track in tracks:
+            length = None
+            if not track.duration_seconds:
+                try:
+                    length = mb.recording_length_by_title(clean_artist(release.artist), track.title)
+                except Exception as error:
+                    print(f"    ! MusicBrainz falhou em {track.position}: {error}")
+            filled.append(dataclasses.replace(track, duration_seconds=length) if length else track)
+        if filled != tracks:
+            tracks = filled
+            source = (source + "+faixas") if source != "-" else "musicbrainz-faixas"
+
     inferred = infer_vinyl_sides(tracks, release.formats)
     if inferred != tracks:
         tracks = inferred

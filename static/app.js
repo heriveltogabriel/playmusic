@@ -73,6 +73,14 @@ let pendingDriftListen = false;
 let lastDetectorAction = "";
 const FAR_GAP_CHECK_SECONDS = 2;
 let farGapChecked = false;
+let farGapTrackKey = "";          // v4.2: a conferência de "pausa fora do previsto" vale uma vez por faixa
+let unknownDurationCheckedKey = ""; // v4.2: faixa sem duração: uma conferência só, no fim estimado
+let recognizeReason = "";          // v4.2: motivo enviado ao servidor (aparece no Reconhecimento)
+
+function listenFor(reason) {
+  recognizeReason = reason;
+  recordClip(true, false);
+}
 
 async function handleSilenceResume(event) {
   if (recording || !silenceDetector || !lastServerState) return;
@@ -81,7 +89,7 @@ async function handleSilenceResume(event) {
   lastDetectorAction = `${action} após pausa de ${gapSeconds}s`;
   if (action === "ignore") return;
   if (action === "recognize") {
-    recordClip(true, false);
+    listenFor("lado_novo");
     return;
   }
   try {
@@ -93,7 +101,7 @@ async function handleSilenceResume(event) {
     const result = (res && res.result) || {};
     if (action === "flip" && !result.flipped) {
       // Não havia outro lado (ou o disco não tem lados): provavelmente é outro disco
-      recordClip(true, false);
+      listenFor("virada_sem_lado");
       return;
     }
     if (action === "flip") {
@@ -106,7 +114,7 @@ async function handleSilenceResume(event) {
       farGapChecked = true;
       lastDetectorAction = `pausa fora do previsto (${result.offset}s): conferindo com o Shazam`;
       if (res && res.state) renderState(res.state);
-      recordClip(true, false);
+      listenFor("pausa_fora");
       return;
     }
     if (res && res.state) renderState(res.state);
@@ -376,12 +384,28 @@ function renderStateInner(state) {
       waitingFlipSince = 0;
       const progress = state.progress_seconds || 0;
       const duration = track.duration_seconds || state.duration_seconds || 0;
-      if (silenceDetector && !state.duration_estimated) {
+      const playingKey = `${release.release_id}|${track.position}`;
+      if (playingKey !== farGapTrackKey) {
+        // v4.2: faixa nova, conferência nova. Trechos quietos dentro da mesma música não
+        // disparam o Shazam de novo (antes, cada confirmação liberava outra conferência).
+        farGapTrackKey = playingKey;
+        farGapChecked = false;
+      }
+      if (silenceDetector && state.duration_estimated) {
+        // v4.2: faixa sem duração no Discogs: o detector acompanha e o Shazam confere uma
+        // vez só, um pouco depois do fim estimado (antes era a cada 90 s).
+        if (unknownDurationCheckedKey !== playingKey) {
+          const remaining = Math.max(0, duration - progress);
+          window.nextAutoListenAt = Date.now() + (remaining + 30) * 1000;
+          if (remaining <= 0) unknownDurationCheckedKey = playingKey;
+        } else {
+          window.nextAutoListenAt = Date.now() + DETECTOR_HOLD_MS;
+        }
+      } else if (silenceDetector && !state.duration_estimated) {
         // v3.5: as pausas entre faixas mantêm o tempo certo; o Shazam só é chamado se
         // duas trocas de faixa seguidas passarem sem pausa (deriva ou disco trocado).
         if ((state.seconds_since_anchor || 0) < 10) {
           driftCheckBoundaries = 0;
-          farGapChecked = false;
         }
         const unconfirmed = state.unconfirmed_boundaries || 0;
         if (unconfirmed >= 2 && unconfirmed >= driftCheckBoundaries + 2) {
@@ -665,7 +689,14 @@ async function startMicrophone() {
 
       if (consecutiveLoudSeconds >= 2 && !recording) {
         consecutiveLoudSeconds = 0;
-        recordClip(true, false);
+        let reason = "ocioso";
+        if (pendingDriftListen) reason = "deriva";
+        else if (lastServerState && lastServerState.status === "playing") {
+          reason = lastServerState.duration_estimated ? "faixa_sem_duracao" : "fim_da_faixa";
+        } else if (lastServerState && lastServerState.status === "waiting_flip") {
+          reason = lastServerState.next_track ? "virada_demorou" : "fim_do_disco";
+        }
+        listenFor(reason);
       }
     }, 1000);
 
@@ -746,6 +777,8 @@ function recordClip(isAutomatic = false, isManual = false, attempt = 1, maxAttem
   }
   lastRecognitionAt = Date.now();
   pendingDriftListen = false;
+  const reasonForServer = isManual ? "manual" : (recognizeReason || "automatico");
+  recognizeReason = "";
 
   const isPlaying = (currentRelease !== null) || playbackTracker.active;
 
@@ -804,10 +837,20 @@ function recordClip(isAutomatic = false, isManual = false, attempt = 1, maxAttem
         headers: { 
           "X-Clip-Filename": "clip.raw",
           "Content-Type": "application/octet-stream",
-          "X-Client-Elapsed-Ms": String(Date.now() - lastRecognitionAt)
+          "X-Client-Elapsed-Ms": String(Date.now() - lastRecognitionAt),
+          "X-Recognize-Reason": reasonForServer
         },
         body: blob,
       });
+
+      if (response && response.status === "skipped_recent") {
+        // O servidor não chamou o Shazam: o disco acabou de ser confirmado.
+        recording = false;
+        if (elements.retryButton) elements.retryButton.classList.remove("recording");
+        window.nextAutoListenAt = Date.now() + 60000;
+        if (response.state) renderState(response.state);
+        return;
+      }
 
       if (response && response.status === "matched" && response.match) {
         consecutiveFailedListens = 0;

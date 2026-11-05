@@ -638,7 +638,10 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                     elapsed_seconds = float(client_elapsed_ms) / 1000.0
                 except ValueError:
                     pass
-            self._json(self.app.recognize_audio(audio_bytes, filename=filename, client_elapsed_seconds=elapsed_seconds))
+            trigger = (self.headers.get("X-Recognize-Reason") or "").strip().lower() or None
+            self._json(self.app.recognize_audio(
+                audio_bytes, filename=filename, client_elapsed_seconds=elapsed_seconds, trigger=trigger
+            ))
             return
         if path == "/api/playback/next":
             self.app.playback.skip_next()

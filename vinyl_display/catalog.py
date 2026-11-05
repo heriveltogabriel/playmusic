@@ -67,6 +67,10 @@ class CatalogStore:
             connection.execute(
                 "CREATE INDEX IF NOT EXISTS idx_recognition_events_at ON recognition_events(at)"
             )
+            # v4.2: o que disparou o reconhecimento (manual, troca de faixa, pausa fora do previsto...)
+            columns = {row[1] for row in connection.execute("PRAGMA table_info(recognition_events)")}
+            if "trigger" not in columns:
+                connection.execute("ALTER TABLE recognition_events ADD COLUMN trigger TEXT")
             connection.execute(
                 """
                 CREATE TABLE IF NOT EXISTS release_preferences (
@@ -521,7 +525,7 @@ class CatalogStore:
         """Registra cada tentativa de reconhecimento (com ou sem chamada ao Shazam)."""
         allowed = {
             "shazam_called", "shazam_key", "title", "artist", "release_id",
-            "track_position", "score", "rms", "active_release_id", "detail",
+            "track_position", "score", "rms", "active_release_id", "detail", "trigger",
         }
         values = {k: v for k, v in fields.items() if k in allowed}
         values["shazam_called"] = 1 if values.get("shazam_called") else 0
@@ -542,7 +546,7 @@ class CatalogStore:
         with self._connect() as connection:
             rows = connection.execute(
                 """
-                SELECT e.at, e.status, e.shazam_called, e.shazam_key, e.title, e.artist,
+                SELECT e.at, e.status, e.shazam_called, e.shazam_key, e.title, e.artist, e.trigger,
                        COALESCE(e.release_id, e.active_release_id) AS rid, e.track_position, e.score, e.detail,
                        r.title AS release_title, r.artist AS release_artist
                 FROM recognition_events e
@@ -554,6 +558,7 @@ class CatalogStore:
             ).fetchall()
 
         by_status: dict[str, int] = {}
+        by_trigger: dict[str, int] = {}
         per_day: dict[str, int] = {}
         per_disc: dict[int, dict] = {}
         for row in rows:
@@ -563,6 +568,8 @@ class CatalogStore:
             per_day.setdefault(day, 0)
             if row["shazam_called"]:
                 per_day[day] += 1
+                trigger = row["trigger"] or "sem_registro"
+                by_trigger[trigger] = by_trigger.get(trigger, 0) + 1
             if row["rid"] is not None and row["release_title"]:
                 disc = per_disc.setdefault(
                     int(row["rid"]),
@@ -586,6 +593,7 @@ class CatalogStore:
                 "release_title": row["release_title"],
                 "track_position": row["track_position"],
                 "detail": row["detail"],
+                "trigger": row["trigger"],
             }
             for row in rows[-recent_limit:]
         ][::-1]
@@ -598,6 +606,7 @@ class CatalogStore:
             "since": since,
             "shazam_calls": shazam_calls,
             "by_status": by_status,
+            "by_trigger": by_trigger,
             "per_day": [{"day": day, "shazam_calls": calls} for day, calls in sorted(per_day.items())],
             "discs": discs,
             "recent": recent,

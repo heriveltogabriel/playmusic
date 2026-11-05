@@ -2,6 +2,21 @@
 // Scripts clássicos carregados em ordem pelo admin.html; compartilham o escopo global.
 
 // ==================== v3.9: PAINEL DE RECONHECIMENTO ====================
+const RECOGNITION_TRIGGER_LABELS = {
+  manual: 'Botão de identificar',
+  ocioso: 'Esperando disco (som na vitrola)',
+  lado_novo: 'Lado novo em disco duplo',
+  virada_sem_lado: 'Som novo depois do fim do disco',
+  pausa_fora: 'Pausa fora do previsto',
+  deriva: 'Duas trocas de faixa sem pausa',
+  faixa_sem_duracao: 'Faixa sem duração no Discogs',
+  fim_da_faixa: 'Fim da faixa (sem detector)',
+  virada_demorou: 'Virada demorou',
+  fim_do_disco: 'Fim do disco',
+  automatico: 'Automático',
+  sem_registro: 'Antes do registro de motivo',
+};
+
 const RECOGNITION_STATUS_LABELS = {
   matched: 'Reconhecido',
   no_result: 'Shazam não reconheceu',
@@ -14,6 +29,7 @@ const RECOGNITION_STATUS_LABELS = {
   gap_ignored: 'Pausa ignorada',
   flip_local: 'Virada sem Shazam',
   flip_rejected: 'Virada recusada',
+  skipped_recent: 'Não chamou (disco recém-confirmado)',
   manual_start: 'Disco escolhido à mão',
   audition_auto: 'Audição marcada',
   audition_merged: 'Mesma audição (não contou de novo)',
@@ -55,6 +71,26 @@ async function renderRecognition() {
   setText('rec-local-sub', `${st.flip_local || 0} viradas · ${st.gap_aligned || 0} trocas de faixa`);
   setText('rec-match-rate', data.match_rate !== null && data.match_rate !== undefined ? `${data.match_rate}%` : '—');
   setText('rec-match-sub', `${st.matched || 0} reconhecidos · ${st.no_result || 0} sem resultado · ${st.not_found || 0} fora da coleção`);
+
+  // v4.2: chamadas por motivo
+  const triggers = document.getElementById('rec-triggers');
+  if (triggers) {
+    const entries = Object.entries(data.by_trigger || {}).sort((a, b) => b[1] - a[1]);
+    triggers.replaceChildren();
+    if (!entries.length) {
+      triggers.innerHTML = '<p class="profile-hint">Nenhuma chamada no período.</p>';
+    }
+    const max = Math.max(1, ...entries.map(([, n]) => n));
+    entries.forEach(([key, count]) => {
+      const row = document.createElement('div');
+      row.className = 'profile-bar-row';
+      row.innerHTML = `<span class="profile-bar-label"></span>
+        <span class="profile-bar-track"><span class="profile-bar-fill" style="width:${(count / max) * 100}%"></span></span>
+        <span class="profile-bar-value">${count}</span>`;
+      row.querySelector('.profile-bar-label').textContent = RECOGNITION_TRIGGER_LABELS[key] || key;
+      triggers.appendChild(row);
+    });
+  }
 
   // Gráfico: chamadas por dia (todos os dias do período, inclusive os zerados)
   const chart = document.getElementById('rec-chart');

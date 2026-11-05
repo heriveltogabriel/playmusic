@@ -13,6 +13,9 @@ Versões do PlayVinil / Vinyl Display. As mais recentes primeiro.
 - **Estatísticas** ficam com o perfil da coleção (gêneros, décadas, países, edições) e o mapa "Quando você ouve"; tocar numa barra abre a coleção filtrada.
 - **Diário da Vitrola** (novo): sessões por dia com discos, lados e faixas que o player acompanhou; faixas mais tocadas.
 - **Audição automática sem duplicar**: o mesmo disco voltando ao prato dentro da duração dele (mínimo 1 h) + 30 min conta como a mesma audição (lados fora de ordem, parar e retomar). Fica registrado como `audition_merged` no Reconhecimento.
+- **Menos chamadas ao Shazam**: a conferência de "pausa fora do previsto" vale uma vez por faixa (trechos quietos da mesma música não chamam de novo); faixa sem duração no Discogs é conferida no máximo uma vez, em vez de a cada 90 s; chamada automática até 2 min depois de o Shazam confirmar o disco é recusada pelo servidor sem gastar cota (o botão manual sempre passa).
+- **Motivo de cada chamada** registrado e mostrado em Reconhecimento → "Por que o Shazam foi chamado".
+- `fill_missing_durations.py` busca faixa a faixa no MusicBrainz quando o disco inteiro não bate.
 - **Agulha e Cuidados** (novo): horas de agulha, vida útil, previsão de troca, histórico de agulhas e limpeza de cada disco.
 
 ## 4.0.1 — 2026-11-04 — Servidor do Bruno em dia
