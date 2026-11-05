@@ -411,39 +411,37 @@ async function renderWeeklyHistory() {
     `;
     details.appendChild(summary);
     
+    // v4.4.1: dentro de cada semana, a mesma lista de dias da Escuta da Semana
     const playsList = document.createElement('div');
-    playsList.className = 'weekly-history-plays-list';
-    
+    playsList.className = 'weekly-history-plays-list agenda-list';
+    const esc = (text) => {
+      const div = document.createElement('div');
+      div.textContent = text == null ? '' : String(text);
+      return div.innerHTML;
+    };
+    const defaultCover = '/static/logo_lp_da_semana.png';
+
     wd.lpsData.forEach((item, dayIndex) => {
       const lp = item.lp;
-      const dayName = AGENDA_DAYS[dayIndex];
-      const defaultCover = 'https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=200&auto=format&fit=crop';
-      
-      const statusIcon = item.wasListened 
-        ? `<svg viewBox="0 0 24 24" width="12" height="12" stroke="#2ecc71" stroke-width="3" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>`
-        : `<svg viewBox="0 0 24 24" width="12" height="12" stroke="#e74c3c" stroke-width="2.5" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
-        
-      const statusText = item.wasListened ? 'Ouvido' : 'Não ouvido';
-      const playClass = item.wasListened ? 'play-item--done' : 'play-item--missed';
-      
-      const playHtml = `
-        <div class="history-play-item weekly-history-play-item ${playClass}">
-          <div class="weekly-history-play-day">${dayName}</div>
-          <div class="history-play-cover-wrapper">
-            <img class="history-play-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.onerror=null; this.src='${defaultCover}'">
-          </div>
-          <div class="history-play-details">
-            <div class="history-play-title" title="${lp.title}">${lp.title}</div>
-            <div class="history-play-artist" title="${lp.artist}">${lp.artist}</div>
-          </div>
-          <div class="weekly-history-play-status ${item.wasListened ? 'status--done' : 'status--missed'}">
-            ${item.wasListened ? 'Ouvido' : 'Não ouvido'}
-          </div>
+      const date = new Date(wd.startDate);
+      date.setDate(wd.startDate.getDate() + dayIndex);
+      const row = document.createElement('div');
+      row.className = `agenda-row ${item.wasListened ? 'agenda-done' : 'agenda-missed'}`;
+      row.innerHTML = `
+        <div class="agenda-row-day">
+          <span class="agenda-row-dayname">${AGENDA_DAYS[dayIndex].slice(0, 3)}</span>
+          <span class="agenda-row-date">${fmt(date)}</span>
         </div>
-      `;
-      playsList.insertAdjacentHTML('beforeend', playHtml);
+        <img class="agenda-row-cover" src="${esc(lp.thumbnail || lp.cover_image || defaultCover)}" alt="" loading="lazy" onerror="this.onerror=null; this.src='${defaultCover}'">
+        <div class="agenda-row-info">
+          <div class="agenda-row-title">${esc(lp.title)}</div>
+          <div class="agenda-row-artist">${esc(lp.artist)}</div>
+          <span class="agenda-status ${item.wasListened ? 'done' : 'missed'}">${item.wasListened ? '✓ Ouvido' : 'Não ouvido'}</span>
+        </div>`;
+      if (lp.id) row.addEventListener('click', () => openDetailsDialog(lp.id));
+      playsList.appendChild(row);
     });
-    
+
     details.appendChild(playsList);
     listContainer.appendChild(details);
   });

@@ -5411,3 +5411,6 @@ dialog::backdrop {
   .agenda-row-cover { width: 44px; height: 44px; }
   .agenda-row-day { width: 34px; }
 }
+
+/* v4.4.1: lista de dias dentro de cada semana do histórico */
+.weekly-history-plays-list.agenda-list { display: flex; flex-direction: column; gap: 6px; padding: 10px 0 4px; }
