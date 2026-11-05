@@ -110,7 +110,8 @@ async function loadDatabase() {
       plays: r.auditions || 0,
       date_added: r.synced_at ? new Date(r.synced_at * 1000).toISOString() : new Date().toISOString(),
       genres: r.genres || [],
-      styles: r.styles || []
+      styles: r.styles || [],
+      vinyl_override_id: r.vinyl_override_id || null
     }));
 
     // Clean suffixes and perform basic normalization

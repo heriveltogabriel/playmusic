@@ -128,6 +128,17 @@ class CatalogStore:
                 )
                 """
             )
+            # v4.3: disco cadastrado no Discogs como CD/arquivo, mas que você tem em vinil
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS release_overrides (
+                    release_id INTEGER PRIMARY KEY,
+                    vinyl_release_id INTEGER NOT NULL,
+                    chosen_at REAL NOT NULL,
+                    original_json TEXT NOT NULL
+                )
+                """
+            )
             connection.execute(
                 """
                 CREATE TABLE IF NOT EXISTS sync_metadata (
@@ -805,4 +816,33 @@ class CatalogStore:
                 "ON CONFLICT(shelf_id, release_id) DO UPDATE SET note = COALESCE(?, shelf_items.note)",
                 (shelf_id, release_id, _time.time(), (note or "").strip()[:120], None if note is None else note.strip()[:120]),
             )
+
+    # ---------------- v4.3: edição em vinil escolhida no PlayVinil ----------------
+    def get_override(self, release_id: int) -> dict | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT vinyl_release_id, chosen_at, original_json FROM release_overrides WHERE release_id = ?",
+                (release_id,),
+            ).fetchone()
+        if row is None:
+            return None
+        return {"vinyl_release_id": int(row[0]), "chosen_at": float(row[1]), "original": json.loads(row[2])}
+
+    def list_overrides(self) -> dict[int, int]:
+        with self._connect() as connection:
+            rows = connection.execute("SELECT release_id, vinyl_release_id FROM release_overrides").fetchall()
+        return {int(r[0]): int(r[1]) for r in rows}
+
+    def save_override(self, release_id: int, vinyl_release_id: int, original: dict, chosen_at: float) -> None:
+        with self._connect() as connection:
+            connection.execute(
+                "INSERT INTO release_overrides (release_id, vinyl_release_id, chosen_at, original_json) "
+                "VALUES (?, ?, ?, ?) ON CONFLICT(release_id) DO UPDATE SET "
+                "vinyl_release_id = excluded.vinyl_release_id, chosen_at = excluded.chosen_at",
+                (release_id, vinyl_release_id, chosen_at, json.dumps(original, ensure_ascii=False)),
+            )
+
+    def delete_override(self, release_id: int) -> None:
+        with self._connect() as connection:
+            connection.execute("DELETE FROM release_overrides WHERE release_id = ?", (release_id,))
 

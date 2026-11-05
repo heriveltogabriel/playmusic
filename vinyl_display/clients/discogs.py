@@ -361,6 +361,60 @@ class DiscogsClient:
             self.sleep_func(self.page_delay_seconds)
         return items
 
+    # ---------------- v4.3: trocar pela edição em vinil ----------------
+    def vinyl_versions(self, release_id: int) -> dict[str, Any]:
+        """Edições em vinil da mesma obra de um disco da coleção (pelo master). Sem master,
+        procura lançamentos em vinil com o mesmo artista e título."""
+        import urllib.parse
+
+        payload = self._request_json(f"{self.api_base}/releases/{release_id}")
+        master_id = payload.get("master_id")
+        title = str(payload.get("title") or "")
+        artist = _artist_name(payload)
+        versions: list[dict[str, Any]] = []
+        if master_id:
+            page = 1
+            while page <= 3:
+                data = self._request_json(
+                    f"{self.api_base}/masters/{master_id}/versions?format=Vinyl&per_page=100&page={page}"
+                )
+                for item in data.get("versions") or []:
+                    versions.append({
+                        "id": int(item.get("id") or 0),
+                        "title": str(item.get("title") or ""),
+                        "format": str(item.get("format") or ""),
+                        "label": str(item.get("label") or ""),
+                        "catno": str(item.get("catno") or ""),
+                        "country": str(item.get("country") or ""),
+                        "year": str(item.get("released") or "")[:4],
+                        "thumb": str(item.get("thumb") or ""),
+                    })
+                pagination = data.get("pagination") or {}
+                if int(pagination.get("page", page)) >= int(pagination.get("pages", page)):
+                    break
+                page += 1
+                self.sleep_func(self.page_delay_seconds)
+        else:
+            query = urllib.parse.urlencode(
+                {"type": "release", "format": "Vinyl", "artist": artist, "release_title": title, "per_page": 50}
+            )
+            data = self._request_json(f"{self.api_base}/database/search?{query}")
+            for item in data.get("results") or []:
+                versions.append({
+                    "id": int(item.get("id") or 0),
+                    "title": str(item.get("title") or "").split(" - ", 1)[-1],
+                    "format": ", ".join(item.get("format") or []),
+                    "label": ", ".join((item.get("label") or [])[:2]),
+                    "catno": str(item.get("catno") or ""),
+                    "country": str(item.get("country") or ""),
+                    "year": str(item.get("year") or ""),
+                    "thumb": str(item.get("thumb") or ""),
+                })
+        # Prensagens do Brasil primeiro (a coleção é daqui), depois as mais antigas
+        versions = [v for v in versions if v["id"]]
+        versions.sort(key=lambda v: (v["country"] != "Brazil", v["year"] or "9999", v["label"]))
+        return {"master_id": master_id, "title": title, "artist": artist, "versions": versions}
+
     def sync_collection(self, store: CatalogStore) -> dict[str, int]:
         added_count = 0
         updated_count = 0

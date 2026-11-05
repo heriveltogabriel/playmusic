@@ -362,6 +362,88 @@ class VinylDisplayApp:
         except Exception as error:  # o diário nunca derruba o player
             print(f"[DIARY] Could not log track: {error}")
 
+    # ---------------- v4.3: edição em vinil ----------------
+    EDITION_FIELDS = ("tracks", "formats", "labels", "catalog_numbers", "country", "cover_url",
+                      "discogs_url", "edition_year")
+
+    def vinyl_versions(self, release_id: int) -> dict[str, Any]:
+        if self.discogs_client is None:
+            return {"status": "error", "message": "Discogs não configurado."}
+        override = self.store.get_override(release_id)
+        try:
+            data = self.discogs_client.vinyl_versions(release_id)
+        except Exception as error:
+            return {"status": "error", "message": f"Discogs indisponível: {error}"}
+        return {"status": "ok", "chosen": override["vinyl_release_id"] if override else None, **data}
+
+    def use_vinyl_version(self, release_id: int, vinyl_release_id: int | None) -> dict[str, Any]:
+        """Passa a usar os dados de uma prensagem em vinil (faixas com lados, durações, capa,
+        selo) sem mexer no item do Discogs: data de cadastro, audições, notas e prateleiras
+        continuam do item original. vinyl_release_id=None volta para a edição do Discogs."""
+        import dataclasses
+
+        from vinyl_display.models import Track
+
+        existing = self.store.get_release(release_id)
+        if existing is None:
+            return {"status": "error", "message": "Disco não encontrado."}
+        override = self.store.get_override(release_id)
+
+        if vinyl_release_id is None:
+            if not override:
+                return {"status": "ok", "release": existing.to_dict()}
+            original = override["original"]
+            restored = dataclasses.replace(
+                existing,
+                **{k: v for k, v in original.items() if k != "tracks"},
+                tracks=[Track.from_dict(t) for t in original.get("tracks") or []],
+            )
+            self.store.upsert_release(restored)
+            self.store.delete_override(release_id)
+            return {"status": "ok", "release": self.store.get_release(release_id).to_dict()}
+
+        if self.discogs_client is None:
+            return {"status": "error", "message": "Discogs não configurado."}
+        try:
+            vinyl = self.discogs_client.release_details(int(vinyl_release_id))
+        except Exception as error:
+            return {"status": "error", "message": f"Discogs indisponível: {error}"}
+        if not vinyl.tracks:
+            return {"status": "error", "message": "Essa edição não tem lista de faixas no Discogs."}
+
+        # Guarda a edição original só na primeira troca (para poder desfazer)
+        original = override["original"] if override else {
+            field: ([t.to_dict() for t in existing.tracks] if field == "tracks" else getattr(existing, field))
+            for field in self.EDITION_FIELDS
+        }
+        # Durações que o player já aprendeu valem para a mesma música na edição nova
+        learned = {self._title_key(t.title): t.duration_seconds for t in existing.tracks if t.duration_seconds}
+        tracks = [
+            t if t.duration_seconds else dataclasses.replace(t, duration_seconds=learned.get(self._title_key(t.title)))
+            for t in vinyl.tracks
+        ]
+        updated = dataclasses.replace(
+            existing,
+            tracks=tracks,
+            formats=vinyl.formats,
+            labels=vinyl.labels or existing.labels,
+            catalog_numbers=vinyl.catalog_numbers or existing.catalog_numbers,
+            country=vinyl.country or existing.country,
+            cover_url=vinyl.cover_url or existing.cover_url,
+            discogs_url=vinyl.discogs_url or existing.discogs_url,
+            edition_year=vinyl.edition_year or existing.edition_year,
+        )
+        self.store.upsert_release(updated)
+        self.store.save_override(release_id, int(vinyl_release_id), original, time.time())
+        return {"status": "ok", "release": self.store.get_release(release_id).to_dict()}
+
+    @staticmethod
+    def _title_key(title: str) -> str:
+        import unicodedata
+
+        value = unicodedata.normalize("NFKD", title or "").encode("ascii", "ignore").decode("ascii").lower()
+        return " ".join("".join(ch if ch.isalnum() else " " for ch in value).split())
+
     def diary(self, days: int = 30) -> dict[str, Any]:
         from vinyl_display.journal import build_diary
 
@@ -590,7 +672,14 @@ class VinylDisplayApp:
 
     def list_admin_releases(self) -> list[dict[str, Any]]:
         releases = self.store.list_releases_with_stats()
-        return [r.to_dict() for r in releases]
+        overrides = self.store.list_overrides()
+        result = []
+        for r in releases:
+            item = r.to_dict()
+            if r.release_id in overrides:
+                item["vinyl_override_id"] = overrides[r.release_id]  # v4.3: edição em vinil escolhida aqui
+            result.append(item)
+        return result
 
     def _generate_and_save_weekly_agenda(self) -> list[int]:
         releases = self.store.list_releases_with_stats()

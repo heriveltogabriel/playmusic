@@ -2,6 +2,10 @@
 
 Versões do PlayVinil / Vinyl Display. As mais recentes primeiro.
 
+## 4.3.0 — em teste (branch feature/edicao-vinil, só no servidor principal)
+
+- **Edição em vinil**: disco cadastrado no Discogs como CD ou arquivo pode usar, no PlayVinil, os dados de uma prensagem em vinil (faixas com lados, durações, capa, selo, país). O item do Discogs não muda: data de cadastro, audições, notas e prateleiras ficam. Dá para trocar de prensagem ou voltar à edição do Discogs pela ficha do disco.
+
 ## 4.2.0 — 2026-11-05 — Letra para ler, admin novo e menos Shazam
 
 ### Player

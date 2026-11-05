@@ -275,6 +275,14 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                 result["discography"] = discography(self.app, ids, refresh=(query.get("refresh") or ["0"])[0] == "1")
             self._json(result)
             return
+        if path.startswith("/api/admin/releases/") and path.endswith("/vinyl_versions"):
+            try:
+                release_id = int(path.split("/")[4])
+            except (IndexError, ValueError):
+                self.send_error(HTTPStatus.BAD_REQUEST)
+                return
+            self._json(self.app.vinyl_versions(release_id))
+            return
         if path == "/api/admin/system":
             from vinyl_display.system_status import build_system_status
 
@@ -726,6 +734,17 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                 self._json({"status": "ok", "chats": chats})
             except Exception as error:
                 self._json({"status": "error", "message": f"Não foi possível falar com o Telegram: {str(error).replace(token, '***') if token else error}"})
+            return
+        if path.startswith("/api/admin/releases/") and path.endswith("/use_version"):
+            try:
+                release_id = int(path.split("/")[4])
+                payload = self._read_json_body()
+                vinyl_id = payload.get("vinyl_release_id")
+                vinyl_id = int(vinyl_id) if vinyl_id not in (None, "") else None
+            except (IndexError, TypeError, ValueError):
+                self.send_error(HTTPStatus.BAD_REQUEST)
+                return
+            self._json(self.app.use_vinyl_version(release_id, vinyl_id))
             return
         if path.startswith("/api/admin/shelves/"):
             payload = self._read_json_body()

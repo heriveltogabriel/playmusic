@@ -5229,3 +5229,42 @@ dialog::backdrop {
   .artist-work-cover { width: 40px; height: 40px; }
   .artist-work-mark { grid-column: 3; font-size: 0.75rem; }
 }
+
+/* ==================== v4.3: EDIÇÃO EM VINIL ==================== */
+.details-edition { margin: 12px 0; display: flex; flex-direction: column; gap: 8px; }
+.details-edition:empty { display: none; }
+.ve-note { font-size: 0.82rem; line-height: 1.45; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border-color); color: var(--text-secondary); }
+.ve-note.warn { border-color: var(--border-color-active); background: var(--primary-light); color: var(--text-primary); }
+.ve-note.ok { border-color: rgba(48, 209, 88, 0.3); }
+.ve-actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.ve-switch.cf-link, .ve-undo { padding-left: 0; }
+
+.ve-dialog {
+  width: min(720px, calc(100vw - 32px));
+  max-height: 85vh;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 18px;
+}
+.ve-dialog::backdrop { background: rgba(0, 0, 0, 0.7); }
+.ve-dialog-head { display: flex; justify-content: space-between; align-items: center; }
+.ve-dialog-head h3 { margin: 0; font-size: 1.05rem; }
+.ve-filter {
+  width: 100%;
+  margin: 4px 0 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--text-primary);
+}
+.ve-list { overflow-y: auto; max-height: 58vh; }
+.ve-row { display: flex; align-items: center; gap: 12px; padding: 8px 4px; border-bottom: 1px solid var(--border-color); }
+.ve-row.chosen { background: rgba(48, 209, 88, 0.06); }
+.ve-row img { width: 48px; height: 48px; border-radius: 4px; object-fit: cover; flex-shrink: 0; }
+.ve-row-info { flex: 1; min-width: 0; }
+.ve-row-title { font-weight: 600; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ve-row-sub { font-size: 0.78rem; color: var(--text-secondary); }
+.ve-use { flex-shrink: 0; }

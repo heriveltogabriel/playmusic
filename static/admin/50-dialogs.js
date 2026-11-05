@@ -279,6 +279,7 @@ function openDetailsDialog(id) {
   // Interactive stars
   renderDetailsStars(lp);
   if (typeof renderDetailsShelves === 'function') renderDetailsShelves(lp);
+  if (typeof renderDetailsEdition === 'function') renderDetailsEdition(lp);
   
   // Details Action Buttons
   const markListenedBtn = document.getElementById('details-mark-listened');
