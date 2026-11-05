@@ -223,15 +223,16 @@ function renderArtistDiscography(disco) {
     if (summary) summary.textContent = '';
     return;
   }
-  if (summary) {
-    const when = new Date(disco.fetched_at * 1000).toLocaleDateString('pt-BR');
-    const vinylKnown = disco.vinyl_total !== null && disco.vinyl_total !== undefined;
-    const total = artistOnlyVinyl && vinylKnown ? `${disco.vinyl_total} álbuns em vinil` : `${disco.total} álbuns`;
-    const partial = artistOnlyVinyl && vinylKnown && !disco.vinyl_complete ? ' (lista de vinil parcial: artista com muitas prensagens)' : '';
-    summary.textContent = `você tem ${disco.owned_count} de ${total}${partial} · Discogs de ${when}${disco.stale ? ' (sem atualizar)' : ''}`;
-  }
   let works = artistShowAll ? disco.works : disco.works.filter(w => w.album);
   if (artistOnlyVinyl) works = works.filter(w => w.vinyl !== false);
+  if (summary) {
+    // A conta é sempre sobre a lista que está na tela (vinil, singles), para bater com os ✓
+    const when = new Date(disco.fetched_at * 1000).toLocaleDateString('pt-BR');
+    const owned = works.filter(w => w.owned_release_ids.length).length;
+    const kind = `${artistShowAll ? 'discos' : 'álbuns'}${artistOnlyVinyl ? ' em vinil' : ''}`;
+    const partial = artistOnlyVinyl && disco.vinyl_total !== null && !disco.vinyl_complete ? ' (lista de vinil parcial: artista com muitas prensagens)' : '';
+    summary.textContent = `você tem ${owned} de ${works.length} ${kind}${partial} · Discogs de ${when}${disco.stale ? ' (sem atualizar)' : ''}`;
+  }
   if (artistOnlyMissing) works = works.filter(w => !w.owned_release_ids.length);
   if (!works.length) {
     box.innerHTML = `<p class="profile-hint">${artistOnlyMissing ? 'Você tem todos. 🎉' : 'O Discogs não lista discos deste artista.'}</p>`;
