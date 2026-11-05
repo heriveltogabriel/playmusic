@@ -486,3 +486,21 @@ class PlaybackControllerTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AlternativesOnlyOnFirstTrackTests(unittest.TestCase):
+    def test_alternatives_disappear_after_first_track(self):
+        controller = PlaybackController()
+        primary = match_at_a1()
+        other = match_at_a1()
+        other = TrackMatch(
+            release=Release(**{**other.release.__dict__, "release_id": 555, "title": "Outra edição"}),
+            track=other.track, score=90, reason="alt",
+        )
+        controller.handle_match(primary, now=1000, alternatives=[other])
+        self.assertEqual(len(controller.current_state(now=1010)["alternatives"]), 1)
+        # A1 tem 261s: aos 273s já está na A2 e o aviso some
+        state = controller.current_state(now=1000 + 273)
+        self.assertEqual(state["track"]["position"], "A2")
+        self.assertEqual(state["alternatives"], [])
+        self.assertEqual(controller.current_state(now=1000 + 280)["alternatives"], [])

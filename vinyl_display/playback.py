@@ -207,6 +207,12 @@ class PlaybackController:
                 self.stop()
                 return self.current_state(now)
 
+        if self.alternatives and len(self.active.played_tracks) > 1:
+            # v4.5.3: "Também em outro disco" só vale na primeira música ouvida.
+            # Passou para a próxima sem trocar, o disco está definido.
+            self.alternatives = []
+            self._changed()
+
         alternatives_payload = [
             {
                 "release_id": alt.release.release_id,
