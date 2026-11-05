@@ -386,7 +386,7 @@ class DiscogsClient:
                         "label": str(item.get("label") or ""),
                         "catno": str(item.get("catno") or ""),
                         "country": str(item.get("country") or ""),
-                        "year": str(item.get("released") or "")[:4],
+                        "year": "" if str(item.get("released") or "0")[:4] in ("0", "") else str(item.get("released"))[:4],
                         "thumb": str(item.get("thumb") or ""),
                     })
                 pagination = data.get("pagination") or {}
