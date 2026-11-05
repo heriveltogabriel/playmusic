@@ -47,7 +47,8 @@ class StaticAssetTests(unittest.TestCase):
         self.assertNotIn("handleSearchUpdate(e.target.value.trim());", js)
         self.assertIn("state.filters.search.trim().toLowerCase()", js)
 
-    def test_weekly_suggestion_screen_uses_focused_listening_layout(self):
+    def test_weekly_suggestion_screen_is_a_day_list(self):
+        # v4.4.1: os 7 dias viraram uma lista e o painel "Disco selecionado" saiu
         html = (ROOT / "static" / "admin.html").read_text()
         js = admin_js_source()
         css = (ROOT / "static" / "admin.css").read_text()
@@ -55,12 +56,10 @@ class StaticAssetTests(unittest.TestCase):
         self.assertIn("Escuta da Semana", html)
         self.assertIn("Escuta da Semana", js)
         self.assertIn('class="weekly-agenda-panel"', html)
-        self.assertIn('class="featured-suggestion-panel"', html)
-        self.assertIn('class="suggestion-support-grid"', html)
-        self.assertIn(".weekly-agenda-panel", css)
-        self.assertIn(".featured-suggestion-panel", css)
-        self.assertIn("grid-template-columns: repeat(7, minmax(112px, 1fr));", css)
-        self.assertIn(".suggestion-support-grid", css)
+        self.assertNotIn('class="featured-suggestion-panel"', html)
+        self.assertIn("container.classList.add('agenda-list')", js)
+        self.assertIn(".agenda-scroll-container.agenda-list", css)
+        self.assertIn("if (isCurrentWeek) return;", js)
 
     def test_plays_ranking_bars_use_absolute_progress(self):
         js = admin_js_source()
