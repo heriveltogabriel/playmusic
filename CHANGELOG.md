@@ -2,6 +2,11 @@
 
 Versões do PlayVinil / Vinyl Display. As mais recentes primeiro.
 
+## 4.4.4 — 2026-11-05
+
+- Ranking: histórico de audições com atalhos de período (1 mês, 3 meses, 6 meses, 1 ano, tudo) no lugar das duas listas de meses.
+- Top LPs Mais Tocados abre em "Geral".
+
 ## 4.4.3 — 2026-11-05
 
 - Ranking: "Resgate da Estante" removido; Top LPs Mais Tocados mostra 10 discos.

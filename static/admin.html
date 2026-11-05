@@ -345,9 +345,9 @@
                   <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
                     <h4 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text-primary);">🔥 Top LPs Mais Tocados</h4>
                     <div class="stats-period-pills" id="top-lps-period-pills">
-                      <button type="button" class="stats-period-pill active" data-period="week">Semana</button>
+                      <button type="button" class="stats-period-pill" data-period="week">Semana</button>
                       <button type="button" class="stats-period-pill" data-period="month">Mês</button>
-                      <button type="button" class="stats-period-pill" data-period="all">Geral</button>
+                      <button type="button" class="stats-period-pill active" data-period="all">Geral</button>
                     </div>
                   </div>
                   <div id="top-ranking-container" class="custom-ranking-list">
@@ -402,11 +402,20 @@
             <div style="height: 1px; background: rgba(255,255,255,0.05); margin: 32px 0;"></div>
 
             <!-- Filtros de Período -->
-            <div class="plays-history-filter-row" style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 24px; flex-wrap: wrap;">
-              <label style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">Filtrar Período:</label>
-              <select id="plays-history-filter-start" class="history-select"></select>
-              <span style="font-size: 0.85rem; color: var(--text-muted);">até</span>
-              <select id="plays-history-filter-end" class="history-select"></select>
+            <!-- Período: atalhos (as listas de meses ficam escondidas e são preenchidas pelos atalhos) -->
+            <div class="plays-history-filter-row" style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
+              <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 600;">Período:</span>
+              <div class="stats-period-pills" id="plays-history-pills">
+                <button type="button" class="stats-period-pill" data-months="1">1 mês</button>
+                <button type="button" class="stats-period-pill" data-months="3">3 meses</button>
+                <button type="button" class="stats-period-pill" data-months="6">6 meses</button>
+                <button type="button" class="stats-period-pill active" data-months="12">1 ano</button>
+                <button type="button" class="stats-period-pill" data-months="all">Tudo</button>
+              </div>
+              <div style="display: none;">
+                <select id="plays-history-filter-start" class="history-select"></select>
+                <select id="plays-history-filter-end" class="history-select"></select>
+              </div>
             </div>
 
             <!-- Novo Histórico de Audições (Timeline) -->
@@ -1369,12 +1378,12 @@
   <script src="/static/admin/20-collection.js?v=4.2.4" defer></script>
   <script src="/static/admin/25-filters.js?v=4.3.1" defer></script>
   <script src="/static/admin/30-timeline.js?v=4.2.4" defer></script>
-  <script src="/static/admin/40-stats.js?v=4.4.3" defer></script>
+  <script src="/static/admin/40-stats.js?v=4.4.4" defer></script>
   <script src="/static/admin/45-profile.js?v=4.2.4" defer></script>
   <script src="/static/admin/50-dialogs.js?v=4.3.0" defer></script>
   <script src="/static/admin/60-ranking.js?v=4.2.4" defer></script>
   <script src="/static/admin/70-settings.js?v=4.2.4" defer></script>
-  <script src="/static/admin/80-history.js?v=4.4.2" defer></script>
+  <script src="/static/admin/80-history.js?v=4.4.4" defer></script>
   <script src="/static/admin/90-devices-alerts.js?v=4.2.4" defer></script>
   <script src="/static/admin/95-recognition.js?v=4.2.4" defer></script>
   <script src="/static/admin/96-diary-care.js?v=4.2.4" defer></script>

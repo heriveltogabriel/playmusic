@@ -673,7 +673,7 @@ function renderPlayPeriodStats() {
   if (statMonthlyPlaysEl) statMonthlyPlaysEl.textContent = monthlyPlaysCount;
 
   // 4. Render Unified Top Ranking (Week / Month / All-time)
-  state.activeTopPeriod = state.activeTopPeriod || 'week';
+  state.activeTopPeriod = state.activeTopPeriod || 'all'; // v4.4.4: Geral como padrão
 
   const renderTopRanking = () => {
     const topContainer = document.getElementById('top-ranking-container');

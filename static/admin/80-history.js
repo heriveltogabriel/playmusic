@@ -72,6 +72,23 @@ function setupPlaysHistoryFilters() {
 
   startSelect.addEventListener('change', renderPlaysHistory);
   endSelect.addEventListener('change', renderPlaysHistory);
+
+  // v4.4.4: atalhos de período no lugar das duas listas de meses (abre em "1 ano", o padrão acima)
+  document.querySelectorAll('#plays-history-pills .stats-period-pill').forEach(pill => {
+    pill.classList.toggle('active', pill.dataset.months === '12');
+    if (pill.dataset.bound) return;
+    pill.dataset.bound = '1';
+    pill.addEventListener('click', () => {
+      const options = [...startSelect.options];
+      if (!options.length) return;
+      const months = pill.dataset.months;
+      const startIdx = months === 'all' ? 0 : Math.max(0, options.length - parseInt(months, 10));
+      startSelect.value = options[startIdx].value;
+      endSelect.value = options[options.length - 1].value;
+      document.querySelectorAll('#plays-history-pills .stats-period-pill').forEach(p => p.classList.toggle('active', p === pill));
+      renderPlaysHistory();
+    });
+  });
 }
 
 function getWeekStartEnd(dateObj) {
