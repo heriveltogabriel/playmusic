@@ -230,6 +230,7 @@ function renderArtistDiscography(disco) {
     const owned = w.owned_release_ids.length > 0;
     return `<a class="artist-work ${owned ? 'owned' : 'missing'}" href="${artistEsc(w.url)}" target="_blank" rel="noopener noreferrer"
         ${owned ? `data-owned="${w.owned_release_ids[0]}"` : ''}>
+      <img class="artist-work-cover" src="${artistEsc(w.thumb || ARTIST_DEFAULT_COVER)}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='${ARTIST_DEFAULT_COVER}'">
       <span class="artist-work-year">${w.year || '—'}</span>
       <span class="artist-work-title">${artistEsc(w.title)}</span>
       <span class="artist-work-mark">${owned ? '✓ na coleção' : 'falta'}</span>

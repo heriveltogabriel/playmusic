@@ -5195,7 +5195,7 @@ dialog::backdrop {
 .artist-works { display: flex; flex-direction: column; margin-top: 12px; }
 .artist-work {
   display: grid;
-  grid-template-columns: 56px 1fr auto;
+  grid-template-columns: 44px 56px 1fr auto;
   gap: 12px;
   align-items: center;
   padding: 8px 6px;
@@ -5213,3 +5213,19 @@ dialog::backdrop {
 
 .details-artist-link { cursor: pointer; }
 .details-artist-link:hover { color: var(--primary); text-decoration: underline; }
+
+/* v4.2: capa pequena de cada disco da discografia; os que faltam ficam apagados */
+.artist-work-cover {
+  width: 44px;
+  height: 44px;
+  border-radius: 4px;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.04);
+}
+.artist-work.missing .artist-work-cover { opacity: 0.45; filter: grayscale(0.6); }
+.artist-work.missing:hover .artist-work-cover { opacity: 0.9; filter: none; }
+@media (max-width: 600px) {
+  .artist-work { grid-template-columns: 40px 44px 1fr; }
+  .artist-work-cover { width: 40px; height: 40px; }
+  .artist-work-mark { grid-column: 3; font-size: 0.75rem; }
+}
