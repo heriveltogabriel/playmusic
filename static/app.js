@@ -313,7 +313,7 @@ function setCover(release) {
     const image = document.createElement("img");
     image.className = "cover-image";
     image.alt = "PlayVinil";
-    image.src = "/static/playvinil-capa.svg";
+    image.src = "/static/logo_lp_da_semana.png";
     elements.albumCover.appendChild(image);
     if (elements.vinylLabel) {
       elements.vinylLabel.style.backgroundImage = "url(/static/playvinil-label.svg)";
