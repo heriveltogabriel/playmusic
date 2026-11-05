@@ -1,6 +1,6 @@
 [project]
 name = "vinyl-display"
-version = "4.3.1"
+version = "4.3.2"
 description = "Local vinyl listening display for Raspberry Pi and Android"
 requires-python = ">=3.9"
 
