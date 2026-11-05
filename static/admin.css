@@ -5338,3 +5338,10 @@ dialog::backdrop {
   .podium-badge { font-size: 0.7rem; padding: 2px 8px; }
   .podium-column > :not(.podium-info):not(.podium-title):not(.podium-artist):not(.podium-plays) { font-size: 0.62rem; }
 }
+
+@media (max-width: 600px) {
+  /* Cartão dentro de cartão (Mais tocados / Resgate da Estante): menos margem para sobrar lista */
+  .stats-section-card { padding: 16px; }
+  .stats-section-card .stats-section-card { padding: 12px !important; }
+  .stats-section-card .stats-row { gap: 12px; }
+}
