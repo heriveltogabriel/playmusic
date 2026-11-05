@@ -2,6 +2,12 @@
 
 Versões do PlayVinil / Vinyl Display. As mais recentes primeiro.
 
+## 4.3.1 — 2026-11-05 — Celular
+
+- Telas do admin sem corte à direita no celular (Estatísticas, Diário, Cuidados, Ranking, ficha do disco); tabelas do Reconhecimento rolam para o lado.
+- Pódio do Ranking lado a lado; abas das Configurações e Prateleiras numa linha que rola; filtros da coleção atrás de um botão "Filtros (n)"; perfil do artista com "ler mais".
+- Player: janela de escolher o disco cabe no celular em pé e deitado.
+
 ## 4.3.0 — 2026-11-05 — Edição em vinil
 
 - **Edição em vinil**: disco cadastrado no Discogs como CD ou arquivo pode usar, no PlayVinil, os dados de uma prensagem em vinil (faixas com lados, durações, capa, selo, país). O item do Discogs não muda: data de cadastro, audições, notas e prateleiras ficam. Dá para trocar de prensagem ou voltar à edição do Discogs pela ficha do disco.
