@@ -133,7 +133,10 @@
    * ou "ignore".
    */
   function decideOnResume(event, state, opts) {
-    const o = Object.assign({ longGapMs: 6000, flipGapMs: 2500, nearSideEndSeconds: 75 }, opts || {});
+    // v4.5.1: no meio do lado, só uma pausa de 20s ou mais indica troca de disco
+    // (tirar um, pôr outro e baixar a agulha). Trechos quietos de uma música davam 6-15s
+    // e chamavam o Shazam à toa; agora viram uma tentativa de alinhar faixa.
+    const o = Object.assign({ longGapMs: 6000, newDiscGapMs: 20000, flipGapMs: 2500, nearSideEndSeconds: 75 }, opts || {});
     if (!state || !state.release) return "ignore";
     // Em LP duplo (ou caixa) a virada pode ir para qualquer lado (B->A no mesmo disco,
     // ou B->C no outro): só o Shazam sabe qual entrou.
@@ -146,7 +149,7 @@
     if (state.status !== "playing") return "ignore";
     if (event.gapMs >= o.longGapMs) {
       const sideLeft = typeof state.side_remaining_seconds === "number" ? state.side_remaining_seconds : Infinity;
-      if (sideLeft > o.nearSideEndSeconds) return "recognize";
+      if (sideLeft > o.nearSideEndSeconds) return event.gapMs >= o.newDiscGapMs ? "recognize" : "boundary";
       return manySides ? "recognize" : "flip";
     }
     return "boundary";

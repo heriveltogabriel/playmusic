@@ -186,10 +186,11 @@ console.log(JSON.stringify([
   m.decideOnResume({gapMs: 9000}, s({status: 'waiting_flip', next_track: {}, release_sides: 4})),
   m.decideOnResume({gapMs: 16000}, s({status: 'playing', side_remaining_seconds: 40, release_sides: 4})),
   m.decideOnResume({gapMs: 2500}, s({status: 'playing', side_remaining_seconds: 600, release_sides: 4})),
+  m.decideOnResume({gapMs: 25000}, s({status: 'playing', side_remaining_seconds: 600})),
 ]));""")
         # LP duplo: a virada vai para o Shazam (B->A ou B->C); pausa entre faixas segue local
-        self.assertEqual(decisions, ["boundary", "flip", "recognize", "flip", "recognize", "ignore",
-                                     "recognize", "recognize", "boundary"])
+        self.assertEqual(decisions, ["boundary", "flip", "boundary", "flip", "recognize", "ignore",
+                                     "recognize", "recognize", "boundary", "recognize"])
 
 
 class StaticV352Tests(unittest.TestCase):

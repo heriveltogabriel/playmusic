@@ -132,6 +132,10 @@ async function handleSilenceResume(event) {
       lastDetectorAction = `virou para ${result.track} sem Shazam`;
     } else if (result.aligned) {
       lastDetectorAction = `faixa ${result.track} confirmada pela pausa (ajuste ${result.shift}s)`;
+      // v4.5.1: faixa recém-confirmada; pausas quietas dentro dela não chamam o Shazam
+      if (res && res.state) renderState(res.state);
+      farGapChecked = true;
+      return;
     } else if (result.reason === "far" && gapSeconds >= FAR_GAP_CHECK_SECONDS && !farGapChecked) {
       // Pausa clara entre músicas longe de qualquer troca prevista: disco ou lado errado.
       // O Shazam confere uma vez (até a próxima confirmação) em vez de esperar duas faixas.
