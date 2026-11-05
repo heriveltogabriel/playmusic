@@ -259,6 +259,22 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             report["shazam_usage"] = self.app.shazam_usage()
             self._json(report)
             return
+        if path == "/api/admin/artist":
+            from urllib.parse import parse_qs
+
+            from vinyl_display.artist import artist_listening, discography
+
+            query = parse_qs(urlparse(self.path).query)
+            try:
+                ids = [int(x) for x in (query.get("release_ids") or [""])[0].split(",") if x.strip()][:200]
+            except ValueError:
+                self.send_error(HTTPStatus.BAD_REQUEST)
+                return
+            result = {"listening": artist_listening(self.app.store, ids)}
+            if (query.get("discography") or ["1"])[0] != "0":
+                result["discography"] = discography(self.app, ids, refresh=(query.get("refresh") or ["0"])[0] == "1")
+            self._json(result)
+            return
         if path == "/api/admin/system":
             from vinyl_display.system_status import build_system_status
 

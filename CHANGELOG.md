@@ -20,6 +20,7 @@ Versões do PlayVinil / Vinyl Display. As mais recentes primeiro.
 - **Linha do Tempo**: atalhos de período (6 meses, 1 ano, tudo) e a origem de cada disco (notas do Discogs).
 - **Prateleiras** no lugar de Favoritos: Favoritos + listas suas (Festa, Domingo de manhã, Emprestados de início), com nota por disco; marcar pela ficha; ordenar por mais ouvidos, ouvido recentemente ou há mais tempo.
 - **Configurações em abas**: Sistema (versão, player, último sync, último backup, Shazam, alertas, banco), Coleção, APIs, Player e alertas, Segurança. O ajuste de tempo da letra saiu (o modo leitura não usa).
+- **Artistas** (novo): lista de artistas da coleção e a página de cada um (seus discos, audições, horas, faixas mais tocadas, perfil e discografia do Discogs com o que você tem e o que falta; guardada por 30 dias). O nome do artista na ficha do disco abre a página.
 - **Agulha e Cuidados** (novo): horas de agulha, vida útil, previsão de troca, histórico de agulhas e limpeza de cada disco.
 
 ## 4.0.1 — 2026-11-04 — Servidor do Bruno em dia

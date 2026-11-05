@@ -5123,3 +5123,93 @@ dialog::backdrop {
 .system-sub { font-size: 0.78rem; color: var(--text-secondary); }
 .system-actions { margin-top: 14px; display: flex; justify-content: flex-end; }
 #view-settings .settings-tab-hidden { display: none !important; }
+
+/* ==================== v4.2: ARTISTAS ==================== */
+.artists-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.artist-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 10px;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+
+.artist-card:hover { background: var(--card-hover-bg); border-color: var(--border-color-active); }
+
+.artist-mosaic {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.artist-mosaic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.artist-mosaic.n1 { grid-template-columns: 1fr; }
+.artist-mosaic.n1 img { grid-row: span 2; }
+.artist-mosaic.n2 img { grid-row: span 2; }
+.artist-mosaic.n3 img:first-child { grid-row: span 2; }
+
+.artist-card-name { margin-top: 8px; font-weight: 700; color: var(--text-primary); font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.artist-card-sub { font-size: 0.78rem; color: var(--text-secondary); }
+
+.artist-back { margin-bottom: 12px; padding-left: 0; }
+
+.artist-header { display: flex; gap: 22px; align-items: flex-start; margin-bottom: 22px; flex-wrap: wrap; }
+.artist-mosaic.big { width: 170px; flex-shrink: 0; }
+.artist-header-info { flex: 1; min-width: 240px; }
+.artist-name { margin: 0 0 10px; font-size: 1.9rem; color: var(--text-primary); }
+.artist-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.artist-chips span {
+  font-size: 0.8rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+}
+.artist-chips .artist-chip-warn { color: var(--primary); border-color: var(--border-color-active); }
+.artist-profile { margin-top: 12px; color: var(--text-secondary); font-size: 0.88rem; line-height: 1.55; white-space: pre-line; max-width: 760px; }
+
+.artist-section { margin-bottom: 18px; }
+
+.artist-discs { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 14px; margin-top: 12px; }
+.artist-disc { background: none; border: 0; padding: 0; text-align: left; cursor: pointer; color: inherit; }
+.artist-disc img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; }
+.artist-disc-title { display: block; margin-top: 6px; font-size: 0.85rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.artist-disc-sub { display: block; font-size: 0.75rem; color: var(--text-secondary); }
+
+.artist-disco-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.artist-disco-head h3 { margin: 0; }
+.artist-disco-head .profile-hint { margin: 0; }
+
+.artist-works { display: flex; flex-direction: column; margin-top: 12px; }
+.artist-work {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 6px;
+  border-bottom: 1px solid var(--border-color);
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+}
+.artist-work:hover { background: rgba(255, 255, 255, 0.03); }
+.artist-work-year { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.artist-work-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.artist-work.owned .artist-work-title { color: var(--text-primary); font-weight: 600; }
+.artist-work.owned .artist-work-mark { color: var(--success); }
+.artist-work.missing .artist-work-mark { color: var(--text-muted); }
+
+.details-artist-link { cursor: pointer; }
+.details-artist-link:hover { color: var(--primary); text-decoration: underline; }

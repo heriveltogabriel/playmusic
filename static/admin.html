@@ -76,6 +76,16 @@
             </button>
           </li>
           <li>
+            <button class="nav-btn" data-view="artists">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                <line x1="12" y1="19" x2="12" y2="23"></line>
+              </svg>
+              Artistas
+            </button>
+          </li>
+          <li>
             <button class="nav-btn" data-view="ranking">
               <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
@@ -341,6 +351,30 @@
       </section>
 
       <!-- VIEW 4: RANKING DE AUDIÇÕES -->
+      <section id="view-artists" class="content-view">
+        <div id="artists-index">
+          <div class="catalog-toolbar">
+            <div class="toolbar-left"><span class="results-text"><span id="artists-count">0</span> artistas</span></div>
+            <div class="toolbar-search">
+              <div class="search-box">
+                <input type="text" id="artists-search" placeholder="Buscar artista..." autocomplete="off" style="padding-left: 12px;">
+              </div>
+            </div>
+            <div class="toolbar-right">
+              <label for="artists-sort">Ordenar por:</label>
+              <select id="artists-sort">
+                <option value="discs">Mais discos</option>
+                <option value="plays">Mais ouvidos</option>
+                <option value="recent">Ouvido recentemente</option>
+                <option value="name">Nome (A-Z)</option>
+              </select>
+            </div>
+          </div>
+          <div id="artists-grid" class="artists-grid"></div>
+        </div>
+        <div id="artist-page" class="artist-page" style="display: none;"></div>
+      </section>
+
       <section id="view-ranking" class="content-view">
         <div class="ranking-container">
           <!-- Top 3 Podium -->
@@ -1407,14 +1441,14 @@
   <div id="toast-container" class="toast-container"></div>
 
   <!-- Database & Logic Scripts -->
-  <script src="/static/admin/00-core.js?v=4.2.4" defer></script>
+  <script src="/static/admin/00-core.js?v=4.2.6" defer></script>
   <script src="/static/admin/10-agenda.js?v=4.2.4" defer></script>
   <script src="/static/admin/20-collection.js?v=4.2.4" defer></script>
   <script src="/static/admin/25-filters.js?v=4.2.4" defer></script>
   <script src="/static/admin/30-timeline.js?v=4.2.4" defer></script>
   <script src="/static/admin/40-stats.js?v=4.2.4" defer></script>
   <script src="/static/admin/45-profile.js?v=4.2.4" defer></script>
-  <script src="/static/admin/50-dialogs.js?v=4.2.4" defer></script>
+  <script src="/static/admin/50-dialogs.js?v=4.2.6" defer></script>
   <script src="/static/admin/60-ranking.js?v=4.2.4" defer></script>
   <script src="/static/admin/70-settings.js?v=4.2.4" defer></script>
   <script src="/static/admin/80-history.js?v=4.2.4" defer></script>
@@ -1423,5 +1457,6 @@
   <script src="/static/admin/96-diary-care.js?v=4.2.4" defer></script>
   <script src="/static/admin/97-shelves.js?v=4.2.4" defer></script>
   <script src="/static/admin/98-settings-tabs.js?v=4.2.5" defer></script>
+  <script src="/static/admin/99-artists.js?v=4.2.6" defer></script>
 </body>
 </html>

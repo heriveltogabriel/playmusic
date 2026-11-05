@@ -249,6 +249,9 @@ function initializeViews() {
         viewTitle.textContent = 'Prateleiras';
         if (typeof loadShelves === 'function') loadShelves();
         renderFavoritesGrid();
+      } else if (targetView === 'artists') {
+        viewTitle.textContent = 'Artistas';
+        renderArtistsIndex();
       } else if (targetView === 'diary') {
         viewTitle.textContent = 'Diário da Vitrola';
         renderDiary();

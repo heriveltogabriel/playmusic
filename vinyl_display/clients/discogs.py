@@ -246,6 +246,51 @@ class DiscogsClient:
                 
         return release
 
+    # ---------------- v4.2: página do artista ----------------
+    def release_artist(self, release_id: int) -> dict[str, Any] | None:
+        """Primeiro artista creditado num lançamento: {"id", "name"}."""
+        payload = self._request_json(f"{self.api_base}/releases/{release_id}")
+        for artist in payload.get("artists") or []:
+            if artist.get("id"):
+                return {"id": int(artist["id"]), "name": str(artist.get("name") or "")}
+        return None
+
+    def artist_profile(self, artist_id: int) -> dict[str, Any]:
+        payload = self._request_json(f"{self.api_base}/artists/{artist_id}")
+        return {
+            "id": artist_id,
+            "name": str(payload.get("name") or ""),
+            "profile": str(payload.get("profile") or ""),
+            "uri": str(payload.get("uri") or ""),
+        }
+
+    def artist_main_releases(self, artist_id: int, max_pages: int = 4) -> list[dict[str, Any]]:
+        """Discografia principal do artista (role Main), mais antigos primeiro."""
+        items: list[dict[str, Any]] = []
+        page = 1
+        while page <= max_pages:
+            payload = self._request_json(
+                f"{self.api_base}/artists/{artist_id}/releases?sort=year&sort_order=asc&per_page=100&page={page}"
+            )
+            for item in payload.get("releases") or []:
+                if str(item.get("role") or "") != "Main":
+                    continue
+                items.append({
+                    "id": int(item.get("id") or 0),
+                    "type": str(item.get("type") or ""),
+                    "main_release": item.get("main_release"),
+                    "title": str(item.get("title") or ""),
+                    "year": int(item.get("year") or 0) or None,
+                    "format": str(item.get("format") or ""),
+                    "thumb": str(item.get("thumb") or ""),
+                })
+            pagination = payload.get("pagination") or {}
+            if int(pagination.get("page", page)) >= int(pagination.get("pages", page)):
+                break
+            page += 1
+            self.sleep_func(self.page_delay_seconds)
+        return items
+
     def sync_collection(self, store: CatalogStore) -> dict[str, int]:
         added_count = 0
         updated_count = 0
