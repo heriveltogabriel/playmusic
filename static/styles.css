@@ -2456,97 +2456,6 @@ h1 {
 .pick-side-btn:hover {
   background: var(--accent);
 }
-
-/* ==========================================================================
-   LEITOR DE LETRA (feature/letra-leitura): tela cheia, texto corrido
-   ========================================================================== */
-.lyrics-overlay.lyrics-reader {
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
-  height: 100dvh;
-  border-radius: 0;
-  border: 0;
-  z-index: 90;
-  background: rgba(10, 10, 10, 0.94);
-}
-
-.lyrics-reader-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 14px 20px 10px;
-  border-bottom: 1px solid rgba(234, 229, 217, 0.08);
-}
-
-.lyrics-reader-info {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.lyrics-reader-title {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--text);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.lyrics-reader-artist {
-  font-size: 0.85rem;
-  color: var(--accent);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.lyrics-reader .lyrics-container,
-.lyrics-reader.plain-lyrics-mode .lyrics-container {
-  scroll-behavior: auto;
-  padding: 24px 24px 40vh;
-  mask-image: linear-gradient(to bottom, transparent, white 6%, white 88%, transparent);
-  -webkit-mask-image: linear-gradient(to bottom, transparent, white 6%, white 88%, transparent);
-}
-
-.lyrics-reader .lyrics-scroll,
-.lyrics-reader.plain-lyrics-mode .lyrics-scroll {
-  max-width: 760px;
-  margin: 0 auto;
-  align-items: center;
-  text-align: center;
-  gap: 6px;
-}
-
-.lyrics-reader .lyrics-line,
-.lyrics-reader.plain-lyrics-mode .lyrics-line {
-  font-size: max(1.25rem, min(4.2vmin, 2rem));
-  font-weight: 500;
-  line-height: 1.45;
-  color: var(--text);
-  opacity: 0.92;
-  transform: none;
-  cursor: default;
-}
-
-.lyrics-reader .lyrics-line:hover {
-  color: var(--text);
-  opacity: 0.92;
-}
-
-.lyrics-reader .lyrics-gap {
-  height: 1.1em;
-  margin: 0;
-}
-
-.lyrics-reader .lyrics-empty {
-  font-size: max(1.1rem, min(3.6vmin, 1.6rem));
-  margin-top: 20vh;
-}
-
 /* v4.3.1: janelas do player cabem no celular (em pé, a de escolher o disco passava da tela) */
 .alternatives-popup-content {
   width: min(440px, calc(100vw - 28px));
@@ -2559,3 +2468,39 @@ h1 {
   #pick-popup .alternatives-popup-subtitle { font-size: 0.78rem; margin: 0; }
   .alternatives-popup-header h3 { font-size: 1rem; }
 }
+
+
+/* v4.3.2: ajuste fino da letra sincronizada (adiantar / atrasar) */
+.lyrics-sync-bar {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid rgba(234, 229, 217, 0.12);
+  z-index: 3;
+}
+
+.plain-lyrics-mode .lyrics-sync-bar { display: none; }
+
+.lyrics-sync-btn,
+.lyrics-sync-label {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(234, 229, 217, 0.08);
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.lyrics-sync-label { background: transparent; color: var(--muted); font-weight: 500; min-width: 96px; }
+.lyrics-sync-label.adjusted { color: var(--accent); }
+.lyrics-sync-btn:active { background: var(--accent); }

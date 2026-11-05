@@ -43,6 +43,30 @@ let lyricsEnabled = localStorage.getItem("lyricsEnabled") === "true";
 let lyricsLatencyOffset = 1.3;
 let lyricsTimeoutId = null;
 const lyricsCache = new Map();
+// v4.3.2: ajuste fino da letra por música (adiantar/atrasar ou tocar no verso que está tocando)
+let lyricsTrackKey = "";
+let lyricsTrackOffset = 0;
+let lastLyricsSeconds = 0;
+const LYRICS_OFFSETS_KEY = "lyricsOffsets";
+
+function loadLyricsOffsets() {
+  try {
+    return JSON.parse(localStorage.getItem(LYRICS_OFFSETS_KEY) || "{}") || {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveLyricsOffset(key, value) {
+  if (!key) return;
+  try {
+    const all = loadLyricsOffsets();
+    if (Math.abs(value) < 0.05) delete all[key]; else all[key] = Math.round(value * 10) / 10;
+    localStorage.setItem(LYRICS_OFFSETS_KEY, JSON.stringify(all));
+  } catch (e) {
+    // sem armazenamento: o ajuste vale só até recarregar
+  }
+}
 let lyricsStatusMessage = "Letra não encontrada para esta faixa";
 let nextTrack = null;
 let currentRelease = null;
@@ -340,7 +364,7 @@ function renderStateInner(state) {
       // Re-verification is now only done manually when the user clicks the "Identify" button.
       currentTrackKey = trackKey;
       fetchLyrics(track, release);
-      resetReaderScroll();
+      setLyricsVisibility(false);
     }
 
     setCover(release);
@@ -1451,6 +1475,11 @@ async function fetchLyrics(track, release, isPrefetch = false) {
   }
 
   const cacheKey = getLyricsCacheKey(track.title, release.artist);
+  if (!isPrefetch) {
+    lyricsTrackKey = cacheKey;
+    lyricsTrackOffset = Number(loadLyricsOffsets()[cacheKey] || 0);
+    updateLyricsSyncLabel();
+  }
 
   // Se já estiver no cache
   if (lyricsCache.has(cacheKey)) {
@@ -1541,13 +1570,12 @@ async function fetchLyrics(track, release, isPrefetch = false) {
       if (response.ok) {
         const results = await response.json();
         if (results && results.length > 0) {
-          // Leitor de letra: melhor "não encontrada" do que a letra de outra versão.
-          const withText = results.filter(r => r.plainLyrics || r.syncedLyrics);
+          let bestMatch = results[0];
           if (duration > 0) {
-            return withText.find(r => Math.abs((r.duration || 0) - duration) <= LYRICS_DURATION_TOLERANCE) || null;
+            const closeMatch = results.find(r => Math.abs((r.duration || 0) - duration) <= 10);
+            if (closeMatch) bestMatch = closeMatch;
           }
-          const wanted = normalizeLyricsTitle(trackClean);
-          return withText.find(r => normalizeLyricsTitle(r.trackName) === wanted) || null;
+          return bestMatch;
         }
       }
     } catch (err) {
@@ -1602,25 +1630,33 @@ function handleLyricsResponse(data) {
     clearTimeout(lyricsTimeoutId);
     lyricsTimeoutId = null;
   }
-  activeLyricIndex = -1;
 
-  // Leitor de letra: mostra o texto inteiro, sem destacar verso. A letra sincronizada
-  // vira texto corrido, porque o tempo dela é o da versão digital, não o do vinil.
-  let lines = null;
-  if (data.plainLyrics) {
-    lines = data.plainLyrics.split("\n").map(text => ({ text: text.trim() }));
-  } else if (data.syncedLyrics) {
-    const synced = parseLRC(data.syncedLyrics);
-    if (synced) lines = synced.map(line => ({ text: line.text }));
+  activeLyricIndex = -1;
+  if (data.syncedLyrics) {
+    parsedLyrics = parseLRC(data.syncedLyrics);
+    if (parsedLyrics) {
+      if (elements.lyricsOverlay) {
+        elements.lyricsOverlay.classList.remove("plain-lyrics-mode");
+      }
+      if (elements.coverPanel) {
+        elements.coverPanel.classList.add("has-lyrics");
+      }
+      renderLyrics(parsedLyrics);
+      setLyricsVisibility(false); // Mantém a capa de disco como padrão
+      return;
+    }
   }
 
-  if (lines && lines.some(line => line.text)) {
-    parsedLyrics = lines;
-    if (elements.lyricsOverlay) elements.lyricsOverlay.classList.add("plain-lyrics-mode");
-    if (elements.coverPanel) elements.coverPanel.classList.add("has-lyrics");
+  if (data.plainLyrics) {
+    parsedLyrics = data.plainLyrics.split("\n").map(text => ({ text: text.trim() }));
+    if (elements.lyricsOverlay) {
+      elements.lyricsOverlay.classList.add("plain-lyrics-mode");
+    }
+    if (elements.coverPanel) {
+      elements.coverPanel.classList.add("has-lyrics");
+    }
     renderLyrics(parsedLyrics, true);
-    resetReaderScroll();
-    if (lyricsVisible) setLyricsVisibility(true);
+    setLyricsVisibility(false); // Mantém a capa de disco como padrão
     return;
   }
 
@@ -1634,53 +1670,76 @@ function handleLyricsResponse(data) {
   showTemporaryMessage("Letra indisponível para esta música");
 }
 
-function renderLyrics(lyrics) {
+function renderLyrics(lyrics, isPlain = false) {
   if (!elements.lyricsScroll) return;
   elements.lyricsScroll.replaceChildren();
   if (!lyrics) return;
+
   lyrics.forEach((line, index) => {
     const p = document.createElement("p");
-    p.className = line.text ? "lyrics-line" : "lyrics-gap";
-    p.textContent = line.text;
+    p.className = "lyrics-line";
+    p.textContent = line.text || "•••";
     p.dataset.index = index;
+    if (!isPlain && line.timeSeconds !== undefined) {
+      // Tocar no verso que está tocando acerta a letra a partir dele
+      p.title = "Tocar aqui quando este verso estiver tocando";
+      p.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (!playbackTracker.active) return;
+        setLyricsTrackOffset(line.timeSeconds - (lastLyricsSeconds + lyricsLatencyOffset) + 0.2);
+      });
+    }
     elements.lyricsScroll.appendChild(p);
   });
 }
 
-// ---------- Leitor de letra: rolagem que acompanha a música, sem prometer sincronia ----------
-const LYRICS_DURATION_TOLERANCE = 8; // segundos de diferença aceitos entre a letra e a faixa do disco
-const READER_PAUSE_AFTER_TOUCH_MS = 12000;
-let readerPausedUntil = 0;
-
-function normalizeLyricsTitle(text) {
-  return (text || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-}
-
-function resetReaderScroll() {
-  readerPausedUntil = 0;
-  if (elements.lyricsContainer) elements.lyricsContainer.scrollTop = 0;
-}
-
 function updateLyricsProgress(seconds) {
-  const container = elements.lyricsContainer;
-  if (!lyricsVisible || !parsedLyrics || !container || !playbackTracker.active) return;
-  if (Date.now() < readerPausedUntil) return;
-  const duration = playbackTracker.duration;
-  const room = container.scrollHeight - container.clientHeight;
-  if (!duration || room <= 0) return;
-  // Começa a descer depois da introdução e chega ao fim um pouco antes do final da faixa.
-  const fraction = Math.min(1, Math.max(0, (seconds - 8) / Math.max(30, duration - 25)));
-  const target = fraction * room;
-  const diff = target - container.scrollTop;
-  if (Math.abs(diff) > 1) container.scrollTop += diff * 0.12;
-}
+  if (!parsedLyrics || parsedLyrics.length === 0 || !elements.lyricsOverlay || !elements.lyricsScroll || !elements.lyricsContainer) {
+    return;
+  }
 
-function updateReaderHeader() {
-  if (!readerTitle) return;
-  const title = elements.trackTitle ? elements.trackTitle.textContent : "";
-  const artist = elements.artistName ? elements.artistName.textContent : "";
-  readerTitle.textContent = title;
-  readerArtist.textContent = artist;
+  if (elements.lyricsOverlay.classList.contains("plain-lyrics-mode")) {
+    return;
+  }
+
+  // Compensação de atraso dinâmica para antecipar a legenda e sincronizar com o áudio real
+  lastLyricsSeconds = seconds;
+  const adjustedTime = seconds + lyricsLatencyOffset + lyricsTrackOffset;
+
+  let newActiveIndex = -1;
+  for (let i = 0; i < parsedLyrics.length; i++) {
+    if (parsedLyrics[i].timeSeconds !== undefined && adjustedTime >= parsedLyrics[i].timeSeconds) {
+      newActiveIndex = i;
+    } else {
+      break;
+    }
+  }
+
+  if (newActiveIndex !== activeLyricIndex) {
+    if (activeLyricIndex !== -1) {
+      const prevEl = elements.lyricsScroll.querySelector(`.lyrics-line[data-index="${activeLyricIndex}"]`);
+      if (prevEl) prevEl.classList.remove("active");
+    }
+
+    activeLyricIndex = newActiveIndex;
+
+    if (activeLyricIndex !== -1) {
+      const activeEl = elements.lyricsScroll.querySelector(`.lyrics-line[data-index="${activeLyricIndex}"]`);
+      if (activeEl) {
+        activeEl.classList.add("active");
+        
+        const containerHeight = elements.lyricsContainer.clientHeight;
+        const lineOffsetTop = activeEl.offsetTop;
+        const lineHalfHeight = activeEl.clientHeight / 2;
+        const targetScroll = lineOffsetTop - (containerHeight / 2) + lineHalfHeight;
+        
+        elements.lyricsContainer.scrollTo({
+          top: Math.max(0, targetScroll),
+          behavior: "smooth"
+        });
+      }
+    }
+  }
 }
 
 function setLyricsVisibility(visible) {
@@ -1694,7 +1753,6 @@ function setLyricsVisibility(visible) {
   
   if (elements.lyricsOverlay) {
     if (visible) {
-      updateReaderHeader();
       elements.lyricsOverlay.classList.remove("hidden");
     } else {
       elements.lyricsOverlay.classList.add("hidden");
@@ -1714,40 +1772,53 @@ if (elements.albumCover) {
   });
 }
 
-let readerTitle = null;
-let readerArtist = null;
-
 if (elements.lyricsOverlay) {
-  // O leitor ocupa a tela toda: sai de dentro da capa e ganha um cabeçalho.
-  document.body.appendChild(elements.lyricsOverlay);
-  elements.lyricsOverlay.classList.add("lyrics-reader");
-  const header = document.createElement("div");
-  header.className = "lyrics-reader-header";
-  const info = document.createElement("div");
-  info.className = "lyrics-reader-info";
-  readerTitle = document.createElement("span");
-  readerTitle.className = "lyrics-reader-title";
-  readerArtist = document.createElement("span");
-  readerArtist.className = "lyrics-reader-artist";
-  info.append(readerTitle, readerArtist);
-  const close = document.createElement("button");
-  close.type = "button";
-  close.className = "btn-popup-close-icon lyrics-reader-close";
-  close.setAttribute("aria-label", "Fechar letra");
-  close.textContent = "×";
-  header.append(info, close);
-  elements.lyricsOverlay.prepend(header);
-
   elements.lyricsOverlay.addEventListener("click", (e) => {
     e.stopPropagation();
     setLyricsVisibility(false);
   });
-  // Mexeu na letra com o dedo: a rolagem automática espera um pouco.
-  ["touchstart", "wheel", "pointerdown"].forEach((type) => {
-    elements.lyricsContainer.addEventListener(type, () => {
-      readerPausedUntil = Date.now() + READER_PAUSE_AFTER_TOUCH_MS;
-    }, { passive: true });
+
+  // Barra de ajuste: atrasar / adiantar a letra desta música
+  const syncBar = document.createElement("div");
+  syncBar.className = "lyrics-sync-bar";
+  // data-step="-0.5" atrasa, data-step="0.5" adianta; o rótulo do meio zera
+  [["-0.5", "−0,5 s", "Atrasar a letra"], ["", "sincronia", "Zerar o ajuste desta música"], ["0.5", "+0,5 s", "Adiantar a letra"]]
+    .forEach(([step, text, title]) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = step ? "lyrics-sync-btn" : "lyrics-sync-label";
+      if (step) btn.dataset.step = step;
+      btn.title = title;
+      btn.textContent = text;
+      syncBar.appendChild(btn);
+    });
+  syncBar.addEventListener("click", (e) => {
+    e.stopPropagation(); // tocar na barra não fecha a letra
+    const step = e.target.dataset && e.target.dataset.step;
+    if (step) setLyricsTrackOffset(lyricsTrackOffset + Number(step));
+    else if (e.target.classList.contains("lyrics-sync-label")) setLyricsTrackOffset(0);
   });
+  elements.lyricsOverlay.appendChild(syncBar);
+}
+
+function setLyricsTrackOffset(value) {
+  lyricsTrackOffset = Math.max(-30, Math.min(30, Math.round(value * 10) / 10));
+  saveLyricsOffset(lyricsTrackKey, lyricsTrackOffset);
+  if (elements.lyricsScroll) {
+    elements.lyricsScroll.querySelectorAll(".lyrics-line.active").forEach((el) => el.classList.remove("active"));
+  }
+  activeLyricIndex = -2; // força redesenhar o verso ativo agora
+  updateLyricsProgress(lastLyricsSeconds);
+  updateLyricsSyncLabel();
+}
+
+function updateLyricsSyncLabel() {
+  const label = document.querySelector(".lyrics-sync-label");
+  if (!label) return;
+  const v = lyricsTrackOffset;
+  label.textContent = Math.abs(v) < 0.05 ? "sincronia" :
+    `${v > 0 ? "adiantada" : "atrasada"} ${Math.abs(v).toFixed(1).replace(".", ",")} s`;
+  label.classList.toggle("adjusted", Math.abs(v) >= 0.05);
 }
 
 function toggleFullscreen() {
