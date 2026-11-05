@@ -5122,3 +5122,4 @@ dialog::backdrop {
 .system-value { font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin: 4px 0 2px; }
 .system-sub { font-size: 0.78rem; color: var(--text-secondary); }
 .system-actions { margin-top: 14px; display: flex; justify-content: flex-end; }
+#view-settings .settings-tab-hidden { display: none !important; }

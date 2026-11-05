@@ -42,7 +42,7 @@ function showSettingsTab(tab) {
   document.querySelectorAll('#view-settings [data-settings-tab]').forEach(el => {
     const owner = el.dataset.settingsTab;
     const visible = owner === tab || (owner === 'form' && SETTINGS_FORM_TABS.has(tab));
-    el.style.display = visible ? '' : 'none';
+    el.classList.toggle('settings-tab-hidden', !visible);
   });
   try { localStorage.setItem(SETTINGS_TAB_KEY, tab); } catch (e) { /* sem armazenamento: só não lembra */ }
   if (tab === 'sistema') renderSystemCard();
