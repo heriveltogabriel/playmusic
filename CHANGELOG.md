@@ -2,6 +2,12 @@
 
 Versões do PlayVinil / Vinyl Display. As mais recentes primeiro.
 
+## 4.4.0 — 2026-11-05 — Letra sincronizada com ajuste
+
+- Letra volta a ser a sincronizada sobre a capa (o modo leitura em tela cheia saiu).
+- Ajuste fino por música: −0,5 s / +0,5 s, tocar no verso que está tocando acerta a letra por ele; o ajuste fica guardado no celular do player. O ajuste geral voltou para Configurações → Player e alertas.
+- Com o celular deitado, a letra ocupa a capa e o disco que gira ao lado.
+
 ## 4.3.2 — 2026-11-05 — Correção do reconhecimento
 
 - Player volta a gravar o trecho para o Shazam com o método antigo (ScriptProcessor). Com o AudioWorklet da 4.0 o Shazam não reconhecia os trechos gravados no celular.
