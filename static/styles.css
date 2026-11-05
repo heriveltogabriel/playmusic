@@ -191,6 +191,13 @@ button:hover {
   .cover-panel {
     width: calc(100% / 1.28);
     justify-self: start;
+    /* v4.5: sem disco tocando a capa fica no centro da coluna; ao tocar ela
+       desliza para a esquerda junto com o disco saindo da capa */
+    transform: translateX(14%);
+    transition: transform 1.2s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+  body.is-playing .cover-panel {
+    transform: translateX(0);
   }
   .vinyl-wrapper.playing .vinyl-disc {
     /* Slide out 48% to expose exactly half of the vinyl label */
