@@ -2,6 +2,12 @@
 
 Versões do PlayVinil / Vinyl Display. As mais recentes primeiro.
 
+## 4.4.1 — 2026-11-05 — Escuta da Semana em lista
+
+- Os 7 dias da semana numa lista (dia e data, capa, disco, situação, "Ouvi" e trocar disco); tocar abre a ficha.
+- Painel "Disco selecionado" removido.
+- Histórico de agendas: a semana atual saiu da lista de baixo; as semanas anteriores abrem no mesmo formato de lista.
+
 ## 4.4.0 — 2026-11-05 — Letra sincronizada com ajuste
 
 - Letra volta a ser a sincronizada sobre a capa (o modo leitura em tela cheia saiu).
