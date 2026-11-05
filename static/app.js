@@ -1758,6 +1758,7 @@ function setLyricsVisibility(visible) {
   
   if (elements.lyricsOverlay) {
     if (visible) {
+      sizeLyricsOverlay();
       elements.lyricsOverlay.classList.remove("hidden");
     } else {
       elements.lyricsOverlay.classList.add("hidden");
@@ -1805,6 +1806,29 @@ if (elements.lyricsOverlay) {
   });
   elements.lyricsOverlay.appendChild(syncBar);
 }
+
+// v4.3.3: com o celular deitado, a letra ocupa a capa e também o disco que sai de trás dela,
+// até perto do título da música. Em pé (título embaixo da capa), fica só sobre a capa.
+function sizeLyricsOverlay() {
+  const overlay = elements.lyricsOverlay;
+  const panel = elements.coverPanel;
+  const info = document.querySelector(".now-playing");
+  if (!overlay || !panel || !info) return;
+  const p = panel.getBoundingClientRect();
+  const i = info.getBoundingClientRect();
+  const sideBySide = i.left >= p.right - 4 && i.top < p.bottom;
+  if (!sideBySide) {
+    overlay.style.width = "";
+    return;
+  }
+  // O disco vai até a borda do título: a letra cobre até ali para ele não aparecer por baixo
+  const width = Math.max(p.width, i.left - p.left - 2);
+  overlay.style.width = `${Math.round(width)}px`;
+}
+
+window.addEventListener("resize", () => {
+  if (lyricsVisible) sizeLyricsOverlay();
+});
 
 function setLyricsTrackOffset(value) {
   lyricsTrackOffset = Math.max(-30, Math.min(30, Math.round(value * 10) / 10));
