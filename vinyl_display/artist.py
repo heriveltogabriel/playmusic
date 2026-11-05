@@ -124,14 +124,14 @@ def discography(app: Any, release_ids: list[int], refresh: bool = False, now: fl
             }
             store.set_metadata(cache_key, json.dumps(cached, ensure_ascii=False))
 
-    # A coleção inteira entra na conferência: um disco seu pode estar creditado diferente
-    all_owned = [(r.release_id, r.title) for r in store.list_releases()]
+    # Só os discos deste artista: títulos genéricos ("Greatest Hits", "Ao Vivo") de outros
+    # artistas não podem contar como seus
     mine_first = [(r.release_id, r.title) for r in owned_releases]
     album_ids = cached.get("album_ids")
     album_set = set(album_ids) if album_ids else None
     works = []
     for work in cached["works"]:
-        owned_ids = _owned_matches(work["title"], mine_first) or _owned_matches(work["title"], all_owned)
+        owned_ids = _owned_matches(work["title"], mine_first)
         url = f"https://www.discogs.com/{'master' if work['type'] == 'master' else 'release'}/{work['id']}"
         if album_set is None:
             is_album = True
