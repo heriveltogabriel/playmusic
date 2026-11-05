@@ -194,7 +194,8 @@ class StaticV37Tests(unittest.TestCase):
     def test_player_sends_heartbeat_and_reloads_only_when_idle(self):
         app_js = (ROOT / "static" / "app.js").read_text(encoding="utf-8")
         self.assertIn('"/api/player/heartbeat"', app_js)
-        self.assertIn("state.version !== pageVersion && !state.release && !recording", app_js)
+        self.assertIn('const calm = !state.release || state.status === "waiting_flip";', app_js)
+        self.assertIn("if (calm && !recording)", app_js)
         admin = (ROOT / "static" / "admin.html").read_text(encoding="utf-8")
         self.assertIn('id="alerts-card"', admin)
         admin_js = admin_js_source()

@@ -1359,14 +1359,19 @@ async function sendHeartbeat() {
 setInterval(sendHeartbeat, 60000);
 setTimeout(sendHeartbeat, 5000);
 
-// Saiu versão nova no servidor: recarrega sozinho, mas só sem disco no player
+// Saiu versão nova no servidor: recarrega sozinho. v4.5.5: antes esperava não ter disco no
+// player, e uma tela que emendava discos ficava horas com a versão velha. Agora recarrega
+// também esperando a virada de lado (o tocador fica no servidor); nunca no meio de uma
+// música nem de uma gravação.
 function checkForNewVersion(state) {
   if (!state || !state.version) return;
   if (pageVersion === null) {
     pageVersion = state.version;
     return;
   }
-  if (state.version !== pageVersion && !state.release && !recording) {
+  if (state.version === pageVersion) return;
+  const calm = !state.release || state.status === "waiting_flip";
+  if (calm && !recording) {
     console.log(`Nova versão ${state.version} (página em ${pageVersion}): recarregando.`);
     window.location.reload();
   }
