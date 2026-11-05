@@ -6,6 +6,12 @@
 const CF_IGNORED_FORMATS = new Set(['Vinyl', 'LP', 'Album']);
 const CF_VIEW_KEY = 'catalogViewMode';
 
+// "1980" → "Anos 80"; de 2000 em diante fica o ano inteiro ("Anos 2010").
+function decadeLabel(decade) {
+  const value = String(decade);
+  return Number(value) >= 2000 ? `Anos ${value}` : `Anos ${value.slice(2)}`;
+}
+
 function cfCount(values) {
   const counts = new Map();
   values.forEach(v => { if (v) counts.set(v, (counts.get(v) || 0) + 1); });
@@ -32,7 +38,7 @@ function populateCatalogFilters() {
     const year = lp.original_year || lp.year;
     return year ? String(Math.floor(year / 10) * 10) : '';
   })).sort((a, b) => Number(a[0]) - Number(b[0]));
-  cfFillSelect(document.getElementById('cf-decade'), decades, state.filters.decade, d => `Anos ${d.slice(2)} (${d})`);
+  cfFillSelect(document.getElementById('cf-decade'), decades, state.filters.decade, decadeLabel);
   cfFillSelect(document.getElementById('cf-country'), cfCount(lps.map(lp => lp.country)), state.filters.country);
   cfFillSelect(
     document.getElementById('cf-format'),

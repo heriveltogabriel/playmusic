@@ -67,9 +67,9 @@ function renderCollectionProfile() {
     const year = lp.original_year || lp.year;
     return year ? `${Math.floor(year / 10) * 10}` : '';
   })).sort((a, b) => Number(a[0]) - Number(b[0]));
-  container.appendChild(profileBars('Décadas (ano original)', decades.map(([d, n]) => [`Anos ${d.slice(2)}`, n, d]), total,
+  container.appendChild(profileBars('Décadas (ano original)', decades.map(([d, n]) => [decadeLabel(d), n]), total,
     label => {
-      const decade = decades.find(([d]) => `Anos ${d.slice(2)}` === label);
+      const decade = decades.find(([d]) => decadeLabel(d) === label);
       profileOpenCatalog(() => { state.filters.decade = decade ? decade[0] : ''; });
     }));
 
