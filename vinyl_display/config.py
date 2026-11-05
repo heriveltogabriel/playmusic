@@ -32,7 +32,7 @@ class Config:
     player_offline_minutes: int = 10
     alert_quiet_start: str = "22:00"
     alert_quiet_end: str = "10:00"
-    collection_name: str = ""  # v4.5: nome que aparece embaixo de "PlayVinil" (ex.: "Discoteca do Herivelto")
+    collection_name: str = ""  # v4.5: nome que aparece embaixo de "PlayVinil" (ex.: "Minha Coleção")
 
 
 

@@ -8,12 +8,12 @@
   "description": "O disco que está tocando na sua vitrola",
   "icons": [
     {
-      "src": "/static/playvinil-icon.png",
+      "src": "/static/playvinil-icon.png?v=2",
       "sizes": "512x512",
       "type": "image/png"
     },
     {
-      "src": "/static/playvinil-icon-180.png",
+      "src": "/static/playvinil-icon-180.png?v=2",
       "sizes": "180x180",
       "type": "image/png"
     }
