@@ -17,6 +17,7 @@ const ARTIST_RULES = [
 const ARTIST_DEFAULT_COVER = '/static/logo_lp_da_semana.png';
 let artistOnlyMissing = false;
 let artistShowAll = false; // singles e compactos ficam escondidos por padrão
+let artistOnlyVinyl = true; // a coleção é de vinil: por padrão só o que saiu em vinil
 let artistCurrent = null;
 
 function artistEsc(text) {
@@ -151,6 +152,7 @@ async function openArtistPage(name, refresh = false) {
         <h3>Discografia no Discogs</h3>
         <span id="artist-disco-summary" class="profile-hint"></span>
         <span class="cf-view-toggle-spacer"></span>
+        <button type="button" id="artist-only-vinyl" class="cf-chip ${artistOnlyVinyl ? 'active' : ''}">Só em vinil</button>
         <button type="button" id="artist-only-missing" class="cf-chip ${artistOnlyMissing ? 'active' : ''}">Só os que faltam</button>
         <button type="button" id="artist-show-all" class="cf-chip ${artistShowAll ? 'active' : ''}">Singles e compactos</button>
         <button type="button" id="artist-refresh" class="cf-link">Atualizar do Discogs</button>
@@ -163,6 +165,11 @@ async function openArtistPage(name, refresh = false) {
   page.querySelector('#artist-only-missing').addEventListener('click', (event) => {
     artistOnlyMissing = !artistOnlyMissing;
     event.target.classList.toggle('active', artistOnlyMissing);
+    renderArtistDiscography(page._discography);
+  });
+  page.querySelector('#artist-only-vinyl').addEventListener('click', (event) => {
+    artistOnlyVinyl = !artistOnlyVinyl;
+    event.target.classList.toggle('active', artistOnlyVinyl);
     renderArtistDiscography(page._discography);
   });
   page.querySelector('#artist-show-all').addEventListener('click', (event) => {
@@ -218,9 +225,13 @@ function renderArtistDiscography(disco) {
   }
   if (summary) {
     const when = new Date(disco.fetched_at * 1000).toLocaleDateString('pt-BR');
-    summary.textContent = `você tem ${disco.owned_count} de ${disco.total} álbuns · Discogs de ${when}${disco.stale ? ' (sem atualizar)' : ''}`;
+    const vinylKnown = disco.vinyl_total !== null && disco.vinyl_total !== undefined;
+    const total = artistOnlyVinyl && vinylKnown ? `${disco.vinyl_total} álbuns em vinil` : `${disco.total} álbuns`;
+    const partial = artistOnlyVinyl && vinylKnown && !disco.vinyl_complete ? ' (lista de vinil parcial: artista com muitas prensagens)' : '';
+    summary.textContent = `você tem ${disco.owned_count} de ${total}${partial} · Discogs de ${when}${disco.stale ? ' (sem atualizar)' : ''}`;
   }
   let works = artistShowAll ? disco.works : disco.works.filter(w => w.album);
+  if (artistOnlyVinyl) works = works.filter(w => w.vinyl !== false);
   if (artistOnlyMissing) works = works.filter(w => !w.owned_release_ids.length);
   if (!works.length) {
     box.innerHTML = `<p class="profile-hint">${artistOnlyMissing ? 'Você tem todos. 🎉' : 'O Discogs não lista discos deste artista.'}</p>`;
@@ -233,7 +244,7 @@ function renderArtistDiscography(disco) {
       <img class="artist-work-cover" src="${artistEsc(w.thumb || ARTIST_DEFAULT_COVER)}" alt="" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='${ARTIST_DEFAULT_COVER}'">
       <span class="artist-work-year">${w.year || '—'}</span>
       <span class="artist-work-title">${artistEsc(w.title)}</span>
-      <span class="artist-work-mark">${owned ? '✓ na coleção' : 'falta'}</span>
+      <span class="artist-work-mark">${owned ? '✓ na coleção' : (w.vinyl ? 'falta · tem em vinil' : (w.vinyl === false ? 'falta · só CD/digital' : 'falta'))}</span>
     </a>`;
   }).join('') + '</div>';
   // Disco que você tem abre a ficha em vez do Discogs

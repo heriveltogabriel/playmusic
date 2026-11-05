@@ -22,6 +22,10 @@ class FakeDiscogs:
         self.calls.append(("albums", name))
         return {3, 1}
 
+    def artist_vinyl_master_ids(self, name):
+        self.calls.append(("vinyl", name))
+        return {1}, True  # só o "Que País É Este" saiu em vinil
+
     def artist_main_releases(self, artist_id):
         self.calls.append(("artist_main_releases", artist_id))
         return [
@@ -52,6 +56,12 @@ class ArtistTests(unittest.TestCase):
             self.assertEqual(albums, {"Dois": True, "Que País É Este 1978/1987": True, "Mais Do Mesmo": True,
                                       "Que País É Este 1978/1987 Ao Vivo": False})  # coletânea sua conta
             self.assertEqual((result["owned_count"], result["total"]), (2, 3))
+            vinyl = {w["title"]: w["vinyl"] for w in result["works"]}
+            self.assertEqual(vinyl["Dois"], False)
+            self.assertEqual(vinyl["Mais Do Mesmo"], True)  # está na coleção: é vinil
+            self.assertEqual(vinyl["Que País É Este 1978/1987"], True)
+            self.assertEqual(result["vinyl_total"], 2)
+            self.assertTrue(result["vinyl_complete"])
             self.assertEqual(result["artist"]["profile"], "Banda de Renato Russo e amigos.")
             self.assertTrue(result["works"][0]["url"].endswith("/master/3"))
             calls = len(app.discogs_client.calls)

@@ -84,7 +84,7 @@ def discography(app: Any, release_ids: list[int], refresh: bool = False, now: fl
             cached = json.loads(raw)
         except ValueError:
             cached = None
-    if not cached or cached.get("version") != 2 or now - float(cached.get("fetched_at", 0)) > CACHE_SECONDS:
+    if not cached or cached.get("version") != 3 or now - float(cached.get("fetched_at", 0)) > CACHE_SECONDS:
         if client is None:
             return {"status": "error", "message": "Discogs não configurado."}
         try:
@@ -95,6 +95,12 @@ def discography(app: Any, release_ids: list[int], refresh: bool = False, now: fl
             except Exception as error:  # sem a busca, mostra tudo como antes
                 print(f"[ARTIST] Album search failed: {error}")
                 album_ids = None
+            try:
+                vinyl_ids, vinyl_complete = client.artist_vinyl_master_ids(profile["name"] or artist["name"])
+                vinyl_ids = sorted(vinyl_ids)
+            except Exception as error:  # sem a busca, não dá para separar o vinil
+                print(f"[ARTIST] Vinyl search failed: {error}")
+                vinyl_ids, vinyl_complete = None, False
         except Exception as error:
             if cached:
                 cached["stale"] = True
@@ -120,7 +126,9 @@ def discography(app: Any, release_ids: list[int], refresh: bool = False, now: fl
                            "profile": clean_profile(profile["profile"]), "uri": profile["uri"]},
                 "works": works,
                 "album_ids": album_ids,
-                "version": 2,
+                "vinyl_ids": vinyl_ids,
+                "vinyl_complete": vinyl_complete,
+                "version": 3,
             }
             store.set_metadata(cache_key, json.dumps(cached, ensure_ascii=False))
 
@@ -129,6 +137,8 @@ def discography(app: Any, release_ids: list[int], refresh: bool = False, now: fl
     mine_first = [(r.release_id, r.title) for r in owned_releases]
     album_ids = cached.get("album_ids")
     album_set = set(album_ids) if album_ids else None
+    vinyl_ids = cached.get("vinyl_ids")
+    vinyl_set = set(vinyl_ids) if vinyl_ids is not None else None
     works = []
     for work in cached["works"]:
         owned_ids = _owned_matches(work["title"], mine_first)
@@ -139,9 +149,17 @@ def discography(app: Any, release_ids: list[int], refresh: bool = False, now: fl
             is_album = work["id"] in album_set
         else:
             is_album = any(word in work.get("format", "") for word in ("LP", "Album"))
-        works.append({**work, "owned_release_ids": owned_ids, "url": url, "album": is_album or bool(owned_ids)})
+        if vinyl_set is None:
+            on_vinyl = None  # não deu para saber
+        elif work["type"] == "master":
+            on_vinyl = work["id"] in vinyl_set
+        else:
+            on_vinyl = any(word in work.get("format", "") for word in ("Vinyl", "LP", '7"', '12"'))
+        works.append({**work, "owned_release_ids": owned_ids, "url": url, "album": is_album or bool(owned_ids),
+                      "vinyl": True if owned_ids else on_vinyl})
     albums = [w for w in works if w["album"]]
     owned_count = sum(1 for w in albums if w["owned_release_ids"])
+    vinyl_albums = [w for w in albums if w["vinyl"]]
     return {
         "status": "ok",
         "artist": cached["artist"],
@@ -149,6 +167,8 @@ def discography(app: Any, release_ids: list[int], refresh: bool = False, now: fl
         "owned_count": owned_count,
         "total": len(albums),
         "others": len(works) - len(albums),
+        "vinyl_total": len(vinyl_albums) if vinyl_set is not None else None,
+        "vinyl_complete": bool(cached.get("vinyl_complete", False)),
         "fetched_at": cached["fetched_at"],
         "stale": bool(cached.get("stale")),
     }

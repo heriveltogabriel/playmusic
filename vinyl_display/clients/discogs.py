@@ -296,6 +296,44 @@ class DiscogsClient:
             self.sleep_func(self.page_delay_seconds)
         return ids
 
+    def artist_vinyl_master_ids(self, artist_name: str, max_pages: int = 10) -> tuple[set[int], bool]:
+        """Obras (masters) do artista que têm pelo menos uma edição em vinil, inclusive
+        reedições. Junta a busca de masters em vinil com os lançamentos em vinil (que trazem
+        o master). Devolve (ids, completo); artistas com milhares de prensagens param em
+        max_pages páginas."""
+        import urllib.parse
+
+        prefix = _search_prefix(artist_name)
+
+        def same_artist(item: dict[str, Any]) -> bool:
+            return _search_prefix(str(item.get("title") or "")).startswith(prefix)
+
+        ids: set[int] = set()
+        query = urllib.parse.urlencode({"type": "master", "artist": artist_name, "format": "Vinyl", "per_page": 100})
+        for item in (self._request_json(f"{self.api_base}/database/search?{query}").get("results") or []):
+            if same_artist(item) and item.get("id"):
+                ids.add(int(item["id"]))
+        complete = True
+        page = 1
+        while True:
+            query = urllib.parse.urlencode(
+                {"type": "release", "artist": artist_name, "format": "Vinyl", "per_page": 100, "page": page}
+            )
+            payload = self._request_json(f"{self.api_base}/database/search?{query}")
+            for item in payload.get("results") or []:
+                if same_artist(item) and item.get("master_id"):
+                    ids.add(int(item["master_id"]))
+            pagination = payload.get("pagination") or {}
+            pages = int(pagination.get("pages", page))
+            if page >= pages:
+                break
+            if page >= max_pages:
+                complete = False
+                break
+            page += 1
+            self.sleep_func(self.page_delay_seconds)
+        return ids, complete
+
     def artist_main_releases(self, artist_id: int, max_pages: int = 4) -> list[dict[str, Any]]:
         """Discografia principal do artista (role Main), mais antigos primeiro."""
         items: list[dict[str, Any]] = []
