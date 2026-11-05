@@ -716,7 +716,12 @@ async function startMicrophone() {
 let captureWorkletReady = false;
 let captureWorkletLoading = null;
 
+// v4.3.2: desligado. Com o AudioWorklet o Shazam deixou de reconhecer os trechos gravados
+// no celular (nenhum acerto desde a 4.0); o ScriptProcessor é o método que funciona.
+const USE_CAPTURE_WORKLET = false;
+
 function preloadCaptureWorklet() {
+  if (!USE_CAPTURE_WORKLET) return;
   if (captureWorkletReady || captureWorkletLoading || !micAudioContext) return;
   if (!micAudioContext.audioWorklet || typeof AudioWorkletNode === "undefined") return;
   captureWorkletLoading = micAudioContext.audioWorklet

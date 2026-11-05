@@ -2,6 +2,10 @@
 
 Versões do PlayVinil / Vinyl Display. As mais recentes primeiro.
 
+## 4.3.2 — 2026-11-05 — Correção do reconhecimento
+
+- Player volta a gravar o trecho para o Shazam com o método antigo (ScriptProcessor). Com o AudioWorklet da 4.0 o Shazam não reconhecia os trechos gravados no celular.
+
 ## 4.3.1 — 2026-11-05 — Celular
 
 - Telas do admin sem corte à direita no celular (Estatísticas, Diário, Cuidados, Ranking, ficha do disco); tabelas do Reconhecimento rolam para o lado.
