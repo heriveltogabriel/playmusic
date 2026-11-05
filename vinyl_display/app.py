@@ -44,7 +44,7 @@ class VinylDisplayApp:
         self.config = config
         self.matcher = CollectionMatcher(store)
         self.playback = PlaybackController(
-            on_scrobble=self.store.increment_auditions,
+            on_scrobble=self._auto_scrobble,
             on_change=self._save_playback,
         )
         self.store.initialize()
@@ -295,6 +295,35 @@ class VinylDisplayApp:
         state["version"] = version_str
         
         return state
+
+    # Mesmo disco voltando ao prato dentro desta janela conta como a mesma audição
+    # (trocar de lado/disco fora de ordem, parar e retomar, reconhecer de novo).
+    AUDITION_MERGE_EXTRA_SECONDS = 30 * 60
+    AUDITION_MERGE_MIN_SECONDS = 60 * 60
+
+    def _audition_window(self, release: Any) -> int:
+        from vinyl_display.journal import disc_seconds
+
+        return max(disc_seconds(release), self.AUDITION_MERGE_MIN_SECONDS) + self.AUDITION_MERGE_EXTRA_SECONDS
+
+    def _auto_scrobble(self, release_id: int, now: float | None = None) -> bool:
+        """Audição marcada pelo player. Não conta de novo o mesmo disco se a última audição
+        dele foi há menos que a duração do disco (mínimo 1 h) + 30 min."""
+        from vinyl_display.journal import _iso_to_ts
+
+        now = now or time.time()
+        release = self.store.get_release(release_id)
+        if release is None:
+            return False
+        stamps = [ts for ts in (_iso_to_ts(v) for v in (release.listen_dates or [])) if ts]
+        last = max(stamps) if stamps else None
+        if last is not None and now - last < self._audition_window(release):
+            self._log_event("audition_merged", release_id=release_id,
+                            detail=f'{{"since_last_seconds": {int(now - last)}}}')
+            return False
+        self.store.increment_auditions(release_id)
+        self._log_event("audition_auto", release_id=release_id)
+        return True
 
     def _log_track_change(self, state: dict[str, Any]) -> None:
         """Diário da vitrola: grava cada faixa nova que o player passa a acompanhar."""

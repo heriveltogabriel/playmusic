@@ -12,6 +12,7 @@ Versões do PlayVinil / Vinyl Display. As mais recentes primeiro.
 - **Ranking** fica com a escuta (pódio, mais tocados, resgate da estante, gráfico de 6 meses, histórico).
 - **Estatísticas** ficam com o perfil da coleção (gêneros, décadas, países, edições) e o mapa "Quando você ouve"; tocar numa barra abre a coleção filtrada.
 - **Diário da Vitrola** (novo): sessões por dia com discos, lados e faixas que o player acompanhou; faixas mais tocadas.
+- **Audição automática sem duplicar**: o mesmo disco voltando ao prato dentro da duração dele (mínimo 1 h) + 30 min conta como a mesma audição (lados fora de ordem, parar e retomar). Fica registrado como `audition_merged` no Reconhecimento.
 - **Agulha e Cuidados** (novo): horas de agulha, vida útil, previsão de troca, histórico de agulhas e limpeza de cada disco.
 
 ## 4.0.1 — 2026-11-04 — Servidor do Bruno em dia

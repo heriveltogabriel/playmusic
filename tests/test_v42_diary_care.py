@@ -89,3 +89,34 @@ class CareTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AuditionMergeTests(unittest.TestCase):
+    def test_same_disc_back_on_the_platter_counts_once(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            app, store = make_app(tmp)
+            now = time.time()
+            self.assertTrue(app._auto_scrobble(1, now=now))
+            # 35 min depois (lado/disco fora de ordem): mesma audição
+            self.assertFalse(app._auto_scrobble(1, now=now + 35 * 60))
+            self.assertEqual(len(store.get_release(1).listen_dates), 1)
+            # outro disco não é afetado
+            self.assertTrue(app._auto_scrobble(2, now=now + 36 * 60))
+            # depois da janela (disco curto: 1 h + 30 min), conta de novo
+            self.assertTrue(app._auto_scrobble(1, now=now + 2 * 3600))
+            self.assertEqual(len(store.get_release(1).listen_dates), 2)
+            report = store.recognition_report(since=0)
+            self.assertEqual(report["by_status"].get("audition_merged"), 1)
+
+    def test_player_flow_out_of_order_sides(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            app, store = make_app(tmp)
+            app.start_manual_playback(1, "A")
+            app.playback.active.started_at -= 400   # A1 inteira + parte da A2: conta a audição
+            app.state()
+            self.assertEqual(len(store.get_release(1).listen_dates), 1)
+            app.stop_playback()                     # parou, voltou para a tela inicial
+            app.start_manual_playback(1, "A")       # e pôs o disco de novo, fora de ordem
+            app.playback.active.started_at -= 400
+            app.state()
+            self.assertEqual(len(store.get_release(1).listen_dates), 1)
