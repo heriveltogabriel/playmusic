@@ -2546,3 +2546,16 @@ h1 {
   font-size: max(1.1rem, min(3.6vmin, 1.6rem));
   margin-top: 20vh;
 }
+
+/* v4.3.1: janelas do player cabem no celular (em pé, a de escolher o disco passava da tela) */
+.alternatives-popup-content {
+  width: min(440px, calc(100vw - 28px));
+  box-sizing: border-box;
+}
+
+@media (max-height: 500px) {
+  /* Celular deitado: menos espaço em cima, mais espaço para a lista */
+  .alternatives-popup-content { padding: 14px 16px; gap: 8px; max-height: 94vh; }
+  #pick-popup .alternatives-popup-subtitle { font-size: 0.78rem; margin: 0; }
+  .alternatives-popup-header h3 { font-size: 1rem; }
+}

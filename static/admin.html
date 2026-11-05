@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/admin.css?v=3.3.10">
+  <link rel="stylesheet" href="/static/admin.css?v=4.3.1">
 </head>
 <body>
   <!-- Ambient background glow representing album colors -->
@@ -600,6 +600,7 @@
           </div>
         </div>
 
+        <button type="button" id="cf-toggle" class="cf-toggle" aria-expanded="false" aria-controls="catalog-filters">Filtros <span id="cf-toggle-count"></span></button>
         <div id="catalog-filters" class="catalog-filters" aria-label="Filtros da coleção">
           <select id="cf-genre" class="cf-select" aria-label="Gênero"><option value="">Todos os gêneros</option></select>
           <select id="cf-decade" class="cf-select" aria-label="Década"><option value="">Todas as décadas</option></select>
@@ -869,14 +870,14 @@
           <div class="settings-card">
             <div class="settings-card-header"><h3>Por disco</h3></div>
             <div style="overflow-x: auto;">
-              <table id="rec-discs" style="width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 8px;"></table>
+              <div class="table-scroll"><table id="rec-discs" style="width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 8px;"></table></div>
             </div>
           </div>
 
           <div class="settings-card">
             <div class="settings-card-header"><h3>Últimos eventos</h3></div>
             <div style="overflow-x: auto;">
-              <table id="rec-events" style="width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 8px;"></table>
+              <div class="table-scroll"><table id="rec-events" style="width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 8px;"></table></div>
             </div>
           </div>
         </div>
@@ -1446,7 +1447,7 @@
   <script src="/static/admin/00-core.js?v=4.3.0" defer></script>
   <script src="/static/admin/10-agenda.js?v=4.2.4" defer></script>
   <script src="/static/admin/20-collection.js?v=4.2.4" defer></script>
-  <script src="/static/admin/25-filters.js?v=4.2.4" defer></script>
+  <script src="/static/admin/25-filters.js?v=4.3.1" defer></script>
   <script src="/static/admin/30-timeline.js?v=4.2.4" defer></script>
   <script src="/static/admin/40-stats.js?v=4.2.4" defer></script>
   <script src="/static/admin/45-profile.js?v=4.2.4" defer></script>
@@ -1459,7 +1460,7 @@
   <script src="/static/admin/96-diary-care.js?v=4.2.4" defer></script>
   <script src="/static/admin/97-shelves.js?v=4.2.4" defer></script>
   <script src="/static/admin/98-settings-tabs.js?v=4.2.5" defer></script>
-  <script src="/static/admin/99-artists.js?v=4.2.10" defer></script>
+  <script src="/static/admin/99-artists.js?v=4.3.1" defer></script>
   <script src="/static/admin/99b-vinyl-edition.js?v=4.3.0" defer></script>
 </body>
 </html>

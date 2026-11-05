@@ -5268,3 +5268,73 @@ dialog::backdrop {
 .ve-row-title { font-weight: 600; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ve-row-sub { font-size: 0.78rem; color: var(--text-secondary); }
 .ve-use { flex-shrink: 0; }
+
+/* ==================== v4.3.1: AJUSTES PARA CELULAR ==================== */
+/* Itens de grade e flex não podem crescer além da tela por causa de um texto comprido
+   (era o que cortava a direita das Estatísticas, Diário, Cuidados, Ranking e da ficha) */
+.stats-row > *, .stats-grid > *, .stats-section-card, .settings-card, .care-needle > *,
+.details-dialog-layout > *, .history-play-details, .diary-disc-info, .ve-row-info { min-width: 0; }
+
+.history-play-title { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.table-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.table-scroll table { min-width: 520px; }
+
+.cf-toggle { display: none; }
+
+.artist-profile.clamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.artist-profile-more { padding-left: 0; }
+
+@media (max-width: 680px) {
+  .details-dialog-layout { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+  .dialog-glass { width: 94%; }
+}
+
+@media (max-width: 700px) {
+  /* Filtros da coleção recolhidos atrás de um botão */
+  .cf-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: -12px 0 12px;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    padding: 7px 14px;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+  .cf-toggle #cf-toggle-count { color: var(--primary); }
+  .catalog-filters { display: none; margin-top: 0; }
+  .catalog-filters.open { display: flex; }
+
+  /* Abas das Configurações numa linha só, rolando para o lado */
+  .settings-tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .settings-tabs::-webkit-scrollbar { display: none; }
+  .settings-tab { flex-shrink: 0; padding: 10px 12px; }
+
+  /* Prateleiras numa linha só, rolando para o lado */
+  .shelf-bar { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+  .shelf-bar::-webkit-scrollbar { display: none; }
+  .shelf-chip { flex-shrink: 0; }
+}
+
+@media (max-width: 600px) {
+  /* Pódio do Ranking lado a lado e menor (antes ocupava a tela inteira, um embaixo do outro) */
+  .ranking-podium { flex-direction: row; flex-wrap: nowrap; align-items: flex-end; gap: 6px; }
+  .podium-step { width: 32%; }
+  .podium-step .podium-cover-wrapper { width: 64px; height: 64px; margin-bottom: 10px; }
+  .podium-step.gold .podium-cover-wrapper { width: 78px; height: 78px; }
+  .podium-column { padding: 10px 6px; border-radius: 12px; }
+  .podium-title { font-size: 0.78rem; }
+  .podium-artist { font-size: 0.68rem; margin-bottom: 4px; }
+  .podium-plays { font-size: 0.72rem; }
+  .podium-badge { font-size: 0.7rem; padding: 2px 8px; }
+  .podium-column > :not(.podium-info):not(.podium-title):not(.podium-artist):not(.podium-plays) { font-size: 0.62rem; }
+}

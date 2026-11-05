@@ -50,7 +50,17 @@ function populateCatalogFilters() {
   if (neverCount) neverCount.textContent = never ? String(never) : '';
 }
 
+// Celular: os filtros ficam recolhidos atrás de um botão que mostra quantos estão ativos
+function updateFilterToggle() {
+  const count = (state.filters.genres.length ? 1 : 0) + (state.filters.decade ? 1 : 0) +
+    (state.filters.country ? 1 : 0) + (state.filters.format ? 1 : 0) +
+    (state.filters.neverHeard ? 1 : 0) + (state.filters.starredOnly ? 1 : 0);
+  const badge = document.getElementById('cf-toggle-count');
+  if (badge) badge.textContent = count ? `(${count})` : '';
+}
+
 function syncCatalogFilterControls() {
+  updateFilterToggle();
   const set = (id, value) => { const el = document.getElementById(id); if (el) el.value = value || ''; };
   set('cf-genre', state.filters.genres[0]);
   set('cf-decade', state.filters.decade);
@@ -94,6 +104,14 @@ function setupCatalogFilters() {
     applyFiltersAndRender();
   });
   on('cf-clear', 'click', () => resetAllFilters());
+  on('cf-toggle', 'click', () => {
+    const box = document.getElementById('catalog-filters');
+    const btn = document.getElementById('cf-toggle');
+    const open = !box.classList.contains('open');
+    box.classList.toggle('open', open);
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  ['cf-genre', 'cf-decade', 'cf-country', 'cf-format'].forEach(id => on(id, 'change', updateFilterToggle));
   on('cf-view-grid', 'click', () => setCatalogViewMode('grid'));
   on('cf-view-list', 'click', () => setCatalogViewMode('list'));
 

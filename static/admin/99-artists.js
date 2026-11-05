@@ -210,6 +210,19 @@ async function openArtistPage(name, refresh = false) {
   const profile = document.getElementById('artist-profile');
   if (profile && disco && disco.status === 'ok' && disco.artist.profile) {
     profile.textContent = disco.artist.profile;
+    // Texto longo: mostra o começo e um "ler mais" (o perfil do Discogs ocupa a tela toda no celular)
+    if (disco.artist.profile.length > 320) {
+      profile.classList.add('clamped');
+      const more = document.createElement('button');
+      more.type = 'button';
+      more.className = 'cf-link artist-profile-more';
+      more.textContent = 'ler mais';
+      more.addEventListener('click', () => {
+        const clamped = profile.classList.toggle('clamped');
+        more.textContent = clamped ? 'ler mais' : 'ler menos';
+      });
+      profile.after(more);
+    }
   }
   renderArtistDiscography(disco);
 }
