@@ -51,6 +51,15 @@ class AlignTests(unittest.TestCase):
         self.assertEqual(state["progress_seconds"], 2)
         self.assertEqual(state["unconfirmed_boundaries"], 0)
 
+    def test_track_start_is_aligned_only_once(self):
+        c, _ = playing()
+        self.assertTrue(c.align_track_start(at=1000 + 210, now=1000 + 212)["aligned"])
+        # trecho baixo 8 s depois do início: não empurra a faixa de novo
+        again = c.align_track_start(at=1000 + 218, now=1000 + 219)
+        self.assertFalse(again["aligned"])
+        self.assertEqual(again["reason"], "already_aligned")
+        self.assertEqual(c.current_state(now=1000 + 220)["progress_seconds"], 10)
+
     def test_quiet_passage_far_from_boundary_is_ignored(self):
         c, _ = playing()
         result = c.align_track_start(at=1000 + 120, now=1000 + 121)

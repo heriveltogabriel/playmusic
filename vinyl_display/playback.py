@@ -17,6 +17,7 @@ class ActivePlayback:
     locked: bool = False
     anchored_at: float = 0.0  # última vez que o tempo foi confirmado (Shazam, pausa entre faixas ou virada)
     recognition_key: str = ""  # música reconhecida (título|artista), para lembrar o disco escolhido
+    aligned_track: str = ""  # v4.5.5: faixa cujo início já foi acertado por uma pausa
 
 
 # Prefixos de disco usados pelo Discogs em LPs duplos/box sets: "LP-A1", "LP1-B2", "Disc 2-C1", "1-A1"
@@ -372,8 +373,13 @@ class PlaybackController:
         shift = elapsed - start
         if abs(shift) > self.BOUNDARY_TOLERANCE:
             return {"aligned": False, "reason": "far", "nearest": track.position, "offset": round(shift, 1)}
+        if track.position == self.active.aligned_track:
+            # v4.5.5: o início desta faixa já foi acertado. Trechos baixos logo depois (jazz,
+            # baladas) davam novas "pausas" e empurravam a faixa para trás várias vezes.
+            return {"aligned": False, "reason": "already_aligned", "nearest": track.position, "offset": round(shift, 1)}
         self.active.started_at += shift
         self.active.anchored_at = at
+        self.active.aligned_track = track.position
         self._record_played_tracks(now)
         self._changed()
         return {"aligned": True, "track": track.position, "shift": round(shift, 1)}
