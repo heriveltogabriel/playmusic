@@ -5414,3 +5414,17 @@ dialog::backdrop {
 
 /* v4.4.1: lista de dias dentro de cada semana do histórico */
 .weekly-history-plays-list.agenda-list { display: flex; flex-direction: column; gap: 6px; padding: 10px 0 4px; }
+
+/* v4.4.2: "Discos ouvidos" no Ranking — no celular o título fica numa linha e os três
+   números (semana, mês, total) lado a lado, em vez de o Total cair sozinho embaixo */
+@media (max-width: 700px) {
+  .ranking-header-flex { flex-direction: column; align-items: stretch; gap: 12px; }
+  .ranking-stats-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .ranking-stats-prefix { grid-column: 1 / -1; margin: 0; }
+  .ranking-stats-summary .stat-mini-card { min-width: 0; padding: 10px 6px; }
+  .ranking-stats-summary .mini-card-value { font-size: 1.3rem; }
+}
