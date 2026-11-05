@@ -23,8 +23,12 @@ def _default_request_json(url: str, headers: dict[str, str]) -> dict[str, Any]:
         raise
 
 
+_QUOTES = str.maketrans({"\u2019": "'", "\u2018": "'", "\u02bc": "'", "\u201c": '"', "\u201d": '"'})
+
+
 def _norm(value: str | None) -> str:
-    value = unicodedata.normalize("NFKD", value or "")
+    # Apóstrofo tipográfico (’) do MusicBrainz tem que bater com o reto (') do Discogs
+    value = unicodedata.normalize("NFKD", (value or "").translate(_QUOTES))
     value = value.encode("ascii", "ignore").decode("ascii").lower()
     return " ".join("".join(ch if ch.isalnum() else " " for ch in value).split())
 
@@ -103,7 +107,9 @@ class MusicBrainzClient:
         if not wanted or not artist:
             return None
         query = f'recording:"{_lucene_escape(title)}" AND artist:"{_lucene_escape(artist)}"'
-        payload = self._get("recording", {"query": query, "limit": "25"})
+        if "live" not in wanted:
+            query += " AND NOT comment:live"  # gravações ao vivo dominam a busca de bandas grandes
+        payload = self._get("recording", {"query": query, "limit": "50"})
         skip = [w for w in ("live", "demo", "remix", "ao vivo", "instrumental") if w not in wanted]
         lengths = []
         for rec in payload.get("recordings") or []:

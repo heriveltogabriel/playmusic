@@ -240,3 +240,18 @@ class RecordingLengthByTitleTests(unittest.TestCase):
         payload = {"recordings": [{"score": 100, "title": "Rara", "length": 200000}]}
         mb = MusicBrainzClient(request_json=lambda url, headers: payload, sleep_func=lambda s: None)
         self.assertIsNone(mb.recording_length_by_title("Alguém", "Rara"))
+
+
+class CurlyApostropheTests(unittest.TestCase):
+    def test_typographic_apostrophe_matches(self):
+        from vinyl_display.clients.musicbrainz import MusicBrainzClient, _norm
+
+        self.assertEqual(_norm("The Bed\u2019s Too Big Without You"), _norm("The Bed's Too Big Without You"))
+        urls = []
+        payload = {"recordings": [
+            {"score": 100, "title": "Don\u2019t Stand So Close to Me", "length": 241000},
+            {"score": 100, "title": "Don\u2019t Stand So Close to Me", "length": 243000},
+        ]}
+        mb = MusicBrainzClient(request_json=lambda url, h: urls.append(url) or payload, sleep_func=lambda s: None)
+        self.assertEqual(mb.recording_length_by_title("The Police", "Don't Stand So Close To Me"), 243)
+        self.assertIn("comment%3Alive", urls[0])
