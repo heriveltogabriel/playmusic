@@ -688,14 +688,14 @@ function renderPlayPeriodStats() {
         if (b.count !== a.count) return b.count - a.count;
         if (a.latestDate && b.latestDate) return b.latestDate.localeCompare(a.latestDate);
         return a.lp.title.localeCompare(b.lp.title);
-      }).slice(0, 5);
+      }).slice(0, 10);
       emptyMsg = 'Nenhum LP ouvido nesta semana.';
     } else if (state.activeTopPeriod === 'month') {
       items = Array.from(monthlyLpsMap.values()).sort((a, b) => {
         if (b.count !== a.count) return b.count - a.count;
         if (a.latestDate && b.latestDate) return b.latestDate.localeCompare(a.latestDate);
         return a.lp.title.localeCompare(b.lp.title);
-      }).slice(0, 5);
+      }).slice(0, 10);
       emptyMsg = 'Nenhum LP ouvido este mês.';
     } else {
       // 'all'
@@ -709,7 +709,7 @@ function renderPlayPeriodStats() {
           if (aLatest && bLatest) return bLatest.localeCompare(aLatest);
           return a.title.localeCompare(b.title);
         })
-        .slice(0, 5)
+        .slice(0, 10)
         .map(lp => ({ lp, count: Number(lp.plays) || 0 }));
       emptyMsg = 'Nenhum LP com audições registradas.';
     }

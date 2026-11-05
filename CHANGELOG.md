@@ -2,6 +2,10 @@
 
 Versões do PlayVinil / Vinyl Display. As mais recentes primeiro.
 
+## 4.4.3 — 2026-11-05
+
+- Ranking: "Resgate da Estante" removido; Top LPs Mais Tocados mostra 10 discos.
+
 ## 4.4.2 — 2026-11-05 — Ranking no celular
 
 - "Discos ouvidos": Semana, Mês e Total lado a lado (o Total caía sozinho embaixo).

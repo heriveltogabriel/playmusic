@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/admin.css?v=4.4.4">
+  <link rel="stylesheet" href="/static/admin.css?v=4.4.5">
 </head>
 <body>
   <!-- Ambient background glow representing album colors -->
@@ -316,7 +316,7 @@
           <!-- NEW: Audition statistics grouped in a card -->
           <div class="stats-row">
             <div class="stats-section-card span-full">
-              <h3>Mais tocados e esquecidos</h3>
+              <h3>Mais tocados</h3>
 
               <!-- Mini cards -->
               <div class="stats-card-row" style="display: none;">
@@ -339,7 +339,7 @@
               </div>
 
               <!-- Two columns for Top LPs (with period tabs) and Shelf Rescue -->
-              <div class="stats-row">
+              <div class="stats-row" style="grid-template-columns: minmax(0, 1fr);">
                 <!-- Left: Top LPs with period tabs -->
                 <div class="stats-section-card" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05); padding: 20px;">
                   <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
@@ -355,18 +355,7 @@
                   </div>
                 </div>
 
-                <!-- Right: Resgate da Estante -->
-                <div class="stats-section-card" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05); padding: 20px;">
-                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
-                    <div>
-                      <h4 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text-primary);">💎 Resgate da Estante</h4>
-                      <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 3px;">Discos parados ou que nunca foram para o prato</div>
-                    </div>
-                  </div>
-                  <div id="forgotten-ranking-container" class="custom-ranking-list">
-                    <!-- Dynamically generated list -->
-                  </div>
-                </div>
+
               </div>
             </div>
           </div>
@@ -1380,7 +1369,7 @@
   <script src="/static/admin/20-collection.js?v=4.2.4" defer></script>
   <script src="/static/admin/25-filters.js?v=4.3.1" defer></script>
   <script src="/static/admin/30-timeline.js?v=4.2.4" defer></script>
-  <script src="/static/admin/40-stats.js?v=4.2.4" defer></script>
+  <script src="/static/admin/40-stats.js?v=4.4.3" defer></script>
   <script src="/static/admin/45-profile.js?v=4.2.4" defer></script>
   <script src="/static/admin/50-dialogs.js?v=4.3.0" defer></script>
   <script src="/static/admin/60-ranking.js?v=4.2.4" defer></script>
