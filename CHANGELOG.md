@@ -2,6 +2,14 @@
 
 Versões do PlayVinil / Vinyl Display. As mais recentes primeiro.
 
+## 4.5.0 — 2026-11-05
+
+- Novo nome: PlayVinil, com ícone próprio (toca-discos laranja) no celular, na aba do navegador e no app instalado.
+- Nome da coleção configurável em Configurações → Coleção (aparece no player e no menu do admin).
+- Tela inicial: sem disco tocando a capa fica centralizada; ao tocar ela desliza e o disco sai de dentro.
+- Microfone menos sensível a conversa: a escuta automática só dispara com som contínuo, e as tentativas sem resultado esperam de 30s até 10 min.
+- Títulos "Vinyl Display" trocados por PlayVinil no player e no login.
+
 ## 4.4.6 — 2026-11-05
 
 - Página do artista no celular: "Seus discos" em lista (capa pequena, título, ano e audições) e mosaico do topo menor.
