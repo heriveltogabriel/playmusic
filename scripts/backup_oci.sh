@@ -20,6 +20,8 @@ Optional:
   LOCAL_RETENTION_DAYS  Days to keep local archives. Default: 7
   INCLUDE_ENV           Include .env in archive. Default: 0
   INCLUDE_CERTS         Include certs/ in archive. Default: 0
+  BACKUP_UPLOAD         1 = envia ao OCI (padrão); 0 = só guarda localmente em BACKUP_ROOT
+                        (servidor sem bucket configurado; OCI_BACKUP_BUCKET não é exigido).
 
 Notes:
   The script creates a consistent SQLite backup with sqlite3 .backup before
@@ -44,8 +46,9 @@ OCI_NAMESPACE="${OCI_NAMESPACE:-}"
 LOCAL_RETENTION_DAYS="${LOCAL_RETENTION_DAYS:-7}"
 INCLUDE_ENV="${INCLUDE_ENV:-0}"
 INCLUDE_CERTS="${INCLUDE_CERTS:-0}"
+BACKUP_UPLOAD="${BACKUP_UPLOAD:-1}"
 
-if [ -z "$OCI_BACKUP_BUCKET" ]; then
+if [ "$BACKUP_UPLOAD" = "1" ] && [ -z "$OCI_BACKUP_BUCKET" ]; then
   echo "Missing OCI_BACKUP_BUCKET."
   usage
   exit 1
@@ -108,7 +111,7 @@ head_object() {
     --name "$object_name" >/dev/null
 }
 
-require_cmd oci
+[ "$BACKUP_UPLOAD" = "1" ] && require_cmd oci
 require_cmd sqlite3
 require_cmd tar
 require_cmd cp
@@ -131,7 +134,7 @@ on_exit() {
   # v3.7: avisa por Telegram/ntfy quando o backup falha (no máximo 1 vez a cada 20 h)
   if [ "$status" -ne 0 ]; then
     (cd "$PROJECT_DIR" && /usr/bin/python3.9 -m vinyl_display.notify --key backup_failed --cooldown 72000 \
-      "O backup diário para o OCI falhou (código $status). Veja: sudo journalctl -u vinyl-display-backup -n 50") || true
+      "O backup diário falhou (código $status). Veja: sudo journalctl -u vinyl-display-backup -n 50") || true
   fi
 }
 trap on_exit EXIT
@@ -188,11 +191,15 @@ EOF
 echo "== Creating archive =="
 tar -czf "$ARCHIVE" -C "$STAGING_DIR" .
 
-echo "== Uploading to OCI Object Storage =="
-upload_object "$ARCHIVE" "$OBJECT_NAME"
-upload_object "$ARCHIVE" "$LATEST_OBJECT_NAME"
-head_object "$OBJECT_NAME"
-head_object "$LATEST_OBJECT_NAME"
+if [ "$BACKUP_UPLOAD" = "1" ]; then
+  echo "== Uploading to OCI Object Storage =="
+  upload_object "$ARCHIVE" "$OBJECT_NAME"
+  upload_object "$ARCHIVE" "$LATEST_OBJECT_NAME"
+  head_object "$OBJECT_NAME"
+  head_object "$LATEST_OBJECT_NAME"
+else
+  echo "== Upload desligado (BACKUP_UPLOAD=0): cópia só local em $ARCHIVE =="
+fi
 
 find "$BACKUP_ROOT" -type f -name 'playmusic-backup-*.tgz' -mtime "+$LOCAL_RETENTION_DAYS" -delete
 

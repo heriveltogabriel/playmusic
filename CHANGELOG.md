@@ -2,6 +2,11 @@
 
 Versões do PlayVinil / Vinyl Display. As mais recentes primeiro.
 
+## 4.0.1 — 2026-11-04 — Servidor do Bruno em dia
+
+- `scripts/backup_oci.sh` ganhou `BACKUP_UPLOAD=0`: backup só local, para servidor sem bucket do OCI.
+- Servidor do Bruno com sync diário, backup diário local, app ouvindo só localmente e logs guardados.
+
 ## 4.0.0 — 2026-11-04 — Casa arrumada
 
 Sem mudança no jeito de usar; é a base para as próximas versões.
