@@ -45,3 +45,12 @@ class BrandTests(unittest.TestCase):
 
         with mock.patch.dict(os.environ, {"VINYL_DISABLE_DOTENV": "1", "COLLECTION_NAME": " Discoteca do Herivelto "}):
             self.assertEqual(load_config().collection_name, "Discoteca do Herivelto")
+
+
+class MicSensitivityTests(unittest.TestCase):
+    def test_idle_listen_requires_steady_sound_and_backs_off(self):
+        js = (Path(__file__).resolve().parent.parent / "static" / "app.js").read_text(encoding="utf-8")
+        self.assertIn("STEADY_MIN_RATIO = 0.85", js)
+        self.assertIn("steadyRatio() >= STEADY_MIN_RATIO", js)
+        self.assertIn("LOUD_SECONDS_NEEDED = 4", js)
+        self.assertIn("30000 * Math.pow(2, steps)", js)

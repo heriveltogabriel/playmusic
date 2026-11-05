@@ -75,8 +75,8 @@ let trackChangeCount = 0;
 let consecutiveFailedListens = 0;
 let micSuspended = false;
 
-// Espera entre escutas sem resultado quando nenhum disco está tocando: 8s nas 3 primeiras
-// tentativas e depois dobra até 5 min. O microfone nunca "dorme" (antes exigia toque na
+// Espera entre escutas sem resultado quando nenhum disco está tocando: 30s na primeira
+// e depois dobra até 10 min. O microfone nunca "dorme" (antes exigia toque na
 // tela), mas ruído ambiente também não queima as chamadas do Shazam.
 // ---------- v3.5: acompanhamento pelo silêncio (sem Shazam a cada faixa) ----------
 // Ajuste fino sem novo deploy: localStorage.vinylDetector = '{"gapRatio":0.2}'
@@ -199,8 +199,25 @@ function fitTrackTitle() {
 }
 
 function idleRetryDelayMs(failures) {
-  const steps = Math.max(0, failures - 3);
-  return Math.min(300000, 8000 * Math.pow(2, steps));
+  // v4.5: 30s, 1min, 2min, 4min, 8min, depois 10min (antes: 8s nas 3 primeiras)
+  const steps = Math.max(0, failures - 1);
+  return Math.min(600000, 30000 * Math.pow(2, steps));
+}
+
+// v4.5: música no toca-discos é som contínuo; conversa tem pausas entre frases.
+// Amostras a cada 250ms; a escuta automática só dispara com som quase sem buracos.
+const LOUD_RMS = 0.030;
+const STEADY_WINDOW = 24;        // 24 x 250ms = 6s
+const STEADY_MIN_RATIO = 0.85;   // 85% das amostras acima do limiar
+const LOUD_SECONDS_NEEDED = 4;
+const loudHistory = [];
+function pushLoudSample(rms) {
+  loudHistory.push(rms > LOUD_RMS ? 1 : 0);
+  if (loudHistory.length > STEADY_WINDOW) loudHistory.shift();
+}
+function steadyRatio() {
+  if (loudHistory.length < STEADY_WINDOW) return 0;
+  return loudHistory.reduce((a, b) => a + b, 0) / loudHistory.length;
 }
 
 // Respostas do servidor que dizem para não tentar de novo tão cedo
@@ -647,20 +664,23 @@ async function startMicrophone() {
         const status = state === "suspended" ? "pausado (toque na tela para ativar)" : "ouvindo";
         const currentRms = rmsValue !== undefined ? rmsValue : 0;
         const volPct = Math.round(currentRms * 100);
-        elements.micDebug.textContent = `Microfone: ${status} | Vol: ${volPct}% | Limiar: 3.0% (${consecutiveLoudSeconds}/2s)`;
+        elements.micDebug.textContent = `Microfone: ${status} | Vol: ${volPct}% | Limiar: 3.0% (${consecutiveLoudSeconds}/${LOUD_SECONDS_NEEDED}s, contínuo ${Math.round(steadyRatio() * 100)}%)`;
       }
     };
 
     const detectorSamples = new Uint8Array(micAnalyserNode.fftSize);
     setInterval(() => {
-      if (!silenceDetector || !micAudioContext || micAudioContext.state !== "running") return;
+      if (!micAudioContext || micAudioContext.state !== "running") return;
       micAnalyserNode.getByteTimeDomainData(detectorSamples);
       let sum = 0;
       for (let i = 0; i < detectorSamples.length; i++) {
         const v = (detectorSamples[i] - 128) / 128;
         sum += v * v;
       }
-      const event = silenceDetector.push(Math.sqrt(sum / detectorSamples.length), Date.now());
+      const fastRms = Math.sqrt(sum / detectorSamples.length);
+      pushLoudSample(fastRms);
+      if (!silenceDetector) return;
+      const event = silenceDetector.push(fastRms, Date.now());
       if (event) handleSilenceResume(event);
     }, 250);
 
@@ -703,7 +723,7 @@ async function startMicrophone() {
         return sum + normalized * normalized;
       }, 0) / samples.length);
 
-      if (rms > 0.030) {
+      if (rms > LOUD_RMS) {
         consecutiveLoudSeconds++;
       } else {
         consecutiveLoudSeconds = 0;
@@ -711,7 +731,7 @@ async function startMicrophone() {
 
       updateDebug(rms);
 
-      if (consecutiveLoudSeconds >= 2 && !recording) {
+      if (consecutiveLoudSeconds >= LOUD_SECONDS_NEEDED && steadyRatio() >= STEADY_MIN_RATIO && !recording) {
         consecutiveLoudSeconds = 0;
         let reason = "ocioso";
         if (pendingDriftListen) reason = "deriva";
