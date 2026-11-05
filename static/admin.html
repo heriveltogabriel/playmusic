@@ -124,6 +124,25 @@
             </button>
           </li>
           <li>
+            <button class="nav-btn" data-view="diary">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+              </svg>
+              Diário da Vitrola
+            </button>
+          </li>
+          <li>
+            <button class="nav-btn" data-view="care">
+              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"></circle>
+                <circle cx="12" cy="12" r="2"></circle>
+                <path d="M19 4l-6.5 6.5"></path>
+              </svg>
+              Agulha e Cuidados
+            </button>
+          </li>
+          <li>
             <button class="nav-btn" data-view="recognition">
               <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M2 10v4M6 6v12M10 3v18M14 8v8M18 5v14M22 10v4"></path>
@@ -329,6 +348,74 @@
             <!-- Dynamically populated podium elements -->
           </div>
 
+          <!-- NEW: Audition statistics grouped in a card -->
+          <div class="stats-row">
+            <div class="stats-section-card span-full">
+              <h3>Mais tocados e esquecidos</h3>
+
+              <!-- Mini cards -->
+              <div class="stats-card-row" style="display: none;">
+                <div class="stat-mini-card" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05);">
+                  <div class="mini-card-label">Ouvidos esta Semana</div>
+                  <div id="stat-weekly-lps" class="mini-card-value">0</div>
+                </div>
+                <div class="stat-mini-card" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05);">
+                  <div class="mini-card-label">Total Audições (Semana)</div>
+                  <div id="stat-weekly-plays" class="mini-card-value">0</div>
+                </div>
+                <div class="stat-mini-card" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05);">
+                  <div class="mini-card-label">Ouvidos este Mês</div>
+                  <div id="stat-monthly-lps" class="mini-card-value">0</div>
+                </div>
+                <div class="stat-mini-card" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05);">
+                  <div class="mini-card-label">Total Audições (Mês)</div>
+                  <div id="stat-monthly-plays" class="mini-card-value">0</div>
+                </div>
+              </div>
+
+              <!-- Two columns for Top LPs (with period tabs) and Shelf Rescue -->
+              <div class="stats-row">
+                <!-- Left: Top LPs with period tabs -->
+                <div class="stats-section-card" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05); padding: 20px;">
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+                    <h4 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text-primary);">🔥 Top LPs Mais Tocados</h4>
+                    <div class="stats-period-pills" id="top-lps-period-pills">
+                      <button type="button" class="stats-period-pill active" data-period="week">Semana</button>
+                      <button type="button" class="stats-period-pill" data-period="month">Mês</button>
+                      <button type="button" class="stats-period-pill" data-period="all">Geral</button>
+                    </div>
+                  </div>
+                  <div id="top-ranking-container" class="custom-ranking-list">
+                    <!-- Dynamically generated list -->
+                  </div>
+                </div>
+
+                <!-- Right: Resgate da Estante -->
+                <div class="stats-section-card" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05); padding: 20px;">
+                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+                    <div>
+                      <h4 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text-primary);">💎 Resgate da Estante</h4>
+                      <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 3px;">Discos parados ou que nunca foram para o prato</div>
+                    </div>
+                  </div>
+                  <div id="forgotten-ranking-container" class="custom-ranking-list">
+                    <!-- Dynamically generated list -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="stats-row">
+            <div id="listening-stats-section" class="stats-section-card span-full timeline-stats-section">
+              <h3>Histórico de Audições</h3>
+              <h4 class="timeline-chart-title">Audições nos Últimos 6 Meses</h4>
+              <div id="listening-monthly-chart" class="custom-chart-list">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+          </div>
+
           <!-- Rest of the Ranking (positions 4+) -->
           <div class="ranking-list-section" id="ranking-list-section">
             <div class="ranking-header-flex">
@@ -471,6 +558,21 @@
           </div>
         </div>
 
+        <div id="catalog-filters" class="catalog-filters" aria-label="Filtros da coleção">
+          <select id="cf-genre" class="cf-select" aria-label="Gênero"><option value="">Todos os gêneros</option></select>
+          <select id="cf-decade" class="cf-select" aria-label="Década"><option value="">Todas as décadas</option></select>
+          <select id="cf-country" class="cf-select" aria-label="País"><option value="">Todos os países</option></select>
+          <select id="cf-format" class="cf-select" aria-label="Formato"><option value="">Todos os formatos</option></select>
+          <button id="cf-never" class="cf-chip" type="button" aria-pressed="false">Nunca ouvidos <span id="cf-never-count" class="cf-chip-count"></span></button>
+          <button id="cf-fav" class="cf-chip" type="button" aria-pressed="false">★ Favoritos</button>
+          <button id="cf-clear" class="cf-link" type="button">Limpar filtros</button>
+          <span class="cf-view-toggle-spacer"></span>
+          <div class="cf-view-toggle" role="group" aria-label="Modo de exibição">
+            <button id="cf-view-grid" class="cf-view-btn active" type="button" title="Grade">▦</button>
+            <button id="cf-view-list" class="cf-view-btn" type="button" title="Lista">☰</button>
+          </div>
+        </div>
+
         <div id="lp-grid" class="lp-grid">
           <!-- Cards dynamically populated -->
         </div>
@@ -589,77 +691,93 @@
 
 
 
-          <!-- NEW: Audition statistics grouped in a card -->
+          <!-- v4.2: perfil da coleção (gêneros, décadas, países, edições e horários) -->
           <div class="stats-row">
             <div class="stats-section-card span-full">
-              <h3>Destaques de Audição</h3>
-
-              <!-- Mini cards -->
-              <div class="stats-card-row" style="margin: 20px 0 24px 0;">
-                <div class="stat-mini-card" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05);">
-                  <div class="mini-card-label">Ouvidos esta Semana</div>
-                  <div id="stat-weekly-lps" class="mini-card-value">0</div>
-                </div>
-                <div class="stat-mini-card" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05);">
-                  <div class="mini-card-label">Total Audições (Semana)</div>
-                  <div id="stat-weekly-plays" class="mini-card-value">0</div>
-                </div>
-                <div class="stat-mini-card" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05);">
-                  <div class="mini-card-label">Ouvidos este Mês</div>
-                  <div id="stat-monthly-lps" class="mini-card-value">0</div>
-                </div>
-                <div class="stat-mini-card" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05);">
-                  <div class="mini-card-label">Total Audições (Mês)</div>
-                  <div id="stat-monthly-plays" class="mini-card-value">0</div>
-                </div>
-              </div>
-
-              <!-- Two columns for Top LPs (with period tabs) and Shelf Rescue -->
-              <div class="stats-row">
-                <!-- Left: Top LPs with period tabs -->
-                <div class="stats-section-card" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05); padding: 20px;">
-                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
-                    <h4 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text-primary);">🔥 Top LPs Mais Tocados</h4>
-                    <div class="stats-period-pills" id="top-lps-period-pills">
-                      <button type="button" class="stats-period-pill active" data-period="week">Semana</button>
-                      <button type="button" class="stats-period-pill" data-period="month">Mês</button>
-                      <button type="button" class="stats-period-pill" data-period="all">Geral</button>
-                    </div>
-                  </div>
-                  <div id="top-ranking-container" class="custom-ranking-list">
-                    <!-- Dynamically generated list -->
-                  </div>
-                </div>
-
-                <!-- Right: Resgate da Estante -->
-                <div class="stats-section-card" style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05); padding: 20px;">
-                  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
-                    <div>
-                      <h4 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text-primary);">💎 Resgate da Estante</h4>
-                      <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 3px;">Discos parados ou que nunca foram para o prato</div>
-                    </div>
-                  </div>
-                  <div id="forgotten-ranking-container" class="custom-ranking-list">
-                    <!-- Dynamically generated list -->
-                  </div>
-                </div>
-              </div>
+              <h3>Perfil da Coleção</h3>
+              <div id="collection-profile" class="collection-profile"></div>
             </div>
           </div>
-
           <div class="stats-row">
-            <div id="listening-stats-section" class="stats-section-card span-full timeline-stats-section">
-              <h3>Histórico de Audições</h3>
-              <h4 class="timeline-chart-title">Audições nos Últimos 6 Meses</h4>
-              <div id="listening-monthly-chart" class="custom-chart-list">
-                <!-- Dynamically populated -->
-              </div>
+            <div class="stats-section-card span-full">
+              <h3>Quando você ouve</h3>
+              <p class="profile-hint">Audições por dia da semana e hora, desde o primeiro registro.</p>
+              <div id="listening-heatmap" class="listening-heatmap"></div>
             </div>
           </div>
         </div>
       </section>
 
       <!-- VIEW 6: SETTINGS (Configurações) -->
+      <section id="view-diary" class="content-view">
+        <div class="stats-grid">
+          <div class="diary-toolbar">
+            <span class="diary-muted">Período:</span>
+            <select id="diary-days" style="width: auto;">
+              <option value="7">7 dias</option>
+              <option value="30" selected>30 dias</option>
+              <option value="90">90 dias</option>
+              <option value="365">1 ano</option>
+            </select>
+          </div>
+          <div class="stats-card-row">
+            <div class="stat-mini-card"><div class="mini-card-label">Sessões</div><div id="diary-sessions" class="mini-card-value">0</div></div>
+            <div class="stat-mini-card"><div class="mini-card-label">Discos tocados</div><div id="diary-discs" class="mini-card-value">0</div></div>
+            <div class="stat-mini-card"><div class="mini-card-label">Horas de música</div><div id="diary-hours" class="mini-card-value">0</div></div>
+            <div class="stat-mini-card"><div class="mini-card-label">Faixas registradas</div><div id="diary-since" class="mini-card-value diary-since">—</div></div>
+          </div>
+          <div class="stats-row">
+            <div class="stats-section-card span-full">
+              <h3>Sessões</h3>
+              <p class="profile-hint">Cada vez que você senta para ouvir: os discos, os lados e as faixas que o player acompanhou. Dias antes do registro de faixas mostram só os discos.</p>
+              <div id="diary-list" class="diary-list"></div>
+            </div>
+          </div>
+          <div class="stats-row">
+            <div class="stats-section-card span-full">
+              <h3>Faixas mais tocadas</h3>
+              <div id="diary-top" class="diary-top"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-care" class="content-view">
+        <div class="stats-grid">
+          <div class="stats-row">
+            <div class="stats-section-card span-full care-needle-card">
+              <h3>Agulha</h3>
+              <div class="care-needle">
+                <div class="care-gauge">
+                  <div class="care-gauge-value"><span id="needle-hours">0</span><small> h</small></div>
+                  <div class="care-gauge-sub">de <span id="needle-life">1000</span> h de vida útil</div>
+                  <div class="care-gauge-track"><div id="needle-bar" class="care-gauge-fill"></div></div>
+                  <div id="needle-summary" class="profile-hint"></div>
+                </div>
+                <form id="needle-form" class="care-form">
+                  <label>Modelo da agulha<input id="needle-model" type="text" placeholder="ex.: AT-VM95E" maxlength="80"></label>
+                  <label>Vida útil (horas)<input id="needle-life-input" type="number" min="50" max="5000" step="50"></label>
+                  <label>Instalada em<input id="needle-installed" type="date"></label>
+                  <div class="care-form-actions">
+                    <button type="submit" class="btn btn-secondary">Salvar</button>
+                    <button type="button" id="needle-replace" class="btn btn-primary">Troquei a agulha</button>
+                  </div>
+                </form>
+              </div>
+              <div id="needle-history" class="care-history"></div>
+            </div>
+          </div>
+          <div class="stats-row">
+            <div class="stats-section-card span-full">
+              <h3>Limpeza dos discos</h3>
+              <p class="profile-hint" id="care-clean-hint">Discos com mais audições desde a última limpeza aparecem primeiro.</p>
+              <div class="care-search"><input id="care-search" type="search" placeholder="Buscar disco para marcar como limpo..." autocomplete="off"></div>
+              <div id="care-list" class="care-list"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="view-recognition" class="content-view">
         <div class="stats-grid">
           <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px;">
@@ -1264,16 +1382,19 @@
   <div id="toast-container" class="toast-container"></div>
 
   <!-- Database & Logic Scripts -->
-  <script src="/static/admin/00-core.js?v=4.0.0" defer></script>
-  <script src="/static/admin/10-agenda.js?v=4.0.0" defer></script>
-  <script src="/static/admin/20-collection.js?v=4.0.0" defer></script>
-  <script src="/static/admin/30-timeline.js?v=4.0.0" defer></script>
-  <script src="/static/admin/40-stats.js?v=4.0.0" defer></script>
-  <script src="/static/admin/50-dialogs.js?v=4.0.0" defer></script>
-  <script src="/static/admin/60-ranking.js?v=4.0.0" defer></script>
-  <script src="/static/admin/70-settings.js?v=4.0.0" defer></script>
-  <script src="/static/admin/80-history.js?v=4.0.0" defer></script>
-  <script src="/static/admin/90-devices-alerts.js?v=4.0.0" defer></script>
-  <script src="/static/admin/95-recognition.js?v=4.0.0" defer></script>
+  <script src="/static/admin/00-core.js?v=4.2.0" defer></script>
+  <script src="/static/admin/10-agenda.js?v=4.2.0" defer></script>
+  <script src="/static/admin/20-collection.js?v=4.2.0" defer></script>
+  <script src="/static/admin/25-filters.js?v=4.2.0" defer></script>
+  <script src="/static/admin/30-timeline.js?v=4.2.0" defer></script>
+  <script src="/static/admin/40-stats.js?v=4.2.0" defer></script>
+  <script src="/static/admin/45-profile.js?v=4.2.0" defer></script>
+  <script src="/static/admin/50-dialogs.js?v=4.2.0" defer></script>
+  <script src="/static/admin/60-ranking.js?v=4.2.0" defer></script>
+  <script src="/static/admin/70-settings.js?v=4.2.0" defer></script>
+  <script src="/static/admin/80-history.js?v=4.2.0" defer></script>
+  <script src="/static/admin/90-devices-alerts.js?v=4.2.0" defer></script>
+  <script src="/static/admin/95-recognition.js?v=4.2.0" defer></script>
+  <script src="/static/admin/96-diary-care.js?v=4.2.0" defer></script>
 </body>
 </html>

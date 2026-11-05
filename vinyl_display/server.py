@@ -259,6 +259,19 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             report["shazam_usage"] = self.app.shazam_usage()
             self._json(report)
             return
+        if path == "/api/admin/diary":
+            from urllib.parse import parse_qs
+
+            query = parse_qs(urlparse(self.path).query)
+            try:
+                days = max(1, min(365, int((query.get("days") or ["30"])[0])))
+            except ValueError:
+                days = 30
+            self._json(self.app.diary(days))
+            return
+        if path == "/api/admin/care":
+            self._json(self.app.care())
+            return
         if path == "/api/admin/player_status":
             self._json(self.app.player_status())
             return
@@ -686,6 +699,34 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                 self._json({"status": "ok", "chats": chats})
             except Exception as error:
                 self._json({"status": "error", "message": f"Não foi possível falar com o Telegram: {str(error).replace(token, '***') if token else error}"})
+            return
+        if path == "/api/admin/care/needle":
+            from vinyl_display.journal import update_needle
+
+            try:
+                update_needle(self.app.store, self._read_json_body())
+            except (TypeError, ValueError):
+                self.send_error(HTTPStatus.BAD_REQUEST)
+                return
+            self._json(self.app.care())
+            return
+        if path == "/api/admin/care/needle/replace":
+            from vinyl_display.journal import replace_needle
+
+            replace_needle(self.app.store, str(self._read_json_body().get("model") or ""))
+            self._json(self.app.care())
+            return
+        if path == "/api/admin/care/cleaned":
+            import time as _time
+
+            payload = self._read_json_body()
+            try:
+                release_id = int(payload.get("release_id"))
+            except (TypeError, ValueError):
+                self.send_error(HTTPStatus.BAD_REQUEST)
+                return
+            self.app.store.mark_cleaned(release_id, float(payload.get("at") or _time.time()))
+            self._json(self.app.care())
             return
         if path == "/api/admin/alerts/test":
             if not self.app.notifier.enabled:

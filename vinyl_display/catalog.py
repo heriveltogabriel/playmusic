@@ -77,6 +77,30 @@ class CatalogStore:
                 )
                 """
             )
+            # v4.2: diário da vitrola (cada faixa que o player acompanhou) e limpeza dos discos
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS listening_log (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    at REAL NOT NULL,
+                    release_id INTEGER NOT NULL,
+                    track_position TEXT NOT NULL,
+                    track_title TEXT,
+                    side TEXT,
+                    duration_seconds INTEGER
+                )
+                """
+            )
+            connection.execute("CREATE INDEX IF NOT EXISTS idx_listening_log_at ON listening_log(at)")
+            connection.execute(
+                """
+                CREATE TABLE IF NOT EXISTS release_care (
+                    release_id INTEGER PRIMARY KEY,
+                    cleaned_at REAL NOT NULL,
+                    times_cleaned INTEGER NOT NULL DEFAULT 1
+                )
+                """
+            )
             connection.execute(
                 """
                 CREATE TABLE IF NOT EXISTS sync_metadata (
@@ -628,3 +652,50 @@ class CatalogStore:
         if not release:
             raise ValueError(f"Release {release_id} not found")
         return release.favorite
+
+    # ---------------- v4.2: diário da vitrola ----------------
+    def log_track_play(self, at: float, release_id: int, track_position: str, track_title: str = "",
+                       side: str = "", duration_seconds: int | None = None) -> None:
+        with self._connect() as connection:
+            connection.execute(
+                "INSERT INTO listening_log (at, release_id, track_position, track_title, side, duration_seconds) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (at, release_id, track_position, track_title, side, duration_seconds),
+            )
+
+    def listening_log_since(self, since: float) -> list[dict]:
+        with self._connect() as connection:
+            connection.row_factory = sqlite3.Row
+            rows = connection.execute(
+                "SELECT at, release_id, track_position, track_title, side, duration_seconds "
+                "FROM listening_log WHERE at >= ? ORDER BY at",
+                (since,),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def top_tracks(self, since: float = 0.0, limit: int = 20) -> list[dict]:
+        with self._connect() as connection:
+            connection.row_factory = sqlite3.Row
+            rows = connection.execute(
+                "SELECT release_id, track_position, MAX(track_title) AS track_title, COUNT(*) AS plays, MAX(at) AS last_at "
+                "FROM listening_log WHERE at >= ? GROUP BY release_id, track_position "
+                "ORDER BY plays DESC, last_at DESC LIMIT ?",
+                (since, limit),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    # ---------------- v4.2: cuidados com os discos ----------------
+    def mark_cleaned(self, release_id: int, at: float) -> None:
+        with self._connect() as connection:
+            connection.execute(
+                "INSERT INTO release_care (release_id, cleaned_at, times_cleaned) VALUES (?, ?, 1) "
+                "ON CONFLICT(release_id) DO UPDATE SET cleaned_at = excluded.cleaned_at, "
+                "times_cleaned = release_care.times_cleaned + 1",
+                (release_id, at),
+            )
+
+    def cleaning_dates(self) -> dict[int, dict]:
+        with self._connect() as connection:
+            rows = connection.execute("SELECT release_id, cleaned_at, times_cleaned FROM release_care").fetchall()
+        return {int(r[0]): {"cleaned_at": float(r[1]), "times_cleaned": int(r[2])} for r in rows}
+

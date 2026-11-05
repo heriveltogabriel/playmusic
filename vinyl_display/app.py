@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import time
+
 from typing import Any
 
 from vinyl_display.catalog import CatalogStore
@@ -276,6 +278,7 @@ class VinylDisplayApp:
             if latest_release:
                 self.playback.refresh_release(latest_release)
         state = self.playback.current_state()
+        self._log_track_change(state)
         state["collection_count"] = self.store.collection_count()
         state["last_sync_at"] = self.store.get_metadata("discogs_last_sync_at")
         state["lyrics_latency_offset"] = self.config.lyrics_latency_offset if self.config else 1.3
@@ -292,6 +295,43 @@ class VinylDisplayApp:
         state["version"] = version_str
         
         return state
+
+    def _log_track_change(self, state: dict[str, Any]) -> None:
+        """Diário da vitrola: grava cada faixa nova que o player passa a acompanhar."""
+        if state.get("status") != "playing" or not state.get("release") or not state.get("track"):
+            return
+        release, track = state["release"], state["track"]
+        key = (release.get("release_id"), track.get("position"), int(self.playback.active.started_at) if self.playback.active else 0)
+        if getattr(self, "_last_logged_track", None) == key:
+            return
+        previous = getattr(self, "_last_logged_track", None)
+        self._last_logged_track = key
+        # Mesma faixa depois de um restart/realinhamento do tempo: não conta de novo.
+        if previous and previous[:2] == key[:2]:
+            return
+        try:
+            from vinyl_display.playback import get_track_side
+
+            self.store.log_track_play(
+                at=time.time() - float(state.get("progress_seconds") or 0),
+                release_id=int(release.get("release_id")),
+                track_position=str(track.get("position") or ""),
+                track_title=str(track.get("title") or ""),
+                side=get_track_side(str(track.get("position") or "")),
+                duration_seconds=track.get("duration_seconds"),
+            )
+        except Exception as error:  # o diário nunca derruba o player
+            print(f"[DIARY] Could not log track: {error}")
+
+    def diary(self, days: int = 30) -> dict[str, Any]:
+        from vinyl_display.journal import build_diary
+
+        return build_diary(self.store, days=days)
+
+    def care(self) -> dict[str, Any]:
+        from vinyl_display.journal import build_care
+
+        return build_care(self.store)
 
     def sync_collection(self) -> dict[str, Any]:
         try:

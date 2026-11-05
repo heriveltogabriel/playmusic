@@ -30,7 +30,10 @@ const state = {
     decade: '',
     starredOnly: false,
     genres: [],
-    styles: []
+    styles: [],
+    country: '',
+    format: '',
+    neverHeard: false
   },
   sortBy: 'added_desc',
   
@@ -233,9 +236,11 @@ function initializeViews() {
       } else if (targetView === 'stats') {
         viewTitle.textContent = 'Estatísticas';
         renderStats();
+        if (typeof renderCollectionProfile === 'function') renderCollectionProfile();
       } else if (targetView === 'ranking') {
         viewTitle.textContent = 'Ranking de Audições';
         renderPlaysRankingPage();
+        renderPlayPeriodStats(); // v4.2: mais tocados, resgate da estante e gráfico ficaram aqui
   renderWeeklyHistory();
       } else if (targetView === 'timeline') {
         viewTitle.textContent = 'Linha do Tempo';
@@ -243,6 +248,12 @@ function initializeViews() {
       } else if (targetView === 'favorites') {
         viewTitle.textContent = 'Favoritos';
         renderFavoritesGrid();
+      } else if (targetView === 'diary') {
+        viewTitle.textContent = 'Diário da Vitrola';
+        renderDiary();
+      } else if (targetView === 'care') {
+        viewTitle.textContent = 'Agulha e Cuidados';
+        renderCare();
       } else if (targetView === 'recognition') {
         viewTitle.textContent = 'Reconhecimento';
         renderRecognition();

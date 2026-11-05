@@ -175,6 +175,10 @@ function resetAllFilters() {
   state.filters.starredOnly = false;
   state.filters.genres = [];
   state.filters.styles = [];
+  state.filters.country = '';
+  state.filters.format = '';
+  state.filters.neverHeard = false;
+  if (typeof syncCatalogFilterControls === 'function') syncCatalogFilterControls();
   
   // Reset UI elements
   const searchInput = document.getElementById('search-input');
@@ -222,13 +226,25 @@ function applyFiltersAndRender() {
     filtered = filtered.filter(lp => lp.favorite === true);
   }
   
-  // 3. Filter by Decade
+  // 3. Filter by Decade (ano original do disco, não o da reedição)
   if (state.filters.decade) {
     const startYear = parseInt(state.filters.decade);
     filtered = filtered.filter(lp => {
-      if (lp.year === 0) return false;
-      return lp.year >= startYear && lp.year < (startYear + 10);
+      const year = lp.original_year || lp.year;
+      if (!year) return false;
+      return year >= startYear && year < (startYear + 10);
     });
+  }
+
+  // 3b. País, formato e nunca ouvidos (v4.2)
+  if (state.filters.country) {
+    filtered = filtered.filter(lp => (lp.country || '') === state.filters.country);
+  }
+  if (state.filters.format) {
+    filtered = filtered.filter(lp => (lp.formats || []).includes(state.filters.format));
+  }
+  if (state.filters.neverHeard) {
+    filtered = filtered.filter(lp => !lp.plays);
   }
   
   // 4. Filter by selected Genres
@@ -391,6 +407,15 @@ function renderActiveFiltersBar() {
   if (state.filters.decade) {
     tags.push({ label: `Década: ${state.filters.decade}s`, type: 'decade' });
   }
+  if (state.filters.country) {
+    tags.push({ label: `País: ${state.filters.country}`, type: 'country' });
+  }
+  if (state.filters.format) {
+    tags.push({ label: state.filters.format, type: 'format' });
+  }
+  if (state.filters.neverHeard) {
+    tags.push({ label: 'Nunca ouvidos', type: 'neverHeard' });
+  }
   state.filters.genres.forEach(g => {
     tags.push({ label: g, type: 'genre', val: g });
   });
@@ -422,10 +447,18 @@ function renderActiveFiltersBar() {
 function removeFilterTag(tag) {
   if (tag.type === 'starred') {
     state.filters.starredOnly = false;
-    document.getElementById('filter-starred').classList.remove('active');
+    const starredBtn = document.getElementById('filter-starred');
+    if (starredBtn) starredBtn.classList.remove('active');
   } else if (tag.type === 'decade') {
     state.filters.decade = '';
-    document.getElementById('filter-decade').value = '';
+    const decadeSelect = document.getElementById('filter-decade');
+    if (decadeSelect) decadeSelect.value = '';
+  } else if (tag.type === 'country') {
+    state.filters.country = '';
+  } else if (tag.type === 'format') {
+    state.filters.format = '';
+  } else if (tag.type === 'neverHeard') {
+    state.filters.neverHeard = false;
   } else if (tag.type === 'genre') {
     const idx = state.filters.genres.indexOf(tag.val);
     if (idx > -1) state.filters.genres.splice(idx, 1);
@@ -433,6 +466,7 @@ function removeFilterTag(tag) {
     const idx = state.filters.styles.indexOf(tag.val);
     if (idx > -1) state.filters.styles.splice(idx, 1);
   }
+  if (typeof syncCatalogFilterControls === 'function') syncCatalogFilterControls();
   
   applyFiltersAndRender();
 }

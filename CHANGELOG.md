@@ -2,6 +2,18 @@
 
 Versões do PlayVinil / Vinyl Display. As mais recentes primeiro.
 
+## 4.2.0 — em teste (branch feature/admin-cuidados-diario)
+
+### Player
+- Letra em modo leitura: tela cheia, texto corrido e rolagem que acompanha a faixa; só aceita letra com a mesma duração da faixa.
+
+### Admin
+- **Minha Coleção**: filtros por gênero, década (ano original), país, formato, nunca ouvidos e favoritos; modo lista.
+- **Ranking** fica com a escuta (pódio, mais tocados, resgate da estante, gráfico de 6 meses, histórico).
+- **Estatísticas** ficam com o perfil da coleção (gêneros, décadas, países, edições) e o mapa "Quando você ouve"; tocar numa barra abre a coleção filtrada.
+- **Diário da Vitrola** (novo): sessões por dia com discos, lados e faixas que o player acompanhou; faixas mais tocadas.
+- **Agulha e Cuidados** (novo): horas de agulha, vida útil, previsão de troca, histórico de agulhas e limpeza de cada disco.
+
 ## 4.0.1 — 2026-11-04 — Servidor do Bruno em dia
 
 - `scripts/backup_oci.sh` ganhou `BACKUP_UPLOAD=0`: backup só local, para servidor sem bucket do OCI.

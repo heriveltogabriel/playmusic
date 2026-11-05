@@ -4714,3 +4714,303 @@ dialog::backdrop {
 }
 
 
+
+/* ==================== v4.2: FILTROS DA COLEÇÃO E MODO LISTA ==================== */
+.catalog-toolbar { flex-wrap: wrap; gap: 12px; }
+.catalog-toolbar .toolbar-search { min-width: 240px; max-width: 420px; }
+
+.catalog-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: -12px 0 20px;
+}
+
+.cf-select {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 0.85rem;
+  max-width: 190px;
+}
+
+.cf-select option { background: var(--bg-surface); }
+
+.cf-chip {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.cf-chip.active {
+  color: var(--text-primary);
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.cf-chip-count {
+  margin-left: 4px;
+  font-size: 0.75rem;
+  color: var(--primary);
+}
+
+.cf-link {
+  background: none;
+  border: 0;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 6px 4px;
+}
+
+.catalog-filters .cf-view-toggle-spacer { flex: 1; }
+
+.cf-view-toggle {
+  display: inline-flex;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.cf-view-btn {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 0;
+  padding: 6px 12px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.cf-view-btn.active {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+/* Modo lista: uma linha por disco */
+.lp-grid.lp-list {
+  display: flex !important;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.lp-grid.lp-list .lp-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 12px;
+}
+
+.lp-grid.lp-list .lp-card-cover-wrapper {
+  width: 56px;
+  min-width: 56px;
+  height: 56px;
+  aspect-ratio: 1;
+  margin: 0;
+}
+
+.lp-grid.lp-list .lp-card-fav-btn { display: none; }
+
+.lp-grid.lp-list .lp-card-info {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1.5fr) auto auto;
+  align-items: center;
+  gap: 16px;
+  padding: 0;
+  min-width: 0;
+}
+
+.lp-grid.lp-list .lp-card-title,
+.lp-grid.lp-list .lp-card-artist {
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lp-grid.lp-list .lp-card-plays-row,
+.lp-grid.lp-list .lp-card-footer {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+@media (max-width: 700px) {
+  .catalog-filters { margin-top: -8px; }
+  .cf-select { flex: 1 1 45%; max-width: none; }
+  .cf-view-toggle { margin-left: 0; }
+  .lp-grid.lp-list .lp-card-info { grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; }
+  .lp-grid.lp-list .lp-card-footer { display: none; }
+}
+
+/* ==================== v4.2: PERFIL DA COLEÇÃO ==================== */
+.collection-profile {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+  margin-top: 16px;
+}
+
+.profile-block h4 {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.profile-bar-row {
+  display: grid;
+  grid-template-columns: minmax(90px, 1.2fr) 2fr auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 5px 4px;
+  background: none;
+  border: 0;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.profile-bar-row:hover:not(:disabled) { background: rgba(255, 255, 255, 0.04); color: var(--text-primary); }
+.profile-bar-row:disabled { cursor: default; }
+
+.profile-bar-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.profile-bar-track {
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+}
+
+.profile-bar-fill { display: block; height: 100%; background: var(--primary); border-radius: 4px; }
+
+.profile-bar-value { font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.profile-bar-value small { color: var(--text-muted); margin-left: 4px; }
+
+.profile-hint { color: var(--text-secondary); font-size: 0.85rem; margin: 6px 0 12px; }
+
+.listening-heatmap { overflow-x: auto; }
+
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: 36px repeat(24, minmax(14px, 1fr));
+  gap: 3px;
+  min-width: 460px;
+}
+
+.heatmap-hour, .heatmap-day { font-size: 0.7rem; color: var(--text-muted); }
+.heatmap-day { align-self: center; }
+.heatmap-cell { aspect-ratio: 1; border-radius: 3px; }
+
+/* ==================== v4.2: DIÁRIO DA VITROLA E CUIDADOS ==================== */
+.diary-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
+.diary-muted { font-size: 0.85rem; color: var(--text-muted); }
+.mini-card-value.diary-since { font-size: 1rem; }
+
+.diary-day {
+  margin: 22px 0 8px;
+  font-size: 0.9rem;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.diary-day:first-child { margin-top: 8px; }
+
+.diary-session {
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.diary-session-when { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 8px; }
+
+.diary-disc, .diary-top-row, .care-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.diary-disc img, .diary-top-row img, .care-row img {
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.diary-disc-info { flex: 1; min-width: 0; }
+.diary-disc-title { color: var(--text-primary); font-weight: 600; font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.diary-disc-artist { color: var(--text-secondary); font-size: 0.8rem; }
+.diary-sides { color: var(--primary); }
+
+.diary-tracks { margin-top: 4px; font-size: 0.8rem; color: var(--text-secondary); }
+.diary-tracks summary { cursor: pointer; color: var(--text-muted); }
+.diary-tracks ol { margin: 6px 0 0; padding-left: 18px; }
+.diary-tracks li span { color: var(--primary); font-weight: 600; margin-right: 4px; }
+.diary-tracks li small { color: var(--text-muted); margin-left: 6px; }
+
+.diary-top-rank { width: 22px; text-align: right; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.diary-top-plays { color: var(--primary); font-weight: 700; }
+
+.care-needle {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(240px, 1fr);
+  gap: 28px;
+  margin-top: 12px;
+}
+
+.care-gauge-value { font-size: 2.6rem; font-weight: 800; color: var(--text-primary); line-height: 1; }
+.care-gauge-value small { font-size: 1rem; color: var(--text-secondary); }
+.care-gauge-sub { color: var(--text-secondary); font-size: 0.85rem; margin: 6px 0 12px; }
+.care-gauge-track { height: 10px; border-radius: 5px; background: rgba(255, 255, 255, 0.06); overflow: hidden; }
+.care-gauge-fill { height: 100%; width: 0; background: var(--success); border-radius: 5px; transition: width 0.4s; }
+.care-gauge-fill.warn { background: var(--primary); }
+
+.care-form { display: flex; flex-direction: column; gap: 10px; }
+.care-form label { display: flex; flex-direction: column; gap: 4px; font-size: 0.8rem; color: var(--text-secondary); }
+.care-form input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: var(--text-primary);
+}
+.care-form-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+
+.care-history { margin-top: 18px; }
+.care-history h4 { font-size: 0.85rem; color: var(--text-secondary); margin: 0 0 6px; }
+.care-history-row { font-size: 0.8rem; color: var(--text-muted); padding: 2px 0; }
+
+.care-search { margin: 4px 0 10px; }
+.care-search input {
+  width: 100%;
+  max-width: 420px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--text-primary);
+}
+
+.care-clean-btn { flex-shrink: 0; }
+
+@media (max-width: 700px) {
+  .care-needle { grid-template-columns: 1fr; }
+}
