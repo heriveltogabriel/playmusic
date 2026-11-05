@@ -2,6 +2,10 @@
 
 Versões do PlayVinil / Vinyl Display. As mais recentes primeiro.
 
+## 4.4.6 — 2026-11-05
+
+- Página do artista no celular: "Seus discos" em lista (capa pequena, título, ano e audições) e mosaico do topo menor.
+
 ## 4.4.5 — 2026-11-05
 
 - Página do artista: biografia em português pela Wikipédia (achada pelo número do artista no Discogs, via Wikidata), com a fonte e o link. Sem página em português, fica o texto do Discogs em inglês.

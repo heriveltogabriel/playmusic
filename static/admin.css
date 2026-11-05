@@ -5450,3 +5450,22 @@ dialog::backdrop {
 /* v4.4.5: crédito da biografia do artista */
 .artist-profile-source { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
 .artist-profile-source a { color: var(--text-secondary); }
+
+/* v4.4.6: "Seus discos" na página do artista vira lista no celular (as capas grandes,
+   duas por linha, faziam uma rolagem longa) */
+@media (max-width: 700px) {
+  .artist-discs { display: flex; flex-direction: column; gap: 0; margin-top: 8px; }
+  .artist-disc {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr);
+    column-gap: 12px;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .artist-disc:last-child { border-bottom: 0; }
+  .artist-disc img { grid-row: 1 / span 2; width: 52px; height: 52px; aspect-ratio: auto; border-radius: 4px; }
+  .artist-disc-title { margin-top: 0; align-self: end; }
+  .artist-disc-sub { align-self: start; }
+  .artist-mosaic.big { width: 120px; }
+}
