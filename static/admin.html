@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/admin.css?v=4.3.2">
+  <link rel="stylesheet" href="/static/admin.css?v=4.4.1">
 </head>
 <body>
   <!-- Ambient background glow representing album colors -->
@@ -243,76 +243,7 @@
             </div>
           </div>
 
-          <div class="featured-suggestion-panel">
-            <div class="featured-suggestion-header">
-              <div>
-                <span class="featured-eyebrow">Disco selecionado</span>
-                <h3 class="card-title-sm" id="featured-day-label">Sugestão de Hoje</h3>
-              </div>
-            </div>
-
-            <div class="suggestion-hero-card">
-              <div class="suggestion-hero-cover">
-                <img id="suggested-cover-img" src="" alt="Capa da Sugestão" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=300&auto=format&fit=crop'">
-                <div class="plays-badge" title="Quantidade de vezes ouvido">
-                  <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none">
-                    <path d="M3 18v-6a9 9 0 0 1 18 0v6"></path>
-                    <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"></path>
-                  </svg>
-                  <span id="suggested-plays-count">0</span> audições
-                </div>
-              </div>
-              
-              <div class="suggestion-hero-info">
-                <div class="suggestion-hero-main">
-                  <h3 id="suggested-title" class="hero-title">Título</h3>
-                  <h4 id="suggested-artist" class="hero-artist">Artista</h4>
-                  
-                  <div class="hero-meta">
-                    <span id="suggested-year" class="hero-meta-item">Ano</span>
-                    <span id="suggested-label" class="hero-meta-item">Selo</span>
-                    <span class="hero-meta-item" style="display:inline-flex; align-items:center;">
-                      <div id="suggested-genres" class="tags-container" style="gap:4px; margin:0;"></div>
-                    </span>
-                  </div>
-
-                  <div class="hero-bottom-actions">
-                    <div class="hero-actions">
-                      <button id="mark-listened-btn" class="btn btn-primary btn-icon btn-pulse">
-                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        Ouvi
-                      </button>
-                      <button id="suggested-details-btn" class="btn btn-secondary">
-                        Ver ficha
-                      </button>
-                      <button id="suggested-favorite-btn" class="btn btn-secondary btn-icon" title="Favoritar" style="display: none;">
-                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" class="star-icon">
-                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="suggestion-support-grid">
-              <div class="hero-scrobble-history">
-                <label class="scrobble-history-label">Histórico</label>
-                <div id="suggested-history-dates" class="scrobble-history-list">
-                  <!-- Dynamically populated dates -->
-                </div>
-              </div>
-
-              <div class="hero-mini-notes">
-                <label class="scrobble-history-label" for="suggested-notes">Notas da audição</label>
-                <textarea id="suggested-notes" placeholder="Anote observações sobre esta audição..."></textarea>
-                <div class="mini-notes-status" id="suggested-notes-status">Salvo automaticamente</div>
-              </div>
-            </div>
-          </div>
+          <!-- v4.4.1: "Disco selecionado" saiu; a lista dos dias mostra tudo -->
         </div>
 
         <!-- Weekly History Section -->
@@ -1445,7 +1376,7 @@
 
   <!-- Database & Logic Scripts -->
   <script src="/static/admin/00-core.js?v=4.3.0" defer></script>
-  <script src="/static/admin/10-agenda.js?v=4.2.4" defer></script>
+  <script src="/static/admin/10-agenda.js?v=4.4.1" defer></script>
   <script src="/static/admin/20-collection.js?v=4.2.4" defer></script>
   <script src="/static/admin/25-filters.js?v=4.3.1" defer></script>
   <script src="/static/admin/30-timeline.js?v=4.2.4" defer></script>
@@ -1454,7 +1385,7 @@
   <script src="/static/admin/50-dialogs.js?v=4.3.0" defer></script>
   <script src="/static/admin/60-ranking.js?v=4.2.4" defer></script>
   <script src="/static/admin/70-settings.js?v=4.2.4" defer></script>
-  <script src="/static/admin/80-history.js?v=4.2.4" defer></script>
+  <script src="/static/admin/80-history.js?v=4.4.1" defer></script>
   <script src="/static/admin/90-devices-alerts.js?v=4.2.4" defer></script>
   <script src="/static/admin/95-recognition.js?v=4.2.4" defer></script>
   <script src="/static/admin/96-diary-care.js?v=4.2.4" defer></script>

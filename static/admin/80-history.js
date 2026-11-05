@@ -385,6 +385,8 @@ async function renderWeeklyHistory() {
   
   reversedWeeks.forEach(wd => {
     const isCurrentWeek = wd.key === currentWeekKey;
+    // v4.4.1: a semana atual já aparece na lista de cima; aqui ficam só as anteriores
+    if (isCurrentWeek) return;
     const fmt = d => `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`;
     const rangeText = `${fmt(wd.startDate)} a ${fmt(wd.endDate)}`;
     const titleText = isCurrentWeek ? `Esta Semana (${rangeText})` : `Semana de ${rangeText}`;

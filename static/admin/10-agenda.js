@@ -306,67 +306,84 @@ function renderWeeklyAgenda() {
   // Atualiza a barra de progresso
   renderWeeklyProgressBar(completedCount, cardStates, todayIdx);
 
-  const defaultCover = 'https://images.unsplash.com/photo-1539628390771-e231e2879708?q=80&w=200&auto=format&fit=crop';
+  const defaultCover = '/static/logo_lp_da_semana.png';
+  container.classList.add('agenda-list');
+
+  // Data de cada dia desta semana (para mostrar "Qui, 05/11" e quando foi ouvido)
+  const dayDate = (index) => {
+    const d = new Date(startOfWeek);
+    d.setDate(startOfWeek.getDate() + index);
+    return d;
+  };
+  const listenedAt = (lp) => (lp.listen_dates || [])
+    .map(ds => new Date(ds))
+    .filter(d => d >= startOfWeek && d <= endOfWeek)
+    .sort((a, b) => b - a)[0];
+  const esc = (text) => {
+    const div = document.createElement('div');
+    div.textContent = text == null ? '' : String(text);
+    return div.innerHTML;
+  };
 
   state.agenda.forEach((lp, index) => {
-    const card = document.createElement('div');
-    card.classList.add('agenda-day-card');
     const st = cardStates[index];
-    if (st === 'done')   card.classList.add('agenda-done');
-    if (st === 'missed') card.classList.add('agenda-missed');
-    if (index === todayIdx) card.classList.add('today');
-    if (index === state.selectedAgendaIndex) card.classList.add('active');
-    card.dataset.index = index;
-
-    const stateIcon = st === 'done'
-      ? `<div class="agenda-state-icon agenda-state-done" title="Ouvido esta semana">
-           <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="3" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>
-         </div>`
-      : st === 'missed'
-        ? `<div class="agenda-state-icon agenda-state-missed" title="Dia perdido">
-             <svg viewBox="0 0 24 24" width="11" height="11" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-           </div>`
-        : '';
-
-    const overlay = st === 'done'
-      ? `<div class="agenda-cover-overlay agenda-cover-overlay--done"></div>`
-      : st === 'missed'
-        ? `<div class="agenda-cover-overlay agenda-cover-overlay--missed"></div>`
-        : '';
-
-    card.innerHTML = `
-      <button class="agenda-day-change-btn" title="Mudar sugestão deste dia">
-        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="23 4 23 10 17 10"></polyline>
-          <polyline points="1 20 1 14 7 14"></polyline>
-          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-        </svg>
-      </button>
-      <div class="agenda-day-name">${AGENDA_DAYS[index]}</div>
-      <div class="agenda-cover-wrap">
-        <img class="agenda-day-cover" src="${lp.thumbnail || lp.cover_image || defaultCover}" alt="${lp.title}" onerror="this.onerror=null; this.src='${defaultCover}'">
-        ${overlay}
+    const row = document.createElement('div');
+    row.className = `agenda-row agenda-${st}${index === todayIdx ? ' today' : ''}`;
+    row.dataset.index = index;
+    const date = dayDate(index);
+    const dateText = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
+    const heard = listenedAt(lp);
+    let status;
+    if (st === 'done') {
+      status = `<span class="agenda-status done">✓ Ouvido${heard ? ' ' + heard.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '') : ''}</span>`;
+    } else if (st === 'missed') {
+      status = '<span class="agenda-status missed">Não ouvido</span>';
+    } else if (index === todayIdx) {
+      status = '<span class="agenda-status today">Hoje</span>';
+    } else {
+      status = '<span class="agenda-status pending">A ouvir</span>';
+    }
+    row.innerHTML = `
+      <div class="agenda-row-day">
+        <span class="agenda-row-dayname">${AGENDA_DAYS[index].slice(0, 3)}</span>
+        <span class="agenda-row-date">${dateText}</span>
       </div>
-      <div class="agenda-day-title" title="${lp.title}">${lp.title}</div>
-      <div class="agenda-day-artist" title="${lp.artist}">${lp.artist}</div>
-      ${stateIcon}
-    `;
+      <img class="agenda-row-cover" src="${esc(lp.thumbnail || lp.cover_image || defaultCover)}" alt="" loading="lazy" onerror="this.onerror=null; this.src='${defaultCover}'">
+      <div class="agenda-row-info">
+        <div class="agenda-row-title">${esc(lp.title)}</div>
+        <div class="agenda-row-artist">${esc(lp.artist)}</div>
+        ${status}
+      </div>
+      <div class="agenda-row-actions">
+        ${st === 'done' ? '' : '<button type="button" class="btn btn-primary agenda-row-listen" title="Marcar como ouvido">Ouvi</button>'}
+        <button type="button" class="agenda-row-change" title="Trocar o disco deste dia" aria-label="Trocar o disco deste dia">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <polyline points="1 20 1 14 7 14"></polyline>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+          </svg>
+        </button>
+      </div>`;
 
-    card.addEventListener('click', () => {
+    // Tocar no disco abre a ficha; os botões fazem a ação sem abrir
+    row.addEventListener('click', () => {
       state.selectedAgendaIndex = index;
-      renderWeeklyAgenda();
-      renderSelectedAgendaLp();
+      openDetailsDialog(lp.id);
     });
-
-    const changeBtn = card.querySelector('.agenda-day-change-btn');
-    if (changeBtn) {
-      changeBtn.addEventListener('click', (e) => {
+    const listenBtn = row.querySelector('.agenda-row-listen');
+    if (listenBtn) {
+      listenBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        changeSingleDayAgendaLp(index);
+        state.selectedAgendaIndex = index;
+        markAsListened(lp.id);
       });
     }
+    row.querySelector('.agenda-row-change').addEventListener('click', (e) => {
+      e.stopPropagation();
+      changeSingleDayAgendaLp(index);
+    });
 
-    container.appendChild(card);
+    container.appendChild(row);
   });
 }
 
@@ -450,6 +467,8 @@ function changeSingleDayAgendaLp(dayIndex) {
 }
 
 function renderSelectedAgendaLp() {
+  // v4.4.1: o painel "Disco selecionado" saiu da tela; a lista dos dias mostra tudo
+  if (!document.getElementById('suggested-title')) return;
   const lp = state.agenda[state.selectedAgendaIndex];
   const dayLabel = document.getElementById('featured-day-label');
   const reasonEl = document.getElementById('suggested-reason');
