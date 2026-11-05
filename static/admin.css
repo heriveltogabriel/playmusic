@@ -5014,3 +5014,111 @@ dialog::backdrop {
 @media (max-width: 700px) {
   .care-needle { grid-template-columns: 1fr; }
 }
+
+/* v4.2: de onde veio cada disco, na Linha do Tempo */
+.timeline-origin {
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ==================== v4.2: PRATELEIRAS ==================== */
+.shelf-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+
+.shelf-chip {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.shelf-chip.active { color: var(--text-primary); border-color: var(--primary); background: var(--primary-light); }
+.shelf-chip-count { color: var(--primary); font-size: 0.78rem; margin-left: 4px; }
+.shelf-chip-add { border-style: dashed; }
+
+.shelf-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; min-height: 8px; margin-bottom: 14px; }
+.shelf-delete { color: var(--danger); }
+
+.shelf-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.shelf-form input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 7px 10px;
+  color: var(--text-primary);
+}
+.shelf-form-emoji { width: 56px; text-align: center; }
+.shelf-form-name { min-width: 220px; }
+
+.lp-card-last-listen { font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; }
+.lp-card-shelf-note { font-size: 0.75rem; color: var(--primary); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.details-shelves-block { display: flex; flex-direction: column; gap: 8px; margin: 14px 0; }
+.details-shelves-block > span { font-size: 0.8rem; color: var(--text-secondary); font-weight: 600; }
+.details-shelves { display: flex; flex-wrap: wrap; gap: 8px; }
+.details-shelf { display: flex; align-items: center; gap: 6px; }
+.details-shelf .shelf-chip { padding: 5px 12px; font-size: 0.8rem; }
+.details-shelf-note {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 4px 8px;
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  width: 170px;
+}
+.details-shelves-empty { font-size: 0.8rem; color: var(--text-muted); }
+
+/* ==================== v4.2: CONFIGURAÇÕES EM ABAS ==================== */
+.settings-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 20px;
+}
+
+.settings-tab {
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  padding: 10px 14px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.settings-tab.active { color: var(--text-primary); border-bottom-color: var(--primary); }
+
+#view-settings [data-settings-tab] + [data-settings-tab] { margin-top: 24px; }
+
+.system-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.system-tile {
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--text-muted);
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.system-tile.ok { border-left-color: var(--success); }
+.system-tile.warn { border-left-color: var(--primary); }
+.system-tile.bad { border-left-color: var(--danger); }
+
+.system-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
+.system-value { font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin: 4px 0 2px; }
+.system-sub { font-size: 0.78rem; color: var(--text-secondary); }
+.system-actions { margin-top: 14px; display: flex; justify-content: flex-end; }

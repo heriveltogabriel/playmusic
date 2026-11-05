@@ -45,7 +45,7 @@ const state = {
 
   // Favorites page state
   favoritesQuery: '',
-  favoritesSortBy: 'added_desc'
+  favoritesSortBy: 'plays_desc'
 };
 
 
@@ -246,7 +246,8 @@ function initializeViews() {
         viewTitle.textContent = 'Linha do Tempo';
         renderTimeline();
       } else if (targetView === 'favorites') {
-        viewTitle.textContent = 'Favoritos';
+        viewTitle.textContent = 'Prateleiras';
+        if (typeof loadShelves === 'function') loadShelves();
         renderFavoritesGrid();
       } else if (targetView === 'diary') {
         viewTitle.textContent = 'Diário da Vitrola';

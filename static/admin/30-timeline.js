@@ -202,6 +202,7 @@ function renderTimeline() {
             <span class="timeline-artist">- ${lp.artist}</span>
           </div>
           <div class="timeline-date">${friendlyDate}</div>
+          ${lp.notes ? `<div class="timeline-origin" title="De onde veio (notas do Discogs)">🛒 ${timelineEscape(lp.notes)}</div>` : ''}
         </div>
         <div class="timeline-play-count">${lp.plays || 0} ${lp.plays === 1 ? 'audição' : 'audições'}</div>
       </div>
@@ -340,8 +341,10 @@ function renderFavoritesGrid() {
   
   grid.innerHTML = '';
   
-  // Filter only favorites
-  let favorites = state.lps.filter(lp => lp.favorite === true);
+  // v4.2: Prateleiras — Favoritos ou a prateleira escolhida
+  let favorites = (typeof currentShelfLps === 'function')
+    ? currentShelfLps()
+    : state.lps.filter(lp => lp.favorite === true);
   
   // Apply search query
   if (state.favoritesQuery) {
@@ -376,7 +379,17 @@ function renderFavoritesGrid() {
       return (b.rating || 0) - (a.rating || 0);
     }
     if (state.favoritesSortBy === 'plays_desc') {
-      return (b.plays || 0) - (a.plays || 0);
+      return (b.plays || 0) - (a.plays || 0) || lastListenTs(b) - lastListenTs(a);
+    }
+    if (state.favoritesSortBy === 'listened_desc') {
+      return lastListenTs(b) - lastListenTs(a);
+    }
+    if (state.favoritesSortBy === 'listened_asc') {
+      // Nunca ouvidos primeiro, depois os parados há mais tempo
+      return lastListenTs(a) - lastListenTs(b);
+    }
+    if (state.favoritesSortBy === 'shelf_added_desc' && typeof shelfAddedAt === 'function') {
+      return shelfAddedAt(b) - shelfAddedAt(a);
     }
     return 0;
   });
@@ -422,6 +435,8 @@ function renderFavoritesGrid() {
             + Ouvir
           </button>
         </div>
+        <div class="lp-card-last-listen">${lastListenLabel(lp)}</div>
+        ${typeof shelfNoteHtml === 'function' ? shelfNoteHtml(lp) : ''}
 
         <div class="lp-card-footer">
           <span class="lp-card-year">
@@ -469,4 +484,53 @@ function renderStarsString(rating) {
     `;
   }
   return starsHtml;
+}
+
+
+// ==================== v4.2: ORIGEM E ATALHOS DE PERÍODO ====================
+function timelineEscape(text) {
+  const div = document.createElement('div');
+  div.textContent = text == null ? '' : String(text);
+  return div.innerHTML;
+}
+
+function setTimelinePeriod(months) {
+  const now = new Date();
+  const end = now.getFullYear() * 12 + now.getMonth();
+  if (months === 'all') {
+    const start = document.getElementById('monthly-filter-start');
+    const first = start && start.options.length ? parseInt(start.options[0].value, 10) : end;
+    state.monthlyFilterStart = first;
+  } else {
+    state.monthlyFilterStart = end - (parseInt(months, 10) - 1);
+  }
+  state.monthlyFilterEnd = end;
+  document.querySelectorAll('#timeline-period-pills .stats-period-pill').forEach(pill => {
+    pill.classList.toggle('active', pill.dataset.months === String(months));
+  });
+  renderTimelineStats();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('#timeline-period-pills .stats-period-pill').forEach(pill => {
+    pill.addEventListener('click', () => setTimelinePeriod(pill.dataset.months));
+  });
+});
+
+
+// v4.2: última audição, para ordenar e mostrar nas Prateleiras
+function lastListenTs(lp) {
+  const dates = lp.listen_dates || [];
+  if (!dates.length) return 0;
+  return Math.max(...dates.map(d => new Date(d).getTime() || 0));
+}
+
+function lastListenLabel(lp) {
+  const ts = lastListenTs(lp);
+  if (!ts) return 'nunca ouvido';
+  const days = Math.floor((Date.now() - ts) / 86400000);
+  if (days <= 0) return 'ouvido hoje';
+  if (days === 1) return 'ouvido ontem';
+  if (days < 60) return `ouvido há ${days} dias`;
+  return `ouvido em ${new Date(ts).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}`;
 }

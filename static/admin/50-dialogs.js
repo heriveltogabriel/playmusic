@@ -271,6 +271,7 @@ function openDetailsDialog(id) {
 
   // Interactive stars
   renderDetailsStars(lp);
+  if (typeof renderDetailsShelves === 'function') renderDetailsShelves(lp);
   
   // Details Action Buttons
   const markListenedBtn = document.getElementById('details-mark-listened');
@@ -321,7 +322,9 @@ function openDetailsDialog(id) {
 }
 
 function renderDetailsStars(lp) {
+  // v4.2: avaliação por estrelas saiu do admin (quase não era usada)
   const container = document.getElementById('details-rating-stars');
+  if (!container) return;
   container.innerHTML = '';
   
   for (let i = 1; i <= 5; i++) {
@@ -472,6 +475,7 @@ function openFormDialog(editId = null) {
 
 function renderFormStars(rating) {
   const container = document.getElementById('form-rating-stars');
+  if (!container) return;
   container.innerHTML = '';
   
   // Track selected rating locally in form
@@ -533,8 +537,10 @@ async function saveFormEntry() {
   
   const coverImage = document.getElementById('form-cover-url').value.trim();
   const notes = document.getElementById('form-notes').value.trim();
-  const rating = parseInt(document.getElementById('form-rating-stars').dataset.rating || 0);
-  const favorite = rating >= 4;
+  // Sem estrelas: mantém a nota e o favorito que o disco já tinha.
+  const existingLp = idInput ? state.lps.find(item => item.id == idInput) : null;
+  const rating = existingLp ? (existingLp.rating || 0) : 0;
+  const favorite = existingLp ? !!existingLp.favorite : false;
   
   const payload = {
     title,

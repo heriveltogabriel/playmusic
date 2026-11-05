@@ -120,7 +120,7 @@
               <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
               </svg>
-              Favoritos
+              Prateleiras
             </button>
           </li>
           <li>
@@ -507,11 +507,20 @@
           </div>
 
           <!-- Filter range of months -->
-          <div class="timeline-filter-row" style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 12px; margin-bottom: 12px; flex-wrap: wrap;">
-            <label style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Filtrar Período:</label>
-            <select id="monthly-filter-start" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 6px; color: #fff; padding: 4px 8px; font-size: 0.75rem; cursor: pointer; outline: none; transition: border-color 0.2s;"></select>
+          <div class="timeline-filter-row" style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 12px; margin-bottom: 4px; flex-wrap: wrap;">
+            <span style="font-size: 0.75rem; color: var(--text-secondary); font-weight: 600;">Período:</span>
+            <div class="stats-period-pills" id="timeline-period-pills">
+              <button type="button" class="stats-period-pill active" data-months="6">6 meses</button>
+              <button type="button" class="stats-period-pill" data-months="12">1 ano</button>
+              <button type="button" class="stats-period-pill" data-months="all">Tudo</button>
+            </div>
+            <!-- As listas de meses ficam escondidas: os atalhos acima preenchem o período -->
+            <div style="display: none;">
+<select id="monthly-filter-start" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 6px; color: #fff; padding: 4px 8px; font-size: 0.75rem; cursor: pointer; outline: none; transition: border-color 0.2s;"></select>
             <span style="font-size: 0.75rem; color: var(--text-muted);">até</span>
             <select id="monthly-filter-end" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 6px; color: #fff; padding: 4px 8px; font-size: 0.75rem; cursor: pointer; outline: none; transition: border-color 0.2s;"></select>
+          
+            </div>
           </div>
 
           <h4 class="timeline-chart-title">Adições Mensais</h4>
@@ -553,7 +562,6 @@
               <option value="year_asc">Ano de Lançamento (Antigo-Novo)</option>
               <option value="title_asc">Título (A-Z)</option>
               <option value="artist_asc">Artista (A-Z)</option>
-              <option value="rating_desc">Avaliação (Maior-Menor)</option>
             </select>
           </div>
         </div>
@@ -592,9 +600,11 @@
 
       <!-- VIEW: FAVORITES (Discos Favoritos) -->
       <section id="view-favorites" class="content-view">
+        <div id="shelf-bar" class="shelf-bar" aria-label="Prateleiras"></div>
+        <div id="shelf-actions" class="shelf-actions"></div>
         <div class="catalog-toolbar">
           <div class="toolbar-left">
-            <span class="results-text">Exibindo <span id="favorites-filtered-count">0</span> favoritos</span>
+            <span class="results-text"><span id="favorites-filtered-count">0</span> <span id="favorites-count-label">discos</span></span>
           </div>
           
           <div class="toolbar-search">
@@ -603,7 +613,7 @@
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
               </svg>
-              <input type="text" id="favorites-search-input" placeholder="Buscar nos favoritos..." autocomplete="off">
+              <input type="text" id="favorites-search-input" placeholder="Buscar na prateleira..." autocomplete="off">
               <button id="clear-favorites-search-btn" class="clear-search-btn" title="Limpar busca" style="display: none;">&times;</button>
             </div>
           </div>
@@ -611,14 +621,14 @@
           <div class="toolbar-right">
             <label for="favorites-sort-select">Ordenar por:</label>
             <select id="favorites-sort-select">
-              <option value="added_desc">Adicionado recentemente</option>
-              <option value="added_asc">Mais antigo na coleção</option>
-              <option value="year_desc">Ano de Lançamento (Novo-Antigo)</option>
-              <option value="year_asc">Ano de Lançamento (Antigo-Novo)</option>
-              <option value="title_asc">Título (A-Z)</option>
+              <option value="plays_desc">Mais ouvidos</option>
+              <option value="listened_desc">Ouvido recentemente</option>
+              <option value="listened_asc">Ouvido há mais tempo</option>
+              <option value="shelf_added_desc">Adicionado à prateleira</option>
+              <option value="added_desc">Adicionado à coleção</option>
+              <option value="year_asc">Ano de lançamento</option>
               <option value="artist_asc">Artista (A-Z)</option>
-              <option value="rating_desc">Avaliação (Maior-Menor)</option>
-              <option value="plays_desc">Audições (Maior-Menor)</option>
+              <option value="title_asc">Título (A-Z)</option>
             </select>
           </div>
         </div>
@@ -642,8 +652,8 @@
           <svg viewBox="0 0 24 24" width="64" height="64" stroke="var(--star-gold)" stroke-width="1.5" fill="none">
             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" stroke-dasharray="4,4"></polygon>
           </svg>
-          <h3>Nenhum disco favoritado</h3>
-          <p>Você ainda não favoritou nenhum disco. Clique na estrela dos discos na coleção para adicioná-los aqui!</p>
+          <h3 id="favorites-empty-title">Nenhum disco favoritado</h3>
+          <p id="favorites-empty-text">Você ainda não favoritou nenhum disco. Clique na estrela dos discos na coleção para adicioná-los aqui!</p>
         </div>
       </section>
 
@@ -840,9 +850,26 @@
 
       <section id="view-settings" class="content-view">
         <div class="settings-container">
+          <nav id="settings-tabs" class="settings-tabs" role="tablist" aria-label="Seções das configurações">
+            <button type="button" class="settings-tab active" data-tab="sistema" role="tab">Sistema</button>
+            <button type="button" class="settings-tab" data-tab="colecao" role="tab">Coleção</button>
+            <button type="button" class="settings-tab" data-tab="apis" role="tab">APIs</button>
+            <button type="button" class="settings-tab" data-tab="player" role="tab">Player e alertas</button>
+            <button type="button" class="settings-tab" data-tab="seguranca" role="tab">Segurança</button>
+          </nav>
+
+          <div data-settings-tab="sistema" class="settings-card" id="system-card">
+            <div class="settings-card-header"><h3>Sistema</h3></div>
+            <p class="settings-card-desc">Como está tudo agora: versão, sincronização, backup, player e Shazam.</p>
+            <div id="system-grid" class="system-grid"></div>
+            <div class="system-actions">
+              <button type="button" id="system-refresh" class="btn btn-secondary">Atualizar</button>
+            </div>
+          </div>
+
           
           <!-- Standalone Sync Collection Bar -->
-          <div class="settings-card sync-collection-bar" style="display: flex; flex-direction: column; gap: 15px; padding: 20px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 12px; margin-bottom: 24px;">
+          <div data-settings-tab="colecao" class="settings-card sync-collection-bar" style="display: flex; flex-direction: column; gap: 15px; padding: 20px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 12px; margin-bottom: 24px;">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 15px; width: 100%;">
               <div style="flex: 1;">
                 <h3 style="margin: 0; font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">Sincronizar Coleção</h3>
@@ -883,7 +910,7 @@
             
             <!-- Discogs Settings Card -->
             <div class="settings-card">
-              <div class="settings-card-header">
+              <div data-settings-tab="apis" class="settings-card-header">
                 <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
                   <circle cx="12" cy="12" r="10"></circle>
                   <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
@@ -918,7 +945,7 @@
 
             <!-- RapidAPI Shazam Settings Card -->
             <div class="settings-card">
-              <div class="settings-card-header">
+              <div data-settings-tab="apis" class="settings-card-header">
                 <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
                   <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
                 </svg>
@@ -952,7 +979,7 @@
 
             <!-- Favorites Settings Card -->
             <div class="settings-card">
-              <div class="settings-card-header">
+              <div data-settings-tab="colecao" class="settings-card-header">
                 <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
                   <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                 </svg>
@@ -970,7 +997,7 @@
 
             <!-- Lyrics Settings Card -->
             <div class="settings-card">
-              <div class="settings-card-header">
+              <div data-settings-tab="oculto" class="settings-card-header">
                 <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
                   <circle cx="12" cy="12" r="10"></circle>
                   <polyline points="12 6 12 12 16 14"></polyline>
@@ -988,7 +1015,7 @@
             </div>
 
             <!-- Action Footer -->
-            <div class="settings-submit-footer">
+            <div data-settings-tab="form" class="settings-submit-footer">
               <button type="submit" id="save-settings-btn" class="btn btn-primary btn-pulse">
                 Salvar Configurações
               </button>
@@ -998,7 +1025,7 @@
 
           <!-- v3.7: status do player e alertas -->
           <div class="settings-card" style="margin-top: 24px;" id="alerts-card">
-            <div class="settings-card-header">
+            <div data-settings-tab="player" class="settings-card-header">
               <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                 <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
@@ -1048,7 +1075,7 @@
 
           <!-- v3.6: aparelhos autorizados (player / Ouvir) -->
           <div class="settings-card" style="margin-top: 24px;" id="devices-card">
-            <div class="settings-card-header">
+            <div data-settings-tab="seguranca" class="settings-card-header">
               <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="7" y="2" width="10" height="20" rx="2" ry="2"></rect>
                 <line x1="12" y1="18" x2="12.01" y2="18"></line>
@@ -1072,7 +1099,7 @@
 
           <!-- Security settings card (Change Password) -->
           <div class="settings-card" style="margin-top: 24px;">
-            <div class="settings-card-header">
+            <div data-settings-tab="seguranca" class="settings-card-header">
               <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
@@ -1186,11 +1213,10 @@
             </div>
           </div>
 
-          <div class="details-rating-block">
-            <span>Avaliação do Colecionador:</span>
-            <div id="details-rating-stars" class="rating-stars clickable-stars" data-lp-id="">
-              <!-- Dynamically populated clickable stars -->
-            </div>
+
+          <div class="details-shelves-block">
+            <span>Prateleiras:</span>
+            <div id="details-shelves" class="details-shelves"></div>
           </div>
 
           <div class="details-notes-block">
@@ -1313,12 +1339,6 @@
               <textarea id="form-notes" rows="3" placeholder="Comentários sobre a edição, estado do vinil, etc."></textarea>
             </div>
             
-            <div class="form-group">
-              <label>Avaliação Inicial</label>
-              <div id="form-rating-stars" class="rating-stars clickable-stars form-stars">
-                <!-- Stars will be populated here -->
-              </div>
-            </div>
           </div>
         </div>
 
@@ -1387,19 +1407,21 @@
   <div id="toast-container" class="toast-container"></div>
 
   <!-- Database & Logic Scripts -->
-  <script src="/static/admin/00-core.js?v=4.2.0" defer></script>
-  <script src="/static/admin/10-agenda.js?v=4.2.0" defer></script>
-  <script src="/static/admin/20-collection.js?v=4.2.0" defer></script>
-  <script src="/static/admin/25-filters.js?v=4.2.1" defer></script>
-  <script src="/static/admin/30-timeline.js?v=4.2.0" defer></script>
-  <script src="/static/admin/40-stats.js?v=4.2.0" defer></script>
-  <script src="/static/admin/45-profile.js?v=4.2.1" defer></script>
-  <script src="/static/admin/50-dialogs.js?v=4.2.0" defer></script>
-  <script src="/static/admin/60-ranking.js?v=4.2.0" defer></script>
-  <script src="/static/admin/70-settings.js?v=4.2.0" defer></script>
-  <script src="/static/admin/80-history.js?v=4.2.0" defer></script>
-  <script src="/static/admin/90-devices-alerts.js?v=4.2.0" defer></script>
-  <script src="/static/admin/95-recognition.js?v=4.2.3" defer></script>
-  <script src="/static/admin/96-diary-care.js?v=4.2.0" defer></script>
+  <script src="/static/admin/00-core.js?v=4.2.4" defer></script>
+  <script src="/static/admin/10-agenda.js?v=4.2.4" defer></script>
+  <script src="/static/admin/20-collection.js?v=4.2.4" defer></script>
+  <script src="/static/admin/25-filters.js?v=4.2.4" defer></script>
+  <script src="/static/admin/30-timeline.js?v=4.2.4" defer></script>
+  <script src="/static/admin/40-stats.js?v=4.2.4" defer></script>
+  <script src="/static/admin/45-profile.js?v=4.2.4" defer></script>
+  <script src="/static/admin/50-dialogs.js?v=4.2.4" defer></script>
+  <script src="/static/admin/60-ranking.js?v=4.2.4" defer></script>
+  <script src="/static/admin/70-settings.js?v=4.2.4" defer></script>
+  <script src="/static/admin/80-history.js?v=4.2.4" defer></script>
+  <script src="/static/admin/90-devices-alerts.js?v=4.2.4" defer></script>
+  <script src="/static/admin/95-recognition.js?v=4.2.4" defer></script>
+  <script src="/static/admin/96-diary-care.js?v=4.2.4" defer></script>
+  <script src="/static/admin/97-shelves.js?v=4.2.4" defer></script>
+  <script src="/static/admin/98-settings-tabs.js?v=4.2.4" defer></script>
 </body>
 </html>

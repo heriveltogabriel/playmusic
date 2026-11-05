@@ -16,6 +16,10 @@ Versões do PlayVinil / Vinyl Display. As mais recentes primeiro.
 - **Menos chamadas ao Shazam**: a conferência de "pausa fora do previsto" vale uma vez por faixa (trechos quietos da mesma música não chamam de novo); faixa sem duração no Discogs é conferida no máximo uma vez, em vez de a cada 90 s; chamada automática até 2 min depois de o Shazam confirmar o disco é recusada pelo servidor sem gastar cota (o botão manual sempre passa).
 - **Motivo de cada chamada** registrado e mostrado em Reconhecimento → "Por que o Shazam foi chamado".
 - `fill_missing_durations.py` busca faixa a faixa no MusicBrainz quando o disco inteiro não bate.
+- **Avaliação por estrelas** removida do admin (ficha, formulário e ordenações).
+- **Linha do Tempo**: atalhos de período (6 meses, 1 ano, tudo) e a origem de cada disco (notas do Discogs).
+- **Prateleiras** no lugar de Favoritos: Favoritos + listas suas (Festa, Domingo de manhã, Emprestados de início), com nota por disco; marcar pela ficha; ordenar por mais ouvidos, ouvido recentemente ou há mais tempo.
+- **Configurações em abas**: Sistema (versão, player, último sync, último backup, Shazam, alertas, banco), Coleção, APIs, Player e alertas, Segurança. O ajuste de tempo da letra saiu (o modo leitura não usa).
 - **Agulha e Cuidados** (novo): horas de agulha, vida útil, previsão de troca, histórico de agulhas e limpeza de cada disco.
 
 ## 4.0.1 — 2026-11-04 — Servidor do Bruno em dia

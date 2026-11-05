@@ -259,6 +259,14 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             report["shazam_usage"] = self.app.shazam_usage()
             self._json(report)
             return
+        if path == "/api/admin/system":
+            from vinyl_display.system_status import build_system_status
+
+            self._json(build_system_status(self.app))
+            return
+        if path == "/api/admin/shelves":
+            self._json({"shelves": self.app.store.list_shelves()})
+            return
         if path == "/api/admin/diary":
             from urllib.parse import parse_qs
 
@@ -703,6 +711,31 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             except Exception as error:
                 self._json({"status": "error", "message": f"Não foi possível falar com o Telegram: {str(error).replace(token, '***') if token else error}"})
             return
+        if path.startswith("/api/admin/shelves/"):
+            payload = self._read_json_body()
+            action = path.rsplit("/", 1)[-1]
+            store = self.app.store
+            try:
+                if action == "create":
+                    store.create_shelf(str(payload.get("name") or ""), str(payload.get("emoji") or ""))
+                elif action == "update":
+                    store.update_shelf(int(payload["id"]), payload.get("name"), payload.get("emoji"))
+                elif action == "delete":
+                    store.delete_shelf(int(payload["id"]))
+                elif action == "item":
+                    note = payload.get("note")
+                    store.set_shelf_item(
+                        int(payload["shelf_id"]), int(payload["release_id"]),
+                        bool(payload.get("present", True)), None if note is None else str(note),
+                    )
+                else:
+                    self.send_error(HTTPStatus.NOT_FOUND)
+                    return
+            except (KeyError, TypeError, ValueError) as error:
+                self._json_status({"status": "error", "message": str(error)}, HTTPStatus.BAD_REQUEST)
+                return
+            self._json({"status": "ok", "shelves": store.list_shelves()})
+            return
         if path == "/api/admin/care/needle":
             from vinyl_display.journal import update_needle
 
@@ -985,8 +1018,11 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
         self.wfile.write(body)
 
     def _json(self, payload: dict) -> None:
+        self._json_status(payload, HTTPStatus.OK)
+
+    def _json_status(self, payload: dict, status: HTTPStatus) -> None:
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-        self.send_response(HTTPStatus.OK)
+        self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
