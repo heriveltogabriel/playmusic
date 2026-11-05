@@ -14,6 +14,9 @@ const RECOGNITION_STATUS_LABELS = {
   gap_ignored: 'Pausa ignorada',
   flip_local: 'Virada sem Shazam',
   flip_rejected: 'Virada recusada',
+  manual_start: 'Disco escolhido à mão',
+  audition_auto: 'Audição marcada',
+  audition_merged: 'Mesma audição (não contou de novo)',
 };
 
 function recCell(row, text, opts = {}) {
