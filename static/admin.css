@@ -5428,3 +5428,15 @@ dialog::backdrop {
   .ranking-stats-summary .stat-mini-card { min-width: 0; padding: 10px 6px; }
   .ranking-stats-summary .mini-card-value { font-size: 1.3rem; }
 }
+
+/* v4.4.2: histórico de audições do Ranking no celular — menos recuo e nome/artista em
+   uma linha cada (antes o recuo duplo espremia os nomes em várias linhas) */
+@media (max-width: 600px) {
+  .ranking-list-section { padding: 16px 12px; }
+  .plays-history-timeline { padding-left: 14px; }
+  .history-month-group { padding-left: 12px !important; }
+  .history-week-group { padding-left: 8px !important; }
+  .history-play-item { padding: 8px !important; gap: 10px; }
+  .history-play-details > div { flex-direction: column; align-items: flex-start !important; gap: 0 !important; flex-wrap: nowrap !important; }
+  .history-play-title, .history-play-artist { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}

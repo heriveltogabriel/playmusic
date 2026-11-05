@@ -2,6 +2,11 @@
 
 Versões do PlayVinil / Vinyl Display. As mais recentes primeiro.
 
+## 4.4.2 — 2026-11-05 — Ranking no celular
+
+- "Discos ouvidos": Semana, Mês e Total lado a lado (o Total caía sozinho embaixo).
+- Histórico de audições com menos recuo e nome/artista sem quebrar em várias linhas.
+
 ## 4.4.1 — 2026-11-05 — Escuta da Semana em lista
 
 - Os 7 dias da semana numa lista (dia e data, capa, disco, situação, "Ouvi" e trocar disco); tocar abre a ficha.
