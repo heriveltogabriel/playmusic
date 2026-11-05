@@ -16,6 +16,7 @@ const ARTIST_RULES = [
 ];
 const ARTIST_DEFAULT_COVER = '/static/logo_lp_da_semana.png';
 let artistOnlyMissing = false;
+let artistShowAll = false; // singles e compactos ficam escondidos por padrão
 let artistCurrent = null;
 
 function artistEsc(text) {
@@ -151,6 +152,7 @@ async function openArtistPage(name, refresh = false) {
         <span id="artist-disco-summary" class="profile-hint"></span>
         <span class="cf-view-toggle-spacer"></span>
         <button type="button" id="artist-only-missing" class="cf-chip ${artistOnlyMissing ? 'active' : ''}">Só os que faltam</button>
+        <button type="button" id="artist-show-all" class="cf-chip ${artistShowAll ? 'active' : ''}">Singles e compactos</button>
         <button type="button" id="artist-refresh" class="cf-link">Atualizar do Discogs</button>
       </div>
       <div id="artist-discography"><p class="profile-hint">Buscando no Discogs…</p></div>
@@ -161,6 +163,11 @@ async function openArtistPage(name, refresh = false) {
   page.querySelector('#artist-only-missing').addEventListener('click', (event) => {
     artistOnlyMissing = !artistOnlyMissing;
     event.target.classList.toggle('active', artistOnlyMissing);
+    renderArtistDiscography(page._discography);
+  });
+  page.querySelector('#artist-show-all').addEventListener('click', (event) => {
+    artistShowAll = !artistShowAll;
+    event.target.classList.toggle('active', artistShowAll);
     renderArtistDiscography(page._discography);
   });
   page.querySelector('#artist-refresh').addEventListener('click', () => openArtistPage(name, true));
@@ -211,9 +218,10 @@ function renderArtistDiscography(disco) {
   }
   if (summary) {
     const when = new Date(disco.fetched_at * 1000).toLocaleDateString('pt-BR');
-    summary.textContent = `você tem ${disco.owned_count} de ${disco.total} · Discogs de ${when}${disco.stale ? ' (sem atualizar)' : ''}`;
+    summary.textContent = `você tem ${disco.owned_count} de ${disco.total} álbuns · Discogs de ${when}${disco.stale ? ' (sem atualizar)' : ''}`;
   }
-  const works = artistOnlyMissing ? disco.works.filter(w => !w.owned_release_ids.length) : disco.works;
+  let works = artistShowAll ? disco.works : disco.works.filter(w => w.album);
+  if (artistOnlyMissing) works = works.filter(w => !w.owned_release_ids.length);
   if (!works.length) {
     box.innerHTML = `<p class="profile-hint">${artistOnlyMissing ? 'Você tem todos. 🎉' : 'O Discogs não lista discos deste artista.'}</p>`;
     return;

@@ -79,12 +79,17 @@ def discography(app: Any, release_ids: list[int], refresh: bool = False, now: fl
             cached = json.loads(raw)
         except ValueError:
             cached = None
-    if not cached or now - float(cached.get("fetched_at", 0)) > CACHE_SECONDS:
+    if not cached or "album_ids" not in cached or now - float(cached.get("fetched_at", 0)) > CACHE_SECONDS:
         if client is None:
             return {"status": "error", "message": "Discogs não configurado."}
         try:
             profile = client.artist_profile(artist["id"])
             items = client.artist_main_releases(artist["id"])
+            try:
+                album_ids = sorted(client.artist_album_master_ids(profile["name"] or artist["name"]))
+            except Exception as error:  # sem a busca, mostra tudo como antes
+                print(f"[ARTIST] Album search failed: {error}")
+                album_ids = None
         except Exception as error:
             if cached:
                 cached["stale"] = True
@@ -102,26 +107,37 @@ def discography(app: Any, release_ids: list[int], refresh: bool = False, now: fl
                 "artist": {"id": artist["id"], "name": profile["name"] or artist["name"],
                            "profile": clean_profile(profile["profile"]), "uri": profile["uri"]},
                 "works": works,
+                "album_ids": album_ids,
             }
             store.set_metadata(cache_key, json.dumps(cached, ensure_ascii=False))
 
     # A coleção inteira entra na conferência: um disco seu pode estar creditado diferente
     all_owned = [(r.release_id, r.title) for r in store.list_releases()]
     mine_first = [(r.release_id, r.title) for r in owned_releases]
+    album_ids = cached.get("album_ids")
+    album_set = set(album_ids) if album_ids else None
     works = []
     for work in cached["works"]:
         owned_ids = _owned_matches(work["title"], mine_first) or (
             _owned_matches(work["title"], all_owned) if len(norm_title(work["title"])) > 8 else []
         )
         url = f"https://www.discogs.com/{'master' if work['type'] == 'master' else 'release'}/{work['id']}"
-        works.append({**work, "owned_release_ids": owned_ids, "url": url})
-    owned_count = sum(1 for w in works if w["owned_release_ids"])
+        if album_set is None:
+            is_album = True
+        elif work["type"] == "master":
+            is_album = work["id"] in album_set
+        else:
+            is_album = any(word in work.get("format", "") for word in ("LP", "Album"))
+        works.append({**work, "owned_release_ids": owned_ids, "url": url, "album": is_album or bool(owned_ids)})
+    albums = [w for w in works if w["album"]]
+    owned_count = sum(1 for w in albums if w["owned_release_ids"])
     return {
         "status": "ok",
         "artist": cached["artist"],
         "works": works,
         "owned_count": owned_count,
-        "total": len(works),
+        "total": len(albums),
+        "others": len(works) - len(albums),
         "fetched_at": cached["fetched_at"],
         "stale": bool(cached.get("stale")),
     }

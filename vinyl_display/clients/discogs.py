@@ -134,6 +134,15 @@ def release_from_discogs(payload: dict[str, Any]) -> Release:
     )
 
 
+def _search_prefix(value: str) -> str:
+    """"Legião Urbana - Dois" → "legiao urbana dois" (para conferir o artista da busca)."""
+    import unicodedata
+
+    value = unicodedata.normalize("NFKD", value or "").encode("ascii", "ignore").decode("ascii").lower()
+    value = value.replace("*", "")
+    return " ".join("".join(ch if ch.isalnum() else " " for ch in value).split())
+
+
 class DiscogsClient:
     def __init__(
         self,
@@ -263,6 +272,29 @@ class DiscogsClient:
             "profile": str(payload.get("profile") or ""),
             "uri": str(payload.get("uri") or ""),
         }
+
+    def artist_album_master_ids(self, artist_name: str, max_pages: int = 3) -> set[int]:
+        """Masters em formato Álbum (LP, CD...) do artista, pela busca do Discogs. A lista
+        de lançamentos do artista mistura compactos e singles; a busca separa os álbuns."""
+        import urllib.parse
+
+        prefix = _search_prefix(artist_name)
+        ids: set[int] = set()
+        page = 1
+        while page <= max_pages:
+            query = urllib.parse.urlencode(
+                {"type": "master", "artist": artist_name, "format": "Album", "per_page": 100, "page": page}
+            )
+            payload = self._request_json(f"{self.api_base}/database/search?{query}")
+            for item in payload.get("results") or []:
+                if _search_prefix(str(item.get("title") or "")).startswith(prefix) and item.get("id"):
+                    ids.add(int(item["id"]))
+            pagination = payload.get("pagination") or {}
+            if int(pagination.get("page", page)) >= int(pagination.get("pages", page)):
+                break
+            page += 1
+            self.sleep_func(self.page_delay_seconds)
+        return ids
 
     def artist_main_releases(self, artist_id: int, max_pages: int = 4) -> list[dict[str, Any]]:
         """Discografia principal do artista (role Main), mais antigos primeiro."""

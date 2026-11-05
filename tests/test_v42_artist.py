@@ -18,6 +18,10 @@ class FakeDiscogs:
         self.calls.append(("artist_profile", artist_id))
         return {"id": artist_id, "name": "Legião Urbana", "profile": "Banda de [a=Renato Russo] e [url=http://x]amigos[/url].", "uri": "u"}
 
+    def artist_album_master_ids(self, name):
+        self.calls.append(("albums", name))
+        return {3, 1}
+
     def artist_main_releases(self, artist_id):
         self.calls.append(("artist_main_releases", artist_id))
         return [
@@ -40,6 +44,8 @@ class ArtistTests(unittest.TestCase):
             self.assertEqual(owned["Que País É Este 1978/1987"], [1])
             self.assertEqual(owned["Mais Do Mesmo"], [2])
             self.assertEqual(owned["Dois"], [])
+            albums = {w["title"]: w["album"] for w in result["works"]}
+            self.assertEqual(albums, {"Dois": True, "Que País É Este 1978/1987": True, "Mais Do Mesmo": True})  # coletânea sua conta
             self.assertEqual((result["owned_count"], result["total"]), (2, 3))
             self.assertEqual(result["artist"]["profile"], "Banda de Renato Russo e amigos.")
             self.assertTrue(result["works"][0]["url"].endswith("/master/3"))
