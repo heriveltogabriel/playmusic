@@ -65,6 +65,7 @@ body.escolhendo button { min-height: 0; }
 .rede { display: flex; align-items: center; gap: 24px; padding: 28px 32px; border-radius: 20px; background: rgba(242,236,226,0.06); border: 1px solid rgba(242,236,226,0.12); }
 .rede-icone { width: 72px; height: 72px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
 .rede-icone img { width: 72px; height: 72px; object-fit: contain; }
+.rede-icone.generico { border-radius: 18px; background: rgba(230,92,0,0.14); color: var(--destaque); }
 .rede-textos { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .rede-titulo { font-size: 30px; font-weight: 700; }
 .rede-perfil { font-size: 22px; color: var(--suave); }
