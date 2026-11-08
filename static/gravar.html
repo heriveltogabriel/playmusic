@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/styles.css?v=4.5.7">
-  <link rel="stylesheet" href="/static/gravar.css?v=4.5.9e">
+  <link rel="stylesheet" href="/static/gravar.css?v=4.6.0a">
 </head>
 <body class="escolhendo">
   <!-- Passo 1: escolher o disco -->
@@ -66,10 +66,11 @@
     <div id="stage" class="stage">
     <div id="tela-marca" class="tela tela-marca">
       <div class="marca-disco-area">
-        <div class="disco disco-grande gira">
-          <img src="/static/logo_lp_da_semana.png" alt="Logo LP da Semana" class="disco-logo">
+        <div class="disco-marca">
+          <div class="vinyl-disc-inner gira-marca">
+            <div id="rotulo-marca" class="vinyl-label"></div>
+          </div>
         </div>
-        <p class="marca-frase">Vem ouvir comigo</p>
       </div>
       <div class="redes">
         <div class="rede">
@@ -82,12 +83,12 @@
         </div>
         <div class="acoes">
           <div class="acao">
-            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
-            <span>Ative o sininho</span>
-          </div>
-          <div class="acao">
             <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10v12"></path><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"></path></svg>
             <span>Deixe seu like</span>
+          </div>
+          <div class="acao">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
+            <span>Ative o sininho</span>
           </div>
         </div>
       </div>
@@ -96,6 +97,6 @@
     <p id="dica" class="dica">Toque: tela cheia · segurar 2 s: sair</p>
   </section>
   <script src="/static/silence-detector.js?v=4.5.4" defer></script>
-  <script src="/static/gravar.js?v=4.5.9e" defer></script>
+  <script src="/static/gravar.js?v=4.6.0a" defer></script>
 </body>
 </html>

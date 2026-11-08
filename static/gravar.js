@@ -159,6 +159,7 @@ function abrirPalco(release, lado) {
   const capa = release.cover_url || "/static/playvinil-cover.svg";
   $("capa").src = capa;
   $("rotulo").style.backgroundImage = `url("${capa}")`;
+  $("rotulo-marca").style.backgroundImage = `url("${capa}")`;
   $("banda").textContent = release.artist || "";
   $("album").textContent = release.title || "";
   discoAtual = release.release_id || release.id || null;
