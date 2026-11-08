@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="icon" href="/static/playvinil-favicon.png?v=2" type="image/png">
+  <title>PlayVinil · Modo gravação</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/gravar.css?v=4.5.6">
+</head>
+<body>
+  <!-- Passo 1: escolher o disco -->
+  <section id="escolha" class="escolha">
+    <header class="escolha-topo">
+      <div>
+        <h1>Modo gravação</h1>
+        <p>Escolha o disco que vai gravar. A tela fica parada, sem Shazam e sem acompanhar as faixas.</p>
+      </div>
+      <a class="btn-sair" href="./">Voltar ao player</a>
+    </header>
+    <button id="usar-atual" class="usar-atual hidden" type="button"></button>
+    <input id="busca" class="busca" type="search" placeholder="Buscar por disco ou artista..." autocomplete="off">
+    <div id="lista" class="lista"></div>
+    <div id="lados" class="lados hidden"></div>
+  </section>
+
+  <!-- Passo 2: as duas telas que alternam -->
+  <section id="palco" class="palco hidden" aria-live="off">
+    <div id="stage" class="stage">
+    <div id="tela-capa" class="tela tela-capa visivel">
+      <div class="capa-area">
+        <div class="disco gira"><div class="disco-rotulo"></div></div>
+        <img id="capa" class="capa" alt="">
+      </div>
+      <div class="capa-info">
+        <div class="marca">
+          <img src="/static/logo_lp_da_semana.png" alt="LP da Semana" class="marca-logo">
+          <div class="marca-textos">
+            <span class="marca-nome">LP DA SEMANA</span>
+            <span class="marca-sub">Vem ouvir comigo</span>
+          </div>
+        </div>
+        <h2 id="album" class="album"></h2>
+        <p id="artista" class="artista"></p>
+        <p id="detalhe" class="detalhe"></p>
+      </div>
+    </div>
+
+    <div id="tela-marca" class="tela tela-marca">
+      <div class="marca-disco-area">
+        <div class="disco disco-grande gira">
+          <img src="/static/logo_lp_da_semana.png" alt="Logo LP da Semana" class="disco-logo">
+        </div>
+        <p class="marca-frase">Vem ouvir comigo</p>
+      </div>
+      <div class="redes">
+        <div class="rede">
+          <div class="rede-icone"><img src="/static/gravar/youtube.png" alt="" class="icone-oficial"></div>
+          <div class="rede-textos"><span class="rede-titulo">Inscreva-se no canal</span><span class="rede-perfil">YouTube · LP da Semana</span></div>
+        </div>
+        <div class="rede">
+          <div class="rede-icone"><img src="/static/gravar/instagram.png" alt="" class="icone-oficial"></div>
+          <div class="rede-textos"><span class="rede-titulo">Siga no Instagram</span><span class="rede-perfil">@lpdasemana</span></div>
+        </div>
+        <div class="acoes">
+          <div class="acao">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
+            <span>Ative o sininho</span>
+          </div>
+          <div class="acao">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10v12"></path><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"></path></svg>
+            <span>Deixe seu like</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+    <p id="dica" class="dica">Toque para tela cheia · segure 2 segundos para sair</p>
+  </section>
+  <script src="/static/gravar.js?v=4.5.6" defer></script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+/* v4.5.6: Modo gravação — tela parada para os vídeos do LP da Semana */
+:root {
+  --fundo: #0d0d0d;
+  --texto: #f2ece2;
+  --suave: #b8b0a3;
+  --destaque: #e65c00;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--fundo); color: var(--texto); font-family: Inter, system-ui, sans-serif; }
+.hidden { display: none !important; }
+
+/* ---------- escolha do disco ---------- */
+.escolha { max-width: 1100px; margin: 0 auto; padding: 24px 16px 48px; }
+.escolha-topo { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.escolha h1 { margin: 0 0 6px; font-family: 'DM Serif Display', Georgia, serif; font-weight: 400; font-size: 2rem; }
+.escolha p { margin: 0; color: var(--suave); }
+.btn-sair { color: var(--texto); border: 1px solid rgba(242,236,226,0.2); border-radius: 999px; padding: 10px 18px; text-decoration: none; white-space: nowrap; }
+.usar-atual { margin-top: 20px; width: 100%; text-align: left; padding: 14px 18px; border-radius: 14px; border: 1px solid var(--destaque); background: rgba(230,92,0,0.12); color: var(--texto); font: inherit; font-weight: 600; cursor: pointer; }
+.busca { width: 100%; margin: 20px 0 16px; padding: 14px 16px; border-radius: 12px; border: 1px solid rgba(242,236,226,0.15); background: #181818; color: var(--texto); font: inherit; }
+.lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
+.item { display: flex; flex-direction: column; gap: 6px; padding: 0; border: 0; background: none; color: var(--texto); text-align: left; cursor: pointer; font: inherit; min-width: 0; }
+.item img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; background: #222; }
+.item-titulo { font-weight: 600; font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item-artista { color: var(--suave); font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lados { margin-top: 24px; display: flex; flex-direction: column; gap: 16px; }
+.lados-titulo { font-size: 1.2rem; font-weight: 600; }
+.lados-botoes { display: flex; flex-wrap: wrap; gap: 12px; }
+.lados button { min-height: 48px; padding: 0 22px; border-radius: 999px; border: 1px solid rgba(242,236,226,0.2); background: #1c1c1c; color: var(--texto); font: inherit; font-weight: 600; cursor: pointer; }
+.lados button.principal { background: var(--destaque); border-color: var(--destaque); }
+
+/* ---------- palco 1280x720, escalado para caber na tela ---------- */
+.palco { position: fixed; inset: 0; background: var(--fundo); overflow: hidden; cursor: none; user-select: none; -webkit-user-select: none; }
+.stage { position: absolute; left: 50%; top: 50%; width: 1280px; height: 720px; transform-origin: center center; }
+.tela { position: absolute; inset: 0; opacity: 0; transition: opacity 1.5s ease; }
+.tela.visivel { opacity: 1; }
+.dica { position: absolute; left: 0; right: 0; bottom: 14px; margin: 0; text-align: center; color: rgba(242,236,226,0.5); font-size: 14px; transition: opacity 1s ease; }
+.dica.some { opacity: 0; }
+
+@keyframes girar { to { transform: rotate(360deg); } }
+.gira { animation: girar 12s linear infinite; }
+.disco { border-radius: 50%; background: repeating-radial-gradient(circle at center, #121212 0px, #121212 2px, #1c1c1c 3px, #121212 4px); box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+
+/* tela 1: capa */
+.tela-capa { display: flex; align-items: center; gap: 72px; padding: 0 96px 0 88px; background: radial-gradient(ellipse at 30% 50%, #1d1a17 0%, #0d0d0d 70%); }
+.capa-area { position: relative; width: 640px; height: 470px; flex-shrink: 0; }
+.capa-area .disco { position: absolute; left: 190px; top: 15px; width: 440px; height: 440px; }
+.disco-rotulo { position: absolute; left: 150px; top: 150px; width: 140px; height: 140px; border-radius: 50%; background: var(--destaque); }
+.disco-rotulo::after { content: ""; position: absolute; left: 63px; top: 63px; width: 14px; height: 14px; border-radius: 50%; background: var(--fundo); }
+.capa { position: absolute; left: 0; top: 0; width: 470px; height: 470px; object-fit: cover; border-radius: 10px; background: #2a2622; box-shadow: 0 30px 80px rgba(0,0,0,0.7); }
+.capa-info { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.marca { display: flex; align-items: center; gap: 18px; }
+.marca-logo { width: 92px; height: 92px; border-radius: 50%; object-fit: cover; }
+.marca-textos { display: flex; flex-direction: column; gap: 4px; }
+.marca-nome { font-size: 36px; font-weight: 700; letter-spacing: 0.08em; color: var(--destaque); line-height: 1; white-space: nowrap; }
+.marca-sub { font-size: 18px; font-weight: 500; color: var(--suave); }
+.album { margin: 18px 0 0; font-family: 'DM Serif Display', Georgia, serif; font-weight: 400; font-size: 64px; line-height: 1.02; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.artista { margin: 0; font-size: 30px; font-weight: 600; }
+.detalhe { margin: 0; font-size: 20px; color: var(--suave); }
+
+/* tela 2: marca do canal */
+.tela-marca { display: flex; align-items: center; justify-content: center; gap: 96px; padding: 0 96px; background: radial-gradient(ellipse at 50% 40%, #1d1a17 0%, #0d0d0d 72%); }
+.marca-disco-area { display: flex; flex-direction: column; align-items: center; gap: 22px; flex-shrink: 0; }
+.disco-grande { width: 400px; height: 400px; display: flex; align-items: center; justify-content: center; }
+.disco-logo { width: 170px; height: 170px; border-radius: 50%; object-fit: cover; }
+.marca-frase { margin: 0; font-family: 'DM Serif Display', Georgia, serif; font-size: 40px; }
+.redes { display: flex; flex-direction: column; gap: 28px; width: 520px; }
+.rede { display: flex; align-items: center; gap: 24px; padding: 28px 32px; border-radius: 20px; background: rgba(242,236,226,0.06); border: 1px solid rgba(242,236,226,0.12); }
+.rede-icone { width: 72px; height: 72px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.rede-icone img { width: 72px; height: 72px; object-fit: contain; }
+.rede-textos { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.rede-titulo { font-size: 30px; font-weight: 700; }
+.rede-perfil { font-size: 22px; color: var(--suave); }
+.acoes { display: flex; gap: 20px; }
+.acao { flex: 1; display: flex; align-items: center; gap: 14px; padding: 18px 22px; border-radius: 16px; background: rgba(242,236,226,0.06); color: var(--destaque); }
+.acao span { font-size: 22px; font-weight: 600; color: var(--texto); }

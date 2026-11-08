@@ -54,3 +54,18 @@ class MicSensitivityTests(unittest.TestCase):
         self.assertIn("steadyRatio() >= STEADY_MIN_RATIO", js)
         self.assertIn("LOUD_SECONDS_NEEDED = 4", js)
         self.assertIn("30000 * Math.pow(2, steps)", js)
+
+
+class ModoGravacaoTests(unittest.TestCase):
+    def test_recording_page_exists_and_has_no_microphone(self):
+        root = Path(__file__).resolve().parent.parent
+        html = (root / "static" / "gravar.html").read_text(encoding="utf-8")
+        js = (root / "static" / "gravar.js").read_text(encoding="utf-8")
+        self.assertIn("Inscreva-se no canal", html)
+        self.assertIn("@lpdasemana", html)
+        self.assertIn("LP DA SEMANA", html)
+        self.assertNotIn("getUserMedia", js)
+        self.assertIn("/api/playback/start_manual", js)
+        self.assertIn('href="./gravar"', (root / "static" / "index.html").read_text(encoding="utf-8"))
+        server = (root / "vinyl_display" / "server.py").read_text(encoding="utf-8")
+        self.assertIn('self._send_static("gravar.html")', server)

@@ -174,6 +174,9 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
         if path == "/ouvir" or path == "/ouvir/":
             self._send_static("ouvir.html")
             return
+        if path == "/gravar" or path == "/gravar/":
+            self._send_static("gravar.html")
+            return
         if path == "/agenda" or path == "/agenda/":
             self._send_static("agenda.html")
             return
@@ -195,6 +198,7 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                     "artist": r.get("artist"),
                     "year": r.get("year"),
                     "cover_url": r.get("cover_url"),
+                    "label": (r.get("labels") or [""])[0],
                     "plays": r.get("auditions", 0),
                     "synced_at": r.get("synced_at") or 0.0
                 }
