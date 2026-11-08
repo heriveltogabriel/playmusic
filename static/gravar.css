@@ -45,7 +45,11 @@ body.escolhendo button { min-height: 0; }
 /* tela 1: usa o layout do player (styles.css); aqui só o que muda */
 #tela-capa { position: absolute; inset: 0; }
 #tela-capa .status-label { white-space: nowrap; }
-#tela-capa .lado-container { margin-top: 24px; }
+.bloco-texto { display: flex; flex-direction: column; align-self: flex-start; max-width: 100%; }
+#tela-capa .status-label { white-space: nowrap; letter-spacing: 0.15em; margin-right: -0.15em; }
+.alinha-direita { text-align: right; }
+.linha-lado { display: flex; justify-content: flex-end; align-items: center; gap: 14px; margin-top: 12px; }
+.linha-lado .album-line { margin: 0; }
 #lado-botoes { transition: opacity 0.6s ease; }
 #lado-botoes.some { opacity: 0; }
 

@@ -112,6 +112,26 @@ let ladoAtual = "";
 function mostrarLado() {
   $("lado").textContent = ladoAtual ? `Lado ${ladoAtual}` : "";
 }
+
+// "LP DA SEMANA · VEM OUVIR COMIGO" ocupa a mesma largura do nome da banda; o álbum e o
+// lado ficam alinhados à direita dessa largura
+function ajustarTextos() {
+  const banda = $("banda");
+  const rotulo = $("rotulo-canal");
+  const bloco = $("bloco");
+  if (!banda.firstChild) return;
+  bloco.style.width = "";
+  rotulo.style.fontSize = "";
+  const faixa = document.createRange();
+  faixa.selectNodeContents(banda);
+  const largura = Math.min(faixa.getBoundingClientRect().width, banda.parentElement.parentElement.clientWidth);
+  const base = parseFloat(getComputedStyle(rotulo).fontSize);
+  const atual = rotulo.scrollWidth;
+  const tamanho = Math.max(base, Math.min(base * 2.6, base * (largura / atual)));
+  rotulo.style.fontSize = `${tamanho}px`;
+  bloco.style.width = `${Math.max(largura, rotulo.scrollWidth)}px`;
+}
+window.addEventListener("resize", () => { if (!palco.classList.contains("hidden")) ajustarTextos(); });
 async function mudarLado(passo) {
   if (!discoAtual || ladosDoDisco.length < 2) return;
   const i = Math.max(0, ladosDoDisco.indexOf(ladoAtual));
@@ -147,6 +167,8 @@ function abrirPalco(release, lado) {
   document.body.classList.remove("escolhendo");
   document.body.classList.add("is-playing");
   ajustarEscala();
+  ajustarTextos();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(ajustarTextos);
   manterAcesa();
   alternar();
   mostrarBotoes();
