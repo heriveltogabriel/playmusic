@@ -45,6 +45,9 @@ body.escolhendo button { min-height: 0; }
 /* tela 1: usa o layout do player (styles.css); aqui só o que muda */
 #tela-capa { position: absolute; inset: 0; }
 #tela-capa .status-label { white-space: nowrap; }
+#tela-capa .lado-container { margin-top: 24px; }
+#lado-botoes { transition: opacity 0.6s ease; }
+#lado-botoes.some { opacity: 0; }
 
 /* tela 2: marca do canal */
 .tela-marca { display: flex; align-items: center; justify-content: center; gap: 96px; padding: 0 96px; background: radial-gradient(ellipse at 50% 40%, #1d1a17 0%, #0d0d0d 72%); }

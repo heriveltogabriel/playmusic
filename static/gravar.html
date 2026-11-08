@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/styles.css?v=4.5.7">
-  <link rel="stylesheet" href="/static/gravar.css?v=4.5.7">
+  <link rel="stylesheet" href="/static/gravar.css?v=4.5.8">
 </head>
 <body class="escolhendo">
   <!-- Passo 1: escolher o disco -->
@@ -46,7 +46,20 @@
         <p class="status-label">LP DA SEMANA · VEM OUVIR COMIGO</p>
         <h1 id="banda"></h1>
         <p id="album" class="artist-name"></p>
-        <p id="lado" class="album-line"></p>
+        <div class="next-track-container lado-container">
+          <div class="next-track">
+            <span class="next-track-label">Lado do disco:</span>
+            <div id="lado" class="next-track-title"></div>
+          </div>
+          <div id="lado-botoes" class="media-nav-buttons">
+            <button id="lado-anterior" class="btn-media-nav" type="button" aria-label="Lado anterior" title="Lado anterior">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+            </button>
+            <button id="lado-proximo" class="btn-media-nav" type="button" aria-label="Próximo lado" title="Próximo lado">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6 18l8.5-6L6 6zm9-12h2v12h-2z"/></svg>
+            </button>
+          </div>
+        </div>
       </section>
     </main>
 
@@ -81,8 +94,9 @@
       </div>
     </div>
     </div>
-    <p id="dica" class="dica">Toque: tela cheia · dois toques: próximo lado · segurar 2 s: sair</p>
+    <p id="dica" class="dica">Toque: tela cheia · segurar 2 s: sair</p>
   </section>
-  <script src="/static/gravar.js?v=4.5.7" defer></script>
+  <script src="/static/silence-detector.js?v=4.5.4" defer></script>
+  <script src="/static/gravar.js?v=4.5.8" defer></script>
 </body>
 </html>

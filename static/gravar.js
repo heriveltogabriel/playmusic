@@ -112,17 +112,19 @@ let ladoAtual = "";
 function mostrarLado() {
   $("lado").textContent = ladoAtual ? `Lado ${ladoAtual}` : "";
 }
-async function proximoLado() {
+async function mudarLado(passo) {
   if (!discoAtual || ladosDoDisco.length < 2) return;
-  const i = ladosDoDisco.indexOf(ladoAtual);
-  ladoAtual = ladosDoDisco[(i + 1) % ladosDoDisco.length];
+  const i = Math.max(0, ladosDoDisco.indexOf(ladoAtual));
+  const novo = ladosDoDisco[(i + passo + ladosDoDisco.length) % ladosDoDisco.length];
+  ladoAtual = novo;
   mostrarLado();
   try {
-    await pedir("/api/playback/start_manual", {
+    const res = await pedir("/api/playback/start_manual", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ release_id: discoAtual, side: ladoAtual }),
+      body: JSON.stringify({ release_id: discoAtual, side: novo }),
     });
+    if (res && res.state) estadoServidor = res.state;
   } catch (e) { /* a tela segue igual */ }
 }
 
@@ -147,6 +149,10 @@ function abrirPalco(release, lado) {
   ajustarEscala();
   manterAcesa();
   alternar();
+  mostrarBotoes();
+  ligarOuvido();
+  atualizarEstado();
+  setInterval(atualizarEstado, 10000);
   setTimeout(() => $("dica").classList.add("some"), 6000);
 }
 
@@ -209,22 +215,86 @@ palco.addEventListener("pointerdown", () => {
   })
 );
 
-let ultimoToque = 0;
-let toqueSimples = null;
 function toque() {
-  const agora = Date.now();
-  if (agora - ultimoToque < 400) {
-    clearTimeout(toqueSimples);
-    ultimoToque = 0;
-    proximoLado();
-    return;
+  mostrarBotoes();
+  if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+    document.documentElement.requestFullscreen().catch(() => {});
   }
-  ultimoToque = agora;
-  toqueSimples = setTimeout(() => {
-    if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
-      document.documentElement.requestFullscreen().catch(() => {});
+}
+
+// botões de lado: aparecem ao tocar e somem depois de 5 s (não ficam no vídeo)
+let botoesTimer = null;
+function mostrarBotoes() {
+  const b = $("lado-botoes");
+  b.classList.remove("some");
+  clearTimeout(botoesTimer);
+  botoesTimer = setTimeout(() => b.classList.add("some"), 5000);
+}
+["lado-anterior", "lado-proximo"].forEach((id, n) => {
+  $(id).addEventListener("pointerdown", (e) => e.stopPropagation());
+  $(id).addEventListener("pointerup", (e) => e.stopPropagation());
+  $(id).addEventListener("click", (e) => {
+    e.stopPropagation();
+    mostrarBotoes();
+    mudarLado(n === 0 ? -1 : 1);
+  });
+});
+
+// ---------- virada automática pelo silêncio (microfone só mede o volume, sem Shazam) ----------
+let estadoServidor = null;
+let detector = null;
+async function ligarOuvido() {
+  if (detector || !window.VinylSilence || !navigator.mediaDevices) return;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === "suspended") await ctx.resume();
+    const analisador = ctx.createAnalyser();
+    analisador.fftSize = 2048;
+    ctx.createMediaStreamSource(stream).connect(analisador);
+    detector = new window.VinylSilence.SilenceDetector();
+    const amostras = new Uint8Array(analisador.fftSize);
+    setInterval(() => {
+      if (ctx.state !== "running") { ctx.resume().catch(() => {}); return; }
+      analisador.getByteTimeDomainData(amostras);
+      let soma = 0;
+      for (let i = 0; i < amostras.length; i++) { const v = (amostras[i] - 128) / 128; soma += v * v; }
+      const ev = detector.push(Math.sqrt(soma / amostras.length), Date.now());
+      if (ev) somVoltou(ev);
+    }, 250);
+  } catch (e) {
+    console.warn("Sem microfone: a virada fica pelos botões.", e);
+  }
+}
+
+async function atualizarEstado() {
+  try {
+    estadoServidor = await pedir("/api/state");
+    const lado = ladoDoEstado(estadoServidor);
+    if (lado && estadoServidor.status === "playing" && lado !== ladoAtual) {
+      ladoAtual = lado;
+      mostrarLado();
     }
-  }, 420);
+  } catch (e) { /* sem rede: tenta de novo */ }
+}
+
+async function somVoltou(ev) {
+  if (!estadoServidor) return;
+  // só a virada interessa aqui: pausas entre faixas e trechos baixos são ignorados
+  const acao = window.VinylSilence.decideOnResume(ev, estadoServidor);
+  if (acao !== "flip") return;
+  try {
+    const res = await pedir("/api/playback/flip", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ago_seconds: (Date.now() - ev.resumedAt) / 1000, gap_seconds: Math.round(ev.gapMs / 100) / 10 }),
+    });
+    if (res && res.state) {
+      estadoServidor = res.state;
+      const lado = ladoDoEstado(res.state);
+      if (lado) { ladoAtual = lado; mostrarLado(); }
+    }
+  } catch (e) { /* segue: os botões corrigem */ }
 }
 
 // ícones oficiais (YouTube, Instagram): enquanto o arquivo não existir, o espaço some
