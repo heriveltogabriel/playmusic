@@ -13,10 +13,12 @@ body.escolhendo button { min-height: 0; }
 
 /* ---------- escolha do disco ---------- */
 .escolha { max-width: 1100px; margin: 0 auto; padding: 24px 16px 48px; }
-.escolha-topo { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.escolha-topo { display: flex; align-items: center; gap: 16px; }
 .escolha h1 { margin: 0 0 6px; font-family: 'DM Serif Display', Georgia, serif; font-weight: 400; font-size: 2rem; }
 .escolha p { margin: 0; color: var(--suave); }
-.btn-sair { color: var(--texto); border: 1px solid rgba(242,236,226,0.2); border-radius: 999px; padding: 10px 18px; text-decoration: none; white-space: nowrap; }
+.btn-voltar { order: -1; flex-shrink: 0; width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; color: var(--texto); background: rgba(242,236,226,0.06); border: 1px solid rgba(242,236,226,0.2); text-decoration: none; }
+.btn-voltar:hover { border-color: var(--destaque); color: var(--destaque); }
+.escolha-titulo { flex: 1; min-width: 0; }
 .usar-atual { margin-top: 20px; width: 100%; text-align: left; padding: 14px 18px; border-radius: 14px; border: 1px solid var(--destaque); background: rgba(230,92,0,0.12); color: var(--texto); font: inherit; font-weight: 600; cursor: pointer; }
 .busca { width: 100%; margin: 20px 0 16px; padding: 14px 16px; border-radius: 12px; border: 1px solid rgba(242,236,226,0.15); background: #181818; color: var(--texto); font: inherit; }
 .lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }

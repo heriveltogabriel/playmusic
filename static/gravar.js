@@ -232,7 +232,7 @@ palco.addEventListener("pointerdown", () => {
   segurando = setTimeout(() => {
     segurando = null;
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-    window.location.href = "./";
+    window.location.href = "/";
   }, 2000);
 });
 ["pointerup", "pointercancel", "pointerleave"].forEach((ev) =>

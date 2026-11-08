@@ -67,6 +67,7 @@ class ModoGravacaoTests(unittest.TestCase):
         self.assertNotIn("/api/recognize", js)  # microfone só mede o volume para a virada
         self.assertIn("/api/playback/flip", js)
         self.assertIn("/api/playback/start_manual", js)
-        self.assertIn('href="./gravar"', (root / "static" / "index.html").read_text(encoding="utf-8"))
+        self.assertNotIn("gravar-button", (root / "static" / "index.html").read_text(encoding="utf-8"))
+        self.assertIn("/vinyl/gravar", (root / "static" / "herivelto.html").read_text(encoding="utf-8"))
         server = (root / "vinyl_display" / "server.py").read_text(encoding="utf-8")
         self.assertIn('self._send_static("gravar.html")', server)

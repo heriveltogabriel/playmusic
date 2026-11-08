@@ -10,17 +10,19 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/styles.css?v=4.5.7">
-  <link rel="stylesheet" href="/static/gravar.css?v=4.6.2">
+  <link rel="stylesheet" href="/static/gravar.css?v=4.6.3">
 </head>
 <body class="escolhendo">
   <!-- Passo 1: escolher o disco -->
   <section id="escolha" class="escolha">
     <header class="escolha-topo">
-      <div>
+      <div class="escolha-titulo">
         <h1>Modo gravação</h1>
-        <p>Escolha o disco que vai gravar. A tela fica parada, sem Shazam e sem acompanhar as faixas.</p>
+        <p>Escolha o disco que vai gravar. A tela fica parada, sem Shazam e sem mostrar as músicas.</p>
       </div>
-      <a class="btn-sair" href="./">Voltar ao player</a>
+      <a class="btn-voltar" href="/" aria-label="Voltar para a tela inicial" title="Voltar">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"></path><path d="m12 19-7-7 7-7"></path></svg>
+      </a>
     </header>
     <button id="usar-atual" class="usar-atual hidden" type="button"></button>
     <input id="busca" class="busca" type="search" placeholder="Buscar por disco ou artista..." autocomplete="off">
@@ -94,9 +96,9 @@
       </div>
     </div>
     </div>
-    <p id="dica" class="dica">Toque: tela cheia · segurar 2 s: sair</p>
+    <p id="dica" class="dica">Toque: tela cheia · segurar 2 s: voltar</p>
   </section>
   <script src="/static/silence-detector.js?v=4.5.4" defer></script>
-  <script src="/static/gravar.js?v=4.6.2" defer></script>
+  <script src="/static/gravar.js?v=4.6.3" defer></script>
 </body>
 </html>
