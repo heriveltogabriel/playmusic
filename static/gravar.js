@@ -115,6 +115,11 @@ function mostrarLado() {
 
 // "LP DA SEMANA · VEM OUVIR COMIGO" ocupa a mesma largura do nome da banda; o álbum e o
 // lado ficam alinhados à direita dessa largura
+function larguraTexto(el) {
+  const faixa = document.createRange();
+  faixa.selectNodeContents(el);
+  return faixa.getBoundingClientRect().width;
+}
 function ajustarTextos() {
   const banda = $("banda");
   const rotulo = $("rotulo-canal");
@@ -122,14 +127,16 @@ function ajustarTextos() {
   if (!banda.firstChild) return;
   bloco.style.width = "";
   rotulo.style.fontSize = "";
-  const faixa = document.createRange();
-  faixa.selectNodeContents(banda);
-  const largura = Math.min(faixa.getBoundingClientRect().width, banda.parentElement.parentElement.clientWidth);
-  const base = parseFloat(getComputedStyle(rotulo).fontSize);
-  const atual = rotulo.scrollWidth;
-  const tamanho = Math.max(base, Math.min(base * 2.6, base * (largura / atual)));
-  rotulo.style.fontSize = `${tamanho}px`;
-  bloco.style.width = `${Math.max(largura, rotulo.scrollWidth)}px`;
+  const largura = Math.min(larguraTexto(banda), banda.parentElement.parentElement.clientWidth);
+  // a largura visível das letras (sem o espaçamento que sobra depois da última) igual à da banda
+  let tamanho = parseFloat(getComputedStyle(rotulo).fontSize);
+  for (let i = 0; i < 4; i++) {
+    const visivel = larguraTexto(rotulo) - 0.15 * tamanho;
+    if (visivel <= 0) break;
+    tamanho = Math.min(80, tamanho * (largura / visivel));
+    rotulo.style.fontSize = `${tamanho}px`;
+  }
+  bloco.style.width = `${largura}px`;
 }
 window.addEventListener("resize", () => { if (!palco.classList.contains("hidden")) ajustarTextos(); });
 async function mudarLado(passo) {
