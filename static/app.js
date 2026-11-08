@@ -1905,6 +1905,7 @@ function updateLyricsSyncLabel() {
 }
 
 function toggleFullscreen() {
+  if (typeof appEmTelaCheia !== "undefined" && appEmTelaCheia) return;
   if (!document.fullscreenElement) {
     document.documentElement.requestFullscreen().catch((err) => {
       console.error("Erro ao ativar tela cheia:", err);
@@ -1913,6 +1914,11 @@ function toggleFullscreen() {
     document.exitFullscreen();
   }
 }
+
+// v4.6.5: aberto pelo ícone da tela inicial (app em tela cheia), o Android não mostra o aviso
+// "Para sair da tela cheia..."; aí o botão de tela cheia nem aparece
+const appEmTelaCheia = window.matchMedia && window.matchMedia("(display-mode: fullscreen)").matches;
+if (appEmTelaCheia && elements.fullscreenButton) elements.fullscreenButton.style.display = "none";
 
 if (elements.fullscreenButton) {
   elements.fullscreenButton.addEventListener("click", (e) => {

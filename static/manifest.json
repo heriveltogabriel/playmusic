@@ -1,8 +1,8 @@
 {
   "name": "PlayVinil",
   "short_name": "PlayVinil",
-  "start_url": "/",
-  "display": "standalone",
+  "start_url": "../",
+  "display": "fullscreen",
   "background_color": "#050505",
   "theme_color": "#050505",
   "description": "O disco que está tocando na sua vitrola",
@@ -17,5 +17,11 @@
       "sizes": "180x180",
       "type": "image/png"
     }
-  ]
+  ],
+  "display_override": [
+    "fullscreen",
+    "standalone"
+  ],
+  "scope": "../",
+  "orientation": "landscape"
 }
