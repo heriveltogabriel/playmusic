@@ -101,8 +101,11 @@ def release_from_discogs(payload: dict[str, Any]) -> Release:
             # soma das durações. Antes as partes eram descartadas e a faixa sumia do disco.
             subs = [sub for sub in (item.get("sub_tracks") or []) if sub.get("type_", "track") == "track"]
             title = str(item.get("title") or "").strip()
-            position = next((str(sub.get("position") or "").strip() for sub in subs if sub.get("position")), "")
-            position = position or str(item.get("position") or "").strip()
+            # posição do próprio índice ("B6") quando houver; senão a da primeira parte ("A1")
+            position = str(item.get("position") or "").strip()
+            if not position:
+                position = next((str(sub.get("position") or "").strip() for sub in subs if sub.get("position")), "")
+                position = position.split(".")[0]
             if not title or not position:
                 continue
             duration = parse_duration(item.get("duration")) or sum(parse_duration(sub.get("duration")) or 0 for sub in subs)

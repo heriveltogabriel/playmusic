@@ -38,7 +38,7 @@ html, body { margin: 0; height: 100%; background: var(--fundo); color: var(--tex
 
 @keyframes girar { to { transform: rotate(360deg); } }
 .gira { animation: girar 12s linear infinite; }
-.disco { border-radius: 50%; background: repeating-radial-gradient(circle at center, #121212 0px, #121212 2px, #1c1c1c 3px, #121212 4px); box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+.disco { border-radius: 50%; background: conic-gradient(from 0deg, rgba(255,255,255,0) 0deg, rgba(255,255,255,0.07) 40deg, rgba(255,255,255,0) 90deg, rgba(255,255,255,0) 180deg, rgba(255,255,255,0.07) 220deg, rgba(255,255,255,0) 270deg), repeating-radial-gradient(circle at center, #0b0b0b 0px, #0b0b0b 2px, #262626 3px, #0b0b0b 4px); border: 2px solid #2c2c2c; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
 
 /* tela 1: capa */
 .tela-capa { display: flex; align-items: center; gap: 72px; padding: 0 96px 0 88px; background: radial-gradient(ellipse at 30% 50%, #1d1a17 0%, #0d0d0d 70%); }
