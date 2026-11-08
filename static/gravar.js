@@ -159,7 +159,7 @@ function abrirPalco(release, lado) {
   const capa = release.cover_url || "/static/playvinil-cover.svg";
   $("capa").src = capa;
   $("rotulo").style.backgroundImage = `url("${capa}")`;
-  $("rotulo-marca").style.backgroundImage = `url("${capa}")`;
+  $("rotulo-marca").setAttribute("href", capa);
   $("banda").textContent = release.artist || "";
   $("album").textContent = release.title || "";
   discoAtual = release.release_id || release.id || null;
@@ -185,6 +185,76 @@ function abrirPalco(release, lado) {
   setInterval(atualizarEstado, 10000);
   setTimeout(() => $("dica").classList.add("some"), 6000);
 }
+
+// ---------- toca-discos da segunda tela: sulcos e braço andando com o tempo do lado ----------
+const SVGNS = "http://www.w3.org/2000/svg";
+(function desenharSulcos() {
+  const g = $("sulcos");
+  for (let r = 340; r > 118; r -= 4) {
+    const c = document.createElementNS(SVGNS, "circle");
+    c.setAttribute("cx", "438");
+    c.setAttribute("cy", "461");
+    c.setAttribute("r", String(r));
+    c.setAttribute("fill", "none");
+    c.setAttribute("stroke", r % 36 === 0 ? "#050505" : "#222");
+    c.setAttribute("stroke-width", r % 36 === 0 ? "2.5" : "0.8");
+    g.appendChild(c);
+  }
+})();
+
+const CENTRO = { x: 438, y: 461 };
+const PIVO = { x: 855, y: 219 };
+const AGULHA = { x: 804, y: 750 };
+const RAIO_INICIO = 334; // primeira faixa
+const RAIO_FIM = 140;    // fim do lado (antes do rótulo)
+
+function angulo(raio) {
+  // gira o braço (graus, sentido horário) até a agulha ficar a `raio` do centro do prato
+  const vx = AGULHA.x - PIVO.x;
+  const vy = AGULHA.y - PIVO.y;
+  const dist = (g) => {
+    const a = (g * Math.PI) / 180;
+    const x = PIVO.x + vx * Math.cos(a) - vy * Math.sin(a);
+    const y = PIVO.y + vx * Math.sin(a) + vy * Math.cos(a);
+    return Math.hypot(x - CENTRO.x, y - CENTRO.y);
+  };
+  let lo = 0;
+  let hi = 60;
+  for (let i = 0; i < 30; i++) {
+    const mid = (lo + hi) / 2;
+    if (dist(mid) > raio) lo = mid; else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+let progressoBase = null; // { p, em, total }
+function duracaoDoLado(estado) {
+  const release = estado && estado.release;
+  const lado = ladoDoEstado(estado);
+  if (!release || !release.tracks || !lado) return 0;
+  const faixas = release.tracks.filter((t) => String(t.position || "").toUpperCase().replace(/\d.*$/, "") === lado);
+  if (!faixas.length) return 0;
+  return faixas.reduce((s, t) => s + (t.duration_seconds || 180), 0) + 3 * (faixas.length - 1);
+}
+function lerProgresso(estado) {
+  const total = duracaoDoLado(estado);
+  if (!estado || estado.status !== "playing" || !total || typeof estado.side_remaining_seconds !== "number") {
+    progressoBase = estado && estado.status === "waiting_flip" ? { p: 1, em: Date.now(), total: 0 } : null;
+    return;
+  }
+  progressoBase = { p: Math.max(0, Math.min(1, 1 - estado.side_remaining_seconds / total)), em: Date.now(), total };
+}
+function posicionarBraco() {
+  let g = 0; // descanso
+  if (progressoBase) {
+    const p = progressoBase.total
+      ? Math.min(1, progressoBase.p + (Date.now() - progressoBase.em) / 1000 / progressoBase.total)
+      : progressoBase.p;
+    g = angulo(RAIO_INICIO - (RAIO_INICIO - RAIO_FIM) * p);
+  }
+  $("braco").style.transform = `rotate(${g.toFixed(2)}deg)`;
+}
+setInterval(posicionarBraco, 2000);
 
 // ---------- alternância das duas telas ----------
 let temporizador = null;
@@ -300,6 +370,8 @@ async function ligarOuvido() {
 async function atualizarEstado() {
   try {
     estadoServidor = await pedir("/api/state");
+    lerProgresso(estadoServidor);
+    posicionarBraco();
     const lado = ladoDoEstado(estadoServidor);
     if (lado && estadoServidor.status === "playing" && lado !== ladoAtual) {
       ladoAtual = lado;
@@ -321,6 +393,7 @@ async function somVoltou(ev) {
     });
     if (res && res.state) {
       estadoServidor = res.state;
+      lerProgresso(res.state);
       const lado = ladoDoEstado(res.state);
       if (lado) { ladoAtual = lado; mostrarLado(); }
     }
