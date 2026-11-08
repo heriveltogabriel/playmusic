@@ -504,3 +504,25 @@ class AlternativesOnlyOnFirstTrackTests(unittest.TestCase):
         self.assertEqual(state["track"]["position"], "A2")
         self.assertEqual(state["alternatives"], [])
         self.assertEqual(controller.current_state(now=1000 + 280)["alternatives"], [])
+
+
+class IndexTracksTests(unittest.TestCase):
+    def test_discogs_index_track_becomes_one_track(self):
+        from vinyl_display.clients.discogs import release_from_discogs
+        payload = {"id": 1, "title": "Wish You Were Here", "artists": [{"name": "Pink Floyd"}],
+                   "formats": [{"name": "Vinyl", "descriptions": ["LP"]}],
+                   "tracklist": [
+                       {"type_": "index", "title": "Shine On You Crazy Diamond (Parts I-V)", "position": "", "duration": "",
+                        "sub_tracks": [{"type_": "track", "position": "A1", "title": "Part I", "duration": "3:54"},
+                                       {"type_": "track", "position": "A2", "title": "Part II", "duration": "4:31"}]},
+                       {"type_": "track", "position": "A6", "title": "Welcome To The Machine", "duration": "7:29"},
+                   ]}
+        release = release_from_discogs(payload)
+        self.assertEqual([(t.position, t.title, t.duration_seconds) for t in release.tracks],
+                         [("A1", "Shine On You Crazy Diamond (Parts I-V)", 505), ("A6", "Welcome To The Machine", 449)])
+
+    def test_part_suffixes_are_ignored_when_matching(self):
+        from vinyl_display.matcher import normalize_text
+        self.assertEqual(normalize_text("Shine On You Crazy Diamond (Pts. 1-5)"),
+                         normalize_text("Shine On You Crazy Diamond (Parts I-V)"))
+        self.assertEqual(normalize_text("Shine On You Crazy Diamond, Pts. 1-7"), "shine on you crazy diamond")

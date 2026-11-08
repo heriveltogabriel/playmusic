@@ -95,6 +95,19 @@ def release_from_discogs(payload: dict[str, Any]) -> Release:
 
     tracks = []
     for item in payload.get("tracklist") or []:
+        if item.get("type_") == "index":
+            # v4.5.6: faixa dividida em partes (ex.: "Shine On You Crazy Diamond (Parts I-V)"
+            # com as partes A1..A5). Vira uma faixa só, na posição da primeira parte, com a
+            # soma das durações. Antes as partes eram descartadas e a faixa sumia do disco.
+            subs = [sub for sub in (item.get("sub_tracks") or []) if sub.get("type_", "track") == "track"]
+            title = str(item.get("title") or "").strip()
+            position = next((str(sub.get("position") or "").strip() for sub in subs if sub.get("position")), "")
+            position = position or str(item.get("position") or "").strip()
+            if not title or not position:
+                continue
+            duration = parse_duration(item.get("duration")) or sum(parse_duration(sub.get("duration")) or 0 for sub in subs)
+            tracks.append(Track(position=position, title=title, duration_seconds=duration or None))
+            continue
         if item.get("type_") != "track":
             continue
         title = str(item.get("title") or "").strip()

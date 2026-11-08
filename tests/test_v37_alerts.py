@@ -80,6 +80,13 @@ class AlertManagerTests(unittest.TestCase):
 
 
 class WatchdogTests(unittest.TestCase):
+    def setUp(self):
+        # o resumo semanal sai no domingo à noite de verdade: fora destes testes
+        from unittest import mock
+        patcher = mock.patch("vinyl_display.assistant.maybe_send_weekly_summary", lambda *a, **k: None)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+
     def make_app(self, tmp):
         store = CatalogStore(Path(tmp) / "c.sqlite3")
         store.initialize()

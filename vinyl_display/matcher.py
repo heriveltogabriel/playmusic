@@ -21,6 +21,9 @@ def normalize_text(value: str | None) -> str:
         ascii_text,
         flags=re.IGNORECASE,
     )
+    # v4.5.6: partes de uma faixa: "(Parts I-V)", "(Pts. 1-5)", "(Part Two)", ", Pts. 1-7"
+    ascii_text = re.sub(r"\s*[\(\[]\s*(parts?|pts?)\b\.?[^\]\)]*[\)\]]", "", ascii_text, flags=re.IGNORECASE)
+    ascii_text = re.sub(r"\s*[,:-]\s*(parts?|pts?)\b\.?\s*[\w\s\-&]*$", "", ascii_text, flags=re.IGNORECASE)
     # Remove trailing terms after a hyphen
     ascii_text = re.sub(
         r"\s*-\s*.*?(remaster|live|mono|stereo|single|version|edit|mix|remix|ao vivo|acustico|unplugged).*$",
