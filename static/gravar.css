@@ -44,6 +44,8 @@ body.escolhendo button { min-height: 0; }
 
 /* tela 1: usa o layout do player (styles.css); aqui só o que muda */
 #tela-capa { position: absolute; inset: 0; }
+/* menos recuo à direita que o player: o texto ganha espaço (o nome da banda quebra menos) */
+#tela-capa.screen { padding-right: max(12px, 2vw); }
 #tela-capa .status-label { white-space: nowrap; }
 .bloco-texto { display: flex; flex-direction: column; align-self: flex-start; max-width: 100%; }
 #tela-capa .status-label { white-space: nowrap; letter-spacing: 0.15em; margin-right: -0.15em; }
