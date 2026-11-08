@@ -131,7 +131,9 @@ function ajustarTextos() {
   // coluna; o rótulo laranja ocupa essa largura toda
   const album = $("album");
   album.style.whiteSpace = "nowrap";
-  const coluna = banda.parentElement.parentElement.clientWidth;
+  const sec = banda.parentElement.parentElement;
+  const est = getComputedStyle(sec);
+  const coluna = sec.clientWidth - parseFloat(est.paddingLeft) - parseFloat(est.paddingRight) - 8;
   const largura = Math.min(Math.max(larguraTexto(banda), larguraTexto(album)), coluna);
   album.style.whiteSpace = "";
   // a largura visível das letras (sem o espaçamento que sobra depois da última) igual à da banda
@@ -140,6 +142,11 @@ function ajustarTextos() {
     const visivel = larguraTexto(rotulo) - 0.15 * tamanho;
     if (visivel <= 0) break;
     tamanho = Math.min(80, tamanho * (largura / visivel));
+    rotulo.style.fontSize = `${tamanho}px`;
+  }
+  // garantia: nunca passa da largura (arredondamentos de fonte)
+  for (let i = 0; i < 6 && larguraTexto(rotulo) - 0.15 * tamanho > largura + 0.5; i++) {
+    tamanho *= 0.98;
     rotulo.style.fontSize = `${tamanho}px`;
   }
   bloco.style.width = `${largura}px`;
