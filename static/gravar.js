@@ -127,7 +127,13 @@ function ajustarTextos() {
   if (!banda.firstChild) return;
   bloco.style.width = "";
   rotulo.style.fontSize = "";
-  const largura = Math.min(larguraTexto(banda), banda.parentElement.parentElement.clientWidth);
+  // largura do bloco: o maior entre o nome da banda e o do álbum (numa linha), sem passar da
+  // coluna; o rótulo laranja ocupa essa largura toda
+  const album = $("album");
+  album.style.whiteSpace = "nowrap";
+  const coluna = banda.parentElement.parentElement.clientWidth;
+  const largura = Math.min(Math.max(larguraTexto(banda), larguraTexto(album)), coluna);
+  album.style.whiteSpace = "";
   // a largura visível das letras (sem o espaçamento que sobra depois da última) igual à da banda
   let tamanho = parseFloat(getComputedStyle(rotulo).fontSize);
   for (let i = 0; i < 4; i++) {
