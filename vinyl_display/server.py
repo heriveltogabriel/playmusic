@@ -1056,6 +1056,9 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
         self.send_response(HTTPStatus.OK)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
+        if content_type == "text/html":
+            # páginas sempre conferem a versão nova (os .js/.css já levam ?v=)
+            self.send_header("Cache-Control", "no-cache")
         self.end_headers()
         self.wfile.write(body)
 

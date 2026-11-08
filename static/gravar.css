@@ -74,3 +74,7 @@ body.escolhendo button { min-height: 0; }
 .acoes { display: flex; gap: 20px; }
 .acao { flex: 1; display: flex; align-items: center; gap: 14px; padding: 18px 22px; border-radius: 16px; background: rgba(242,236,226,0.06); color: var(--destaque); }
 .acao span { font-size: 22px; font-weight: 600; color: var(--texto); }
+
+/* botão voltar na tela de gravação: aparece ao tocar e some junto com os botões de lado */
+.btn-voltar-palco { position: absolute; top: 20px; left: 20px; z-index: 20; cursor: pointer; transition: opacity 0.6s ease; }
+.btn-voltar-palco.some { opacity: 0; pointer-events: none; }
