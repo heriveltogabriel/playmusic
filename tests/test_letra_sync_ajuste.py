@@ -64,7 +64,6 @@ class ModoGravacaoTests(unittest.TestCase):
         self.assertIn("Inscreva-se no canal", html)
         self.assertIn("@lpdasemana", html)
         self.assertIn("LP DA SEMANA", html)
-        self.assertIn("toca-discos.webp", html)
         self.assertNotIn("/api/recognize", js)  # microfone só mede o volume para a virada
         self.assertIn("/api/playback/flip", js)
         self.assertIn("/api/playback/start_manual", js)

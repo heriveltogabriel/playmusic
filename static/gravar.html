@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/styles.css?v=4.5.7">
-  <link rel="stylesheet" href="/static/gravar.css?v=4.6.1c">
+  <link rel="stylesheet" href="/static/gravar.css?v=4.6.2">
 </head>
 <body class="escolhendo">
   <!-- Passo 1: escolher o disco -->
@@ -65,41 +65,12 @@
     <!-- Tela 2: marca do canal (palco 1280x720 escalado) -->
     <div id="stage" class="stage">
     <div id="tela-marca" class="tela tela-marca">
-      <div class="toca-discos">
-        <svg id="cena" viewBox="0 0 1045 895" width="760" height="651" aria-hidden="true">
-          <defs>
-            <clipPath id="clip-rotulo"><circle cx="438" cy="461" r="112"></circle></clipPath>
-            <radialGradient id="brilho-vinil" cx="50%" cy="50%" r="50%">
-              <stop offset="0.3" stop-color="#1a1a1a"></stop>
-              <stop offset="1" stop-color="#0c0c0c"></stop>
-            </radialGradient>
-          </defs>
-          <image href="/static/gravar/toca-discos.webp" x="0" y="0" width="1045" height="895"></image>
-          <g id="vinil" class="vinil-gira">
-            <circle cx="438" cy="461" r="347" fill="url(#brilho-vinil)" stroke="#050505" stroke-width="3"></circle>
-            <g id="sulcos"></g>
-            <path d="M438 461 L438 114 A347 347 0 0 1 683 216 Z" fill="#fff" opacity="0.05"></path>
-            <path d="M438 461 L438 808 A347 347 0 0 1 193 706 Z" fill="#fff" opacity="0.05"></path>
-            <image id="rotulo-marca" clip-path="url(#clip-rotulo)" x="326" y="349" width="224" height="224" preserveAspectRatio="xMidYMid slice"></image>
-            <circle cx="438" cy="461" r="112" fill="none" stroke="#000" stroke-width="4"></circle>
-          </g>
-          <circle cx="438" cy="461" r="7" fill="#cfcfcf" stroke="#444" stroke-width="2"></circle>
-          <g id="braco">
-            <circle cx="855" cy="219" r="98" fill="#1e1e1f"></circle>
-            <circle cx="855" cy="219" r="91" fill="none" stroke="#c87a4c" stroke-width="7"></circle>
-            <circle cx="855" cy="219" r="62" fill="#141414" stroke="#2a2a2a" stroke-width="3"></circle>
-            <circle cx="855" cy="219" r="26" fill="#0d0d0d" stroke="#3a3a3a" stroke-width="2"></circle>
-            <rect x="841" y="80" width="28" height="62" rx="6" fill="#151515" stroke="#2c2c2c" stroke-width="2"></rect>
-            <rect x="841" y="88" width="28" height="6" fill="#c87a4c"></rect>
-            <path d="M855 140 L855 610 Q853 690 806 742" fill="none" stroke="#0b0b0b" stroke-width="15" stroke-linecap="round"></path>
-            <path d="M851 140 L851 608 Q849 686 803 738" fill="none" stroke="#3a3a3a" stroke-width="2" stroke-linecap="round" opacity="0.8"></path>
-            <rect x="847" y="250" width="16" height="9" fill="#c87a4c"></rect>
-            <g transform="rotate(38 804 744)">
-              <rect x="790" y="730" width="28" height="34" rx="4" fill="#111" stroke="#2e2e2e" stroke-width="2"></rect>
-              <rect x="792" y="752" width="24" height="5" fill="#1f8a8a"></rect>
-            </g>
-          </g>
-        </svg>
+      <div class="marca-disco-area">
+        <div class="disco-marca">
+          <div class="vinyl-disc-inner gira-marca">
+            <div id="rotulo-marca" class="vinyl-label"></div>
+          </div>
+        </div>
       </div>
       <div class="redes">
         <div class="rede">
@@ -126,6 +97,6 @@
     <p id="dica" class="dica">Toque: tela cheia · segurar 2 s: sair</p>
   </section>
   <script src="/static/silence-detector.js?v=4.5.4" defer></script>
-  <script src="/static/gravar.js?v=4.6.1" defer></script>
+  <script src="/static/gravar.js?v=4.6.2" defer></script>
 </body>
 </html>
