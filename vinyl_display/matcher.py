@@ -133,7 +133,9 @@ class CollectionMatcher:
                     matches_by_release[release.release_id] = candidate
 
         # Sort matches by score descending
-        return sorted(matches_by_release.values(), key=lambda m: m.score, reverse=True)
+        # v4.5.6: empate de pontos: fica à frente o disco com menos faixas (o álbum original
+        # antes de ao vivo, coletânea ou caixa, como Wish You Were Here antes do Pulse)
+        return sorted(matches_by_release.values(), key=lambda m: (-m.score, len(m.release.tracks)))
 
     def match(
         self,
