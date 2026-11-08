@@ -7,6 +7,8 @@
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--fundo); color: var(--texto); font-family: Inter, system-ui, sans-serif; }
+body.escolhendo { overflow: auto; }
+body.escolhendo button { min-height: 0; }
 .hidden { display: none !important; }
 
 /* ---------- escolha do disco ---------- */
@@ -30,7 +32,7 @@ html, body { margin: 0; height: 100%; background: var(--fundo); color: var(--tex
 
 /* ---------- palco 1280x720, escalado para caber na tela ---------- */
 .palco { position: fixed; inset: 0; background: var(--fundo); overflow: hidden; cursor: none; user-select: none; -webkit-user-select: none; }
-.stage { position: absolute; left: 50%; top: 50%; width: 1280px; height: 720px; transform-origin: center center; }
+.stage { position: absolute; pointer-events: none; left: 50%; top: 50%; width: 1280px; height: 720px; transform-origin: center center; }
 .tela { position: absolute; inset: 0; opacity: 0; transition: opacity 1.5s ease; }
 .tela.visivel { opacity: 1; }
 .dica { position: absolute; left: 0; right: 0; bottom: 14px; margin: 0; text-align: center; color: rgba(242,236,226,0.5); font-size: 14px; transition: opacity 1s ease; }
@@ -40,22 +42,9 @@ html, body { margin: 0; height: 100%; background: var(--fundo); color: var(--tex
 .gira { animation: girar 12s linear infinite; }
 .disco { border-radius: 50%; background: conic-gradient(from 0deg, rgba(255,255,255,0) 0deg, rgba(255,255,255,0.07) 40deg, rgba(255,255,255,0) 90deg, rgba(255,255,255,0) 180deg, rgba(255,255,255,0.07) 220deg, rgba(255,255,255,0) 270deg), repeating-radial-gradient(circle at center, #0b0b0b 0px, #0b0b0b 2px, #262626 3px, #0b0b0b 4px); border: 2px solid #2c2c2c; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
 
-/* tela 1: capa */
-.tela-capa { display: flex; align-items: center; gap: 72px; padding: 0 96px 0 88px; background: radial-gradient(ellipse at 30% 50%, #1d1a17 0%, #0d0d0d 70%); }
-.capa-area { position: relative; width: 640px; height: 470px; flex-shrink: 0; }
-.capa-area .disco { position: absolute; left: 190px; top: 15px; width: 440px; height: 440px; }
-.disco-rotulo { position: absolute; left: 150px; top: 150px; width: 140px; height: 140px; border-radius: 50%; background: var(--destaque); }
-.disco-rotulo::after { content: ""; position: absolute; left: 63px; top: 63px; width: 14px; height: 14px; border-radius: 50%; background: var(--fundo); }
-.capa { position: absolute; left: 0; top: 0; width: 470px; height: 470px; object-fit: cover; border-radius: 10px; background: #2a2622; box-shadow: 0 30px 80px rgba(0,0,0,0.7); }
-.capa-info { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
-.marca { display: flex; align-items: center; gap: 18px; }
-.marca-logo { width: 92px; height: 92px; border-radius: 50%; object-fit: cover; }
-.marca-textos { display: flex; flex-direction: column; gap: 4px; }
-.marca-nome { font-size: 36px; font-weight: 700; letter-spacing: 0.08em; color: var(--destaque); line-height: 1; white-space: nowrap; }
-.marca-sub { font-size: 18px; font-weight: 500; color: var(--suave); }
-.album { margin: 18px 0 0; font-family: 'DM Serif Display', Georgia, serif; font-weight: 400; font-size: 64px; line-height: 1.02; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.artista { margin: 0; font-size: 30px; font-weight: 600; }
-.detalhe { margin: 0; font-size: 20px; color: var(--suave); }
+/* tela 1: usa o layout do player (styles.css); aqui só o que muda */
+#tela-capa { position: absolute; inset: 0; }
+#tela-capa .status-label { white-space: nowrap; }
 
 /* tela 2: marca do canal */
 .tela-marca { display: flex; align-items: center; justify-content: center; gap: 96px; padding: 0 96px; background: radial-gradient(ellipse at 50% 40%, #1d1a17 0%, #0d0d0d 72%); }

@@ -9,9 +9,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/gravar.css?v=4.5.6b">
+  <link rel="stylesheet" href="/static/styles.css?v=4.5.7">
+  <link rel="stylesheet" href="/static/gravar.css?v=4.5.7">
 </head>
-<body>
+<body class="escolhendo">
   <!-- Passo 1: escolher o disco -->
   <section id="escolha" class="escolha">
     <header class="escolha-topo">
@@ -29,26 +30,28 @@
 
   <!-- Passo 2: as duas telas que alternam -->
   <section id="palco" class="palco hidden" aria-live="off">
-    <div id="stage" class="stage">
-    <div id="tela-capa" class="tela tela-capa visivel">
-      <div class="capa-area">
-        <div class="disco gira"><div class="disco-rotulo"></div></div>
-        <img id="capa" class="capa" alt="">
-      </div>
-      <div class="capa-info">
-        <div class="marca">
-          <img src="/static/logo_lp_da_semana.png" alt="LP da Semana" class="marca-logo">
-          <div class="marca-textos">
-            <span class="marca-nome">LP DA SEMANA</span>
-            <span class="marca-sub">Vem ouvir comigo</span>
+    <!-- Tela 1: igual à tela do player, com a banda no lugar da música -->
+    <main id="tela-capa" class="screen tela visivel">
+      <section class="cover-panel">
+        <div class="vinyl-wrapper playing">
+          <div id="album-cover"><img id="capa" class="cover-image" alt=""></div>
+          <div class="vinyl-disc">
+            <div class="vinyl-disc-inner">
+              <div id="rotulo" class="vinyl-label"></div>
+            </div>
           </div>
         </div>
-        <h2 id="album" class="album"></h2>
-        <p id="artista" class="artista"></p>
-        <p id="detalhe" class="detalhe"></p>
-      </div>
-    </div>
+      </section>
+      <section class="now-playing">
+        <p class="status-label">LP DA SEMANA · VEM OUVIR COMIGO</p>
+        <h1 id="banda"></h1>
+        <p id="album" class="artist-name"></p>
+        <p id="lado" class="album-line"></p>
+      </section>
+    </main>
 
+    <!-- Tela 2: marca do canal (palco 1280x720 escalado) -->
+    <div id="stage" class="stage">
     <div id="tela-marca" class="tela tela-marca">
       <div class="marca-disco-area">
         <div class="disco disco-grande gira">
@@ -78,8 +81,8 @@
       </div>
     </div>
     </div>
-    <p id="dica" class="dica">Toque para tela cheia · segure 2 segundos para sair</p>
+    <p id="dica" class="dica">Toque: tela cheia · dois toques: próximo lado · segurar 2 s: sair</p>
   </section>
-  <script src="/static/gravar.js?v=4.5.6" defer></script>
+  <script src="/static/gravar.js?v=4.5.7" defer></script>
 </body>
 </html>

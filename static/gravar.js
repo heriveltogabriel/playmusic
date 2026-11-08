@@ -96,17 +96,54 @@ async function comecar(releaseId, lado) {
     console.warn("Não deu para registrar a escuta:", erro);
   }
   const release = (estado && estado.release) || discos.find((d) => d.id === releaseId) || {};
-  abrirPalco(release);
+  abrirPalco(release, lado || ladoDoEstado(estado));
 }
 
-function abrirPalco(release) {
-  $("capa").src = release.cover_url || "/static/playvinil-cover.svg";
+function ladoDoEstado(estado) {
+  const pos = estado && estado.track && estado.track.position ? String(estado.track.position) : "";
+  const m = pos.toUpperCase().match(/^([A-Z]{1,2})\d/);
+  return m ? m[1] : "";
+}
+
+// ---------- lado do disco ----------
+let discoAtual = null;
+let ladosDoDisco = [];
+let ladoAtual = "";
+function mostrarLado() {
+  $("lado").textContent = ladoAtual ? `Lado ${ladoAtual}` : "";
+}
+async function proximoLado() {
+  if (!discoAtual || ladosDoDisco.length < 2) return;
+  const i = ladosDoDisco.indexOf(ladoAtual);
+  ladoAtual = ladosDoDisco[(i + 1) % ladosDoDisco.length];
+  mostrarLado();
+  try {
+    await pedir("/api/playback/start_manual", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ release_id: discoAtual, side: ladoAtual }),
+    });
+  } catch (e) { /* a tela segue igual */ }
+}
+
+function abrirPalco(release, lado) {
+  const capa = release.cover_url || "/static/playvinil-cover.svg";
+  $("capa").src = capa;
+  $("rotulo").style.backgroundImage = `url("${capa}")`;
+  $("banda").textContent = release.artist || "";
   $("album").textContent = release.title || "";
-  $("artista").textContent = release.artist || "";
-  const gravadora = (release.labels && release.labels[0]) || release.label || "";
-  $("detalhe").textContent = [release.year, gravadora].filter(Boolean).join(" · ");
+  discoAtual = release.release_id || release.id || null;
+  ladoAtual = lado || "";
+  mostrarLado();
+  if (discoAtual) {
+    pedir(`/api/ouvir/sides/${discoAtual}`)
+      .then((info) => { ladosDoDisco = (info.sides || []).map((x) => x.side).filter(Boolean); })
+      .catch(() => {});
+  }
   escolha.classList.add("hidden");
   palco.classList.remove("hidden");
+  document.body.classList.remove("escolhendo");
+  document.body.classList.add("is-playing");
   ajustarEscala();
   manterAcesa();
   alternar();
@@ -167,12 +204,28 @@ palco.addEventListener("pointerdown", () => {
     if (segurando) {
       clearTimeout(segurando);
       segurando = null;
-      if (ev === "pointerup" && !document.fullscreenElement && document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen().catch(() => {});
-      }
+      if (ev === "pointerup") toque();
     }
   })
 );
+
+let ultimoToque = 0;
+let toqueSimples = null;
+function toque() {
+  const agora = Date.now();
+  if (agora - ultimoToque < 400) {
+    clearTimeout(toqueSimples);
+    ultimoToque = 0;
+    proximoLado();
+    return;
+  }
+  ultimoToque = agora;
+  toqueSimples = setTimeout(() => {
+    if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+  }, 420);
+}
 
 // ícones oficiais (YouTube, Instagram): enquanto o arquivo não existir, o espaço some
 document.querySelectorAll(".icone-oficial").forEach((img) => {
@@ -195,7 +248,7 @@ async function iniciar() {
       usarAtual.textContent = `Usar o disco que está tocando: ${estado.release.artist} — ${estado.release.title}`;
       usarAtual.dataset.ok = "1";
       usarAtual.classList.remove("hidden");
-      usarAtual.addEventListener("click", () => abrirPalco(estado.release));
+      usarAtual.addEventListener("click", () => abrirPalco(estado.release, ladoDoEstado(estado)));
     }
   } catch (e) { /* sem estado: só a lista */ }
 }
