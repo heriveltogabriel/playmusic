@@ -1,0 +1,16 @@
+{
+  "id": "gravar",
+  "name": "Gravação · LP da Semana",
+  "short_name": "Gravar LP",
+  "start_url": "../gravar",
+  "scope": "../gravar",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "landscape",
+  "background_color": "#0d0d0d",
+  "theme_color": "#0d0d0d",
+  "description": "Tela parada para gravar os vídeos do LP da Semana",
+  "icons": [
+    { "src": "/static/logo_lp_da_semana.png", "sizes": "640x640", "type": "image/png", "purpose": "any" }
+  ]
+}

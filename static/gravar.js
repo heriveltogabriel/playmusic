@@ -258,9 +258,11 @@ palco.addEventListener("pointerdown", () => {
   })
 );
 
+// aberto pelo ícone "Gravar LP" da tela inicial, já é tela cheia (sem o aviso do Android)
+const appEmTelaCheia = window.matchMedia && window.matchMedia("(display-mode: fullscreen)").matches;
 function toque() {
   mostrarBotoes();
-  if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+  if (!appEmTelaCheia && !document.fullscreenElement && document.documentElement.requestFullscreen) {
     document.documentElement.requestFullscreen().catch(() => {});
   }
 }
