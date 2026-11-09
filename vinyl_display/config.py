@@ -26,6 +26,7 @@ class Config:
     shazam_monthly_limit: int = 500
     require_device_token: bool = False
     site_fechado: bool = False
+    site_pessoal: bool = False
     telegram_bot_token: str = ""
     telegram_chat_id: str = ""
     ntfy_topic: str = ""
@@ -104,6 +105,8 @@ def load_config() -> Config:
         collection_name=os.environ.get("COLLECTION_NAME", "").strip(),
         require_device_token=os.environ.get("REQUIRE_DEVICE_TOKEN", "0").strip().lower() in {"1", "true", "sim", "yes"},
         site_fechado=os.environ.get("SITE_FECHADO", "0").strip().lower() in {"1", "true", "sim", "yes"},
+        # v4.12: tela de escolha (/herivelto) e Modo Gravação só existem no servidor do Herivelto
+        site_pessoal=os.environ.get("SITE_PESSOAL", "0").strip().lower() in {"1", "true", "sim", "yes"},
         telegram_bot_token=os.environ.get("TELEGRAM_BOT_TOKEN", ""),
         telegram_chat_id=os.environ.get("TELEGRAM_CHAT_ID", ""),
         ntfy_topic=os.environ.get("NTFY_TOPIC", ""),

@@ -2527,3 +2527,4 @@ h1 {
 /* v4.7.0: atalho para o modo gravação dentro do "Qual disco está tocando?" */
 .pick-gravar { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 12px; min-height: 44px; border-radius: 999px; border: 1px solid rgba(230, 92, 0, 0.5); color: var(--text); text-decoration: none; font-size: 0.95rem; font-weight: 600; }
 .pick-gravar svg { color: var(--accent); }
+.pick-gravar.hidden { display: none; } /* v4.12: só aparece onde o Modo Gravação existe */

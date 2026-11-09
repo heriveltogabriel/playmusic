@@ -80,7 +80,7 @@ class HttpSiteFechadoTests(unittest.TestCase):
                            "VINYL_DATABASE_PATH": str(Path(self.tmp.name) / "c.sqlite3"),
                            "VINYL_ENV_FILE": str(Path(self.tmp.name) / ".env")})
         self.app, _ = make_app(self.tmp.name)
-        self.app.config = dataclasses.replace(load_config(), site_fechado=True)
+        self.app.config = dataclasses.replace(load_config(), site_fechado=True, site_pessoal=True)
         self.auth = AuthManager(Path(self.tmp.name))
         self.auth.setup_new_password("senha-certa")
         LIMITE_SENHA._ips.clear()

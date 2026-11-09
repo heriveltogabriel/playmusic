@@ -231,9 +231,15 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                 self._send_static("admin.html")
             return
         if path == "/gravar" or path == "/gravar/":
+            if not getattr(self.app.config, "site_pessoal", False):
+                self.send_error(HTTPStatus.NOT_FOUND)
+                return
             self._send_static("gravar.html")
             return
         if path == "/herivelto" or path == "/herivelto/":
+            if not getattr(self.app.config, "site_pessoal", False):
+                self.send_error(HTTPStatus.NOT_FOUND)
+                return
             self._send_static("herivelto.html")
             return
         if path in ("/apple-touch-icon.png", "/apple-touch-icon-precomposed.png"):

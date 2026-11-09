@@ -350,6 +350,8 @@ function renderStateInner(state) {
   checkForNewVersion(state);
   setScreenAwake(Boolean(state && state.release));
   if (!state) return;
+  const linkGravar = document.getElementById("pick-gravar");
+  if (linkGravar) linkGravar.classList.toggle("hidden", !state.modo_gravacao);
 
   if (state.lyrics_latency_offset !== undefined) {
     lyricsLatencyOffset = parseFloat(state.lyrics_latency_offset);
