@@ -142,7 +142,7 @@ class HttpSiteFechadoTests(unittest.TestCase):
         status, headers, corpo = self.post("/api/auth/login", {"password": "senha-certa"})
         self.assertEqual(status, 200)
         sessao = headers["Set-Cookie"].split(";")[0]
-        for caminho in ("/herivelto", "/admin", "/agenda", "/", "/gravar", "/api/admin/stats", "/api/state"):
+        for caminho in ("/herivelto", "/admin", "/", "/gravar", "/api/admin/stats", "/api/state"):
             self.assertEqual(self.get(caminho, cookie=sessao)[0], 200, caminho)
         status, headers, _ = self.get("/login?next=/agenda", cookie=sessao)
         self.assertEqual((status, headers["Location"]), (302, "/agenda"))

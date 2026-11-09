@@ -204,17 +204,6 @@ class StaticAssetTests(unittest.TestCase):
         self.assertNotIn("margin-left: auto;", css)
         self.assertIn("#details-favorite-btn.active", css)
 
-    def test_agenda_page(self):
-        html = (ROOT / "static" / "agenda.html").read_text()
-        js = (ROOT / "static" / "agenda.js").read_text()
-        css = (ROOT / "static" / "agenda.css").read_text()
-
-        self.assertIn('id="agenda-grid"', html)
-        self.assertIn('/api/ouvir/agenda', js)
-        self.assertNotIn('lpweek_daily_agenda_ids', js)
-        self.assertIn('listened-check', css)
-        self.assertIn('agenda-card.today', css)
-
     def test_herivelto_profile_page(self):
         html = (ROOT / "static" / "herivelto.html").read_text()
         css = (ROOT / "static" / "herivelto.css").read_text()

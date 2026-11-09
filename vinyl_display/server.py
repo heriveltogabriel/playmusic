@@ -233,9 +233,6 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
         if path == "/gravar" or path == "/gravar/":
             self._send_static("gravar.html")
             return
-        if path == "/agenda" or path == "/agenda/":
-            self._send_static("agenda.html")
-            return
         if path == "/herivelto" or path == "/herivelto/":
             self._send_static("herivelto.html")
             return
