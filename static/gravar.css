@@ -59,11 +59,7 @@ body.escolhendo button { min-height: 0; }
 /* tela da marca: o logo inteiro, parado (v4.8.1) */
 .cam-disco-marca { width: auto; max-width: 46vw; justify-content: center; }
 /* só o redondo de dentro do logo (o disco com o nome), sem o quadrado de fundo (v4.8.2) */
-.cam-logo-redondo { position: relative; overflow: hidden; height: 88vh; width: 88vh; max-width: 44vw; max-height: 44vw; border-radius: 50%; background: #0b0b0b; box-shadow: 0 2vh 6vh rgba(0,0,0,0.6); }
-/* v4.8.4: o disco do logo gira por baixo; a faixa "LP da Semana" e o aro ficam parados por cima.
-   As duas imagens saem do logo original (disco com a faixa preenchida; frente com o miolo vazado). */
-.cam-logo-disco { position: absolute; left: 4.52%; top: 4.6%; width: 90.95%; height: 90.95%; background: url("/static/logo_lp_disco.png") center / contain no-repeat; animation: girar 4s linear infinite; will-change: transform; }
-.cam-logo-frente { position: absolute; inset: 0; background: url("/static/logo_lp_frente.png") center / 136% no-repeat; }
+.cam-logo-redondo { height: 88vh; width: 88vh; max-width: 44vw; max-height: 44vw; border-radius: 50%; background: #0b0b0b url("/static/logo_lp_da_semana.png") center / 136% no-repeat; box-shadow: 0 2vh 6vh rgba(0,0,0,0.6); }
 
 /* textos: tamanhos máximos; o gravar.js reduz o que não couber */
 .cam-texto { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1.6vh; text-shadow: 0 0.4vh 2.4vh rgba(0,0,0,0.45); }
