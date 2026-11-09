@@ -58,14 +58,16 @@ body.escolhendo button { min-height: 0; }
 
 /* tela da marca: o logo inteiro, parado (v4.8.1) */
 .cam-disco-marca { width: auto; max-width: 46vw; justify-content: center; }
-.cam-logo-img { height: 88vh; width: 88vh; max-width: 44vw; max-height: 44vw; object-fit: cover; border-radius: 1.2vh; box-shadow: 0 2vh 6vh rgba(0,0,0,0.55); }
+/* só o redondo de dentro do logo (o disco com o nome), sem o quadrado de fundo (v4.8.2) */
+.cam-logo-redondo { height: 88vh; width: 88vh; max-width: 44vw; max-height: 44vw; border-radius: 50%; background: #0b0b0b url("/static/logo_lp_da_semana.png") center / 136% no-repeat; box-shadow: 0 2vh 6vh rgba(0,0,0,0.6); }
 
 /* textos: tamanhos máximos; o gravar.js reduz o que não couber */
 .cam-texto { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1.6vh; text-shadow: 0 0.4vh 2.4vh rgba(0,0,0,0.45); }
 .cam-texto p { margin: 0; }
 .cam-canal { font-size: 4.6vh; font-weight: 700; letter-spacing: 0.14em; color: #ffb37a; line-height: 1.1; }
 .cam-banda { margin: 0; font-family: 'DM Serif Display', Georgia, serif; font-weight: 400; font-size: 22vh; line-height: 1.02; overflow: hidden; overflow-wrap: normal; word-break: normal; }
-.cam-convite { font-size: 28vh; line-height: 0.98; }
+/* mesma letra do "LP DA SEMANA · VEM OUVIR COMIGO" laranja do player, só que grande (v4.8.2) */
+.cam-convite { margin: 0; font-family: Inter, system-ui, sans-serif; font-size: 17vh; font-weight: 600; letter-spacing: 0.15em; line-height: 1.04; color: #e65c00; text-shadow: 0 0 2vh rgba(230,92,0,0.35), 0 0.4vh 2vh rgba(0,0,0,0.45); overflow: hidden; }
 .cam-album { font-size: 8vh; font-weight: 600; line-height: 1.12; overflow: hidden; color: #fff3e2; }
 .cam-arroba { font-size: 10vh; font-weight: 700; line-height: 1.1; white-space: nowrap; overflow: hidden; }
 .cam-redes { font-size: 5vh; font-weight: 500; color: rgba(255,243,226,0.85); }
