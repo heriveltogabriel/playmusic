@@ -25,6 +25,7 @@ class Config:
     shazam_daily_budget: int = 60
     shazam_monthly_limit: int = 500
     require_device_token: bool = False
+    site_fechado: bool = False
     telegram_bot_token: str = ""
     telegram_chat_id: str = ""
     ntfy_topic: str = ""
@@ -102,6 +103,7 @@ def load_config() -> Config:
         shazam_monthly_limit=int(os.environ.get("SHAZAM_MONTHLY_LIMIT", "500")),
         collection_name=os.environ.get("COLLECTION_NAME", "").strip(),
         require_device_token=os.environ.get("REQUIRE_DEVICE_TOKEN", "0").strip().lower() in {"1", "true", "sim", "yes"},
+        site_fechado=os.environ.get("SITE_FECHADO", "0").strip().lower() in {"1", "true", "sim", "yes"},
         telegram_bot_token=os.environ.get("TELEGRAM_BOT_TOKEN", ""),
         telegram_chat_id=os.environ.get("TELEGRAM_CHAT_ID", ""),
         ntfy_topic=os.environ.get("NTFY_TOPIC", ""),

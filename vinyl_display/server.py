@@ -7,7 +7,7 @@ from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from http.cookies import SimpleCookie
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qs as _parse_qs, quote, urlparse
 
 from vinyl_display.app import VinylDisplayApp
 from vinyl_display.catalog import CatalogStore
@@ -15,6 +15,9 @@ from vinyl_display.clients.discogs import DiscogsClient
 from vinyl_display.config import Config, load_config
 from vinyl_display.auth import AuthManager
 from vinyl_display.routes import ADMIN, DEVICE, access_for
+from vinyl_display.limite import LimiteTentativas, texto_espera
+
+LIMITE_SENHA = LimiteTentativas()
 
 
 def build_app(config: Config) -> VinylDisplayApp:
@@ -104,16 +107,65 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _site_fechado(self) -> bool:
+        return bool(getattr(self.app.config, "site_fechado", False))
+
+    def _ip(self) -> str:
+        """IP de quem chamou. Atrás do nginx (conexão local) vale o X-Real-IP que ele manda."""
+        remoto = self.client_address[0] if self.client_address else ""
+        if remoto in ("127.0.0.1", "::1"):
+            return (self.headers.get("X-Real-IP") or remoto).strip()
+        return remoto
+
+    @staticmethod
+    def _destino_seguro(destino: str | None, padrao: str = "/") -> str:
+        """Só caminhos do próprio site (evita mandar alguém para outro domínio depois do login)."""
+        if destino and destino.startswith("/") and not destino.startswith("//") and "\\" not in destino:
+            return destino
+        return padrao
+
+    def _redirect(self, destino: str) -> None:
+        self.send_response(HTTPStatus.FOUND)
+        self.send_header("Location", destino)
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
+    def _redirect_login(self, path: str) -> None:
+        """Página pedida sem login: vai para a tela de login e volta para ela depois."""
+        prefixo = (self.headers.get("X-Forwarded-Prefix") or "").rstrip("/")
+        pedido = "/" if path == "/herivelto" else prefixo + path
+        query = urlparse(self.path).query
+        if query:
+            pedido += "?" + query
+        self._redirect("/login?next=" + quote(pedido, safe="/"))
+
     def _check_access(self, method: str, path: str) -> bool:
-        """Aplica a tabela de acesso de vinyl_display/routes.py. Responde 401 e devolve False
-        quando o pedido não pode seguir."""
-        level = access_for(method, path)
+        """Aplica a tabela de acesso de vinyl_display/routes.py. Responde 401 (ou manda para a
+        tela de login, no caso de uma página com o site fechado) e devolve False quando o
+        pedido não pode seguir."""
+        fechado = self._site_fechado()
+        level = access_for(method, path, fechado)
+        pagina = fechado and method == "GET" and not path.startswith(("/api/", "/static/"))
         if level == ADMIN and not self._is_authenticated():
-            self._send_unauthorized()
+            if pagina:
+                self._redirect_login(path)
+            else:
+                self._send_unauthorized()
             return False
-        if level == DEVICE and not self._device_allowed():
-            self._send_device_required()
-            return False
+        if level == DEVICE:
+            if fechado:
+                liberado = self._is_authenticated() or (
+                    self.auth.validate_device(self._get_cookie(self.DEVICE_COOKIE)) is not None
+                )
+            else:
+                liberado = self._device_allowed()
+            if not liberado:
+                if pagina:
+                    self._redirect_login(path)
+                else:
+                    self._send_device_required()
+                return False
         return True
 
     def do_GET(self) -> None:
@@ -164,6 +216,13 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             return
         if path == "/":
             self._send_static("index.html")
+            return
+        if path == "/login" or path == "/login/":
+            if self._is_authenticated():
+                destino = _parse_qs(urlparse(self.path).query).get("next", [""])[0]
+                self._redirect(self._destino_seguro(destino))
+            else:
+                self._send_static("login.html")
             return
         if path == "/admin" or path == "/admin/":
             if not self._is_authenticated():
@@ -476,6 +535,15 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             return
 
         # Public authentication routes
+        if path in ("/api/auth/login", "/api/auth/recover"):
+            espera = LIMITE_SENHA.espera(self._ip())
+            if espera:
+                self._json_status(
+                    {"success": False, "error": f"Muitas tentativas erradas. Tente de novo em {texto_espera(espera)}."},
+                    HTTPStatus.TOO_MANY_REQUESTS,
+                )
+                return
+
         if path == "/api/auth/login":
             length = int(self.headers.get("Content-Length", "0"))
             body_bytes = self.rfile.read(length)
@@ -486,6 +554,7 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             password = payload.get("password", "")
             
             if self.auth.verify_password(password):
+                LIMITE_SENHA.acertou(self._ip())
                 first_access = self.auth.is_first_access()
                 if first_access:
                     self._json({"success": True, "first_access": True})
@@ -499,6 +568,7 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                     self.end_headers()
                     self.wfile.write(body)
             else:
+                LIMITE_SENHA.errou(self._ip())
                 body = json.dumps({"success": False, "error": "Senha incorreta."}, ensure_ascii=False).encode("utf-8")
                 self.send_response(HTTPStatus.UNAUTHORIZED)
                 self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -567,6 +637,7 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                 
             new_recovery_key = self.auth.recover_password(recovery_key, new_password)
             if new_recovery_key:
+                LIMITE_SENHA.acertou(self._ip())
                 token = self.auth.create_session()
                 body = json.dumps({"success": True, "new_recovery_key": new_recovery_key}, ensure_ascii=False).encode("utf-8")
                 self.send_response(HTTPStatus.OK)
@@ -576,6 +647,7 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(body)
             else:
+                LIMITE_SENHA.errou(self._ip())
                 body = json.dumps({"success": False, "error": "Chave de recuperação incorreta."}, ensure_ascii=False).encode("utf-8")
                 self.send_response(HTTPStatus.UNAUTHORIZED)
                 self.send_header("Content-Type", "application/json; charset=utf-8")

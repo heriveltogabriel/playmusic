@@ -329,3 +329,7 @@ body {
     font-size: 0.98rem;
   }
 }
+
+/* v4.9.0: botão sair no rodapé */
+.botao-sair { margin-bottom: 12px; padding: 8px 22px; border-radius: 999px; border: 1px solid var(--glass-border, rgba(255,255,255,0.18)); background: transparent; color: inherit; font: inherit; font-size: 0.9rem; cursor: pointer; opacity: 0.8; }
+.botao-sair:hover { opacity: 1; }

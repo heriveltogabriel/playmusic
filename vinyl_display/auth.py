@@ -133,6 +133,14 @@ class AuthManager:
         h, _ = self._hash(key_normalized, self.recovery_salt)
         return h == self.recovery_hash
 
+    @staticmethod
+    def _nova_chave() -> str:
+        """v4.9.0: VINYL-RESTORE + 4 grupos de 5 caracteres (100 bits; antes eram 8 hex, 32 bits).
+        Sem 0/O/1/I para não confundir ao digitar."""
+        alfabeto = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+        grupos = ["".join(secrets.choice(alfabeto) for _ in range(5)) for _ in range(4)]
+        return "VINYL-RESTORE-" + "-".join(grupos)
+
     def setup_new_password(self, new_password: str) -> str:
         # Generate new password hash
         p_hash, p_salt = self._hash(new_password)
@@ -141,10 +149,7 @@ class AuthManager:
         self.is_default = False
         
         # Generate recovery key
-        # VINYL-RESTORE-XXXX-XXXX where X is alphanumeric hex
-        random_part1 = secrets.token_hex(2).upper()
-        random_part2 = secrets.token_hex(2).upper()
-        recovery_key = f"VINYL-RESTORE-{random_part1}-{random_part2}"
+        recovery_key = self._nova_chave()
         
         # Hash recovery key
         r_hash, r_salt = self._hash(recovery_key, None)
@@ -170,9 +175,7 @@ class AuthManager:
         # Typically keep the same or update. Let's keep it but regenerate is safer.
         # Let's regenerate to ensure one-time usage safety.
         # Generate new recovery key
-        random_part1 = secrets.token_hex(2).upper()
-        random_part2 = secrets.token_hex(2).upper()
-        new_recovery_key = f"VINYL-RESTORE-{random_part1}-{random_part2}"
+        new_recovery_key = self._nova_chave()
         
         r_hash, r_salt = self._hash(new_recovery_key, None)
         self.recovery_hash = r_hash

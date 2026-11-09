@@ -37,12 +37,42 @@ ROUTES: list[tuple[str, str, str]] = [
     ("POST", r"/api/admin/.*", ADMIN),
 ]
 
+# Site fechado (v4.9.0, SITE_FECHADO=1): tudo exige login, inclusive as páginas. Só ficam
+# abertos o login e o que a tela de login precisa; o player e a gravação também abrem nos
+# aparelhos autorizados, sem senha. O que não estiver aqui é admin (login).
+CLOSED_ROUTES: list[tuple[str, str, str]] = [
+    ("GET", r"/login", PUBLIC),
+    ("GET", r"/static/.+", PUBLIC),
+    ("GET", r"/(favicon\.ico|apple-touch-icon(-precomposed)?\.png)", PUBLIC),
+    ("GET", r"/api/health", PUBLIC),
+    ("POST", r"/api/auth/(login|setup|recover|logout)", PUBLIC),
+    # player (/vinyl/) e modo gravação, e o que eles chamam
+    ("GET", r"/", DEVICE),
+    ("GET", r"/gravar", DEVICE),
+    ("GET", r"/api/state", DEVICE),
+    ("GET", r"/api/search", DEVICE),
+    ("GET", r"/api/ouvir/releases", DEVICE),
+    ("GET", r"/api/ouvir/agenda", DEVICE),
+    ("GET", r"/api/ouvir/sides/\d+", DEVICE),
+    ("POST", r"/api/player/heartbeat", DEVICE),
+    ("POST", r"/api/recognize", DEVICE),
+    ("POST", r"/api/playback/[a-z_]+", DEVICE),
+    ("POST", r"/api/ouvir/releases/\d+/(listen|unlisten)", DEVICE),
+]
+
 _COMPILED = [(method, re.compile(pattern + r"/?"), level) for method, pattern, level in ROUTES]
+_CLOSED = [(method, re.compile(pattern + r"/?"), level) for method, pattern, level in CLOSED_ROUTES]
 
 
-def access_for(method: str, path: str) -> str:
-    """Nível exigido para `method path`. Fora de /api/ (páginas e /static) é público;
-    a própria página do admin decide se mostra o login."""
+def access_for(method: str, path: str, fechado: bool = False) -> str:
+    """Nível exigido para `method path`. Com o site aberto, fora de /api/ (páginas e /static)
+    é público e a própria página do admin decide se mostra o login. Com o site fechado, vale
+    a tabela CLOSED_ROUTES e todo o resto exige login."""
+    if fechado:
+        for route_method, pattern, level in _CLOSED:
+            if route_method == method and pattern.fullmatch(path):
+                return level
+        return ADMIN
     if not path.startswith("/api/"):
         return PUBLIC
     for route_method, pattern, level in _COMPILED:

@@ -21,7 +21,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   
   <!-- Styling -->
-  <link rel="stylesheet" href="/static/herivelto.css">
+  <link rel="stylesheet" href="/static/herivelto.css?v=4.9.0">
 </head>
 <body>
   <div class="profile-container">
@@ -175,8 +175,16 @@
     
     <!-- Footer -->
     <div class="profile-footer">
+      <button type="button" id="sair" class="botao-sair">Sair</button>
       <p>&copy; 2026 Herivelto Gabriel</p>
     </div>
+    <script>
+      // v4.9.0: encerra a sessão (aparelhos autorizados continuam liberados para o player)
+      document.getElementById("sair").addEventListener("click", async () => {
+        try { await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" }); } catch (e) {}
+        window.location.href = "/login";
+      });
+    </script>
   </div>
 </body>
 </html>

@@ -748,8 +748,12 @@
       URL.revokeObjectURL(url);
     }
 
+    // v4.9.0: depois do login volta para a página pedida (?next=), ou para a tela de escolha
     function proceedToDashboard() {
-      window.location.href = "/admin";
+      const destino = new URLSearchParams(window.location.search).get("next") || "";
+      const seguro = destino.startsWith("/") && !destino.startsWith("//") && !destino.includes("\\");
+      const padrao = window.location.pathname.startsWith("/admin") ? "/admin" : "/";
+      window.location.href = seguro ? destino : padrao;
     }
   </script>
 </body>
