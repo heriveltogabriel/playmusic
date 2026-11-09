@@ -66,8 +66,24 @@ body.escolhendo button { min-height: 0; }
 .cam-texto p { margin: 0; }
 .cam-canal { font-size: 4.6vh; font-weight: 700; letter-spacing: 0.14em; color: #ffb37a; line-height: 1.1; }
 .cam-banda { margin: 0; font-family: 'DM Serif Display', Georgia, serif; font-weight: 400; font-size: 22vh; line-height: 1.02; overflow: hidden; overflow-wrap: normal; word-break: normal; }
-/* mesma letra do "LP DA SEMANA · VEM OUVIR COMIGO" laranja do player, só que grande (v4.8.2) */
-.cam-convite { margin: 0; font-family: Inter, system-ui, sans-serif; font-size: 17vh; font-weight: 600; letter-spacing: 0.15em; line-height: 1.04; color: #e65c00; text-shadow: 0 0 2vh rgba(230,92,0,0.35), 0 0.4vh 2vh rgba(0,0,0,0.45); overflow: hidden; }
+/* tela da marca, lado direito (v4.8.3): blocos grandes, ícone colorido + texto curto */
+.cam-redes-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3.2vh; }
+.cam-rede { display: flex; align-items: center; gap: 3.4vh; padding: 3vh 4vh 3vh 3vh; border-radius: 3vh; background: rgba(0,0,0,0.32); border: 1px solid rgba(255,248,238,0.14); }
+.cam-rede-icone { position: relative; width: 17vh; height: 17vh; flex-shrink: 0; border-radius: 4.4vh; display: grid; place-items: center; color: #fff; box-shadow: 0 1vh 3vh rgba(0,0,0,0.35); }
+.cam-rede-icone svg { width: 60%; height: 60%; }
+.cam-rede-icone.yt { background: #ff1a1a; }
+.cam-rede-icone.yt svg { width: 70%; height: 70%; }
+.cam-rede-icone.ig { background: radial-gradient(circle at 30% 107%, #fdf497 0%, #fd5949 45%, #d6249f 60%, #285aeb 90%); }
+.cam-rede-icone .icone-oficial { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; border-radius: inherit; }
+.cam-rede-icone.tem-oficial { background: none; box-shadow: none; }
+.cam-rede-icone.tem-oficial svg { display: none; }
+.cam-rede-textos { display: flex; flex-direction: column; gap: 0.8vh; min-width: 0; flex: 1; }
+.cam-rede-titulo { display: block; font-size: 10.5vh; font-weight: 700; line-height: 1.05; color: #fff8ee; white-space: nowrap; overflow: hidden; }
+.cam-rede-sub { font-size: 5.6vh; font-weight: 500; line-height: 1.1; color: rgba(255,243,226,0.85); white-space: nowrap; }
+.cam-acoes { display: flex; gap: 3.2vh; }
+.cam-acao { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 2.4vh; padding: 3vh 2vh; border-radius: 3vh; background: #e65c00; color: #fff; box-shadow: 0 1vh 3vh rgba(0,0,0,0.3); }
+.cam-acao svg { width: 8.5vh; height: 8.5vh; flex-shrink: 0; }
+.cam-acao span { display: block; min-width: 0; font-size: 7vh; font-weight: 700; line-height: 1; white-space: nowrap; overflow: hidden; }
 .cam-album { font-size: 8vh; font-weight: 600; line-height: 1.12; overflow: hidden; color: #fff3e2; }
 .cam-arroba { font-size: 10vh; font-weight: 700; line-height: 1.1; white-space: nowrap; overflow: hidden; }
 .cam-redes { font-size: 5vh; font-weight: 500; color: rgba(255,243,226,0.85); }

@@ -131,8 +131,11 @@ function caber(el, linhas, minimoVh) {
 function ajustarTextos() {
   caber($("banda"), 2, 7);
   caber($("album"), 2, 4.5);
-  caber($("marca-nome"), 2, 7);
-  caber($("marca-arroba"), 1, 5);
+  document.querySelectorAll(".cam-rede-titulo, .cam-acao span").forEach((el) => caber(el, 1, 3.5));
+  // "Curta" e "Compartilhe" no mesmo tamanho (o menor dos dois)
+  const acoes = [...document.querySelectorAll(".cam-acao span")];
+  const menor = Math.min(...acoes.map((el) => parseFloat(getComputedStyle(el).fontSize)));
+  acoes.forEach((el) => { el.style.fontSize = `${menor}px`; });
 }
 window.addEventListener("resize", () => { if (!palco.classList.contains("hidden")) ajustarTextos(); });
 async function mudarLado(passo) {
@@ -344,10 +347,15 @@ async function somVoltou(ev) {
   } catch (e) { /* segue: os botões corrigem */ }
 }
 
-// ícones oficiais (YouTube, Instagram): enquanto o arquivo não existir, o espaço some
+// ícones oficiais (YouTube, Instagram): se o arquivo existir em static/gravar/, ele aparece no
+// lugar do ícone desenhado; se não existir, fica o desenhado
 document.querySelectorAll(".icone-oficial").forEach((img) => {
-  img.addEventListener("error", () => { img.parentElement.classList.add("hidden"); });
-  if (img.complete && img.naturalWidth === 0) img.parentElement.classList.add("hidden");
+  const caixa = img.parentElement;
+  const ok = () => caixa.classList.add("tem-oficial");
+  const falhou = () => { caixa.classList.remove("tem-oficial"); img.remove(); };
+  img.addEventListener("load", ok);
+  img.addEventListener("error", falhou);
+  if (img.complete) { if (img.naturalWidth > 0) ok(); else falhou(); }
 });
 
 // ---------- início ----------

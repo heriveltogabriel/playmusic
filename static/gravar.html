@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/styles.css?v=4.5.7">
-  <link rel="stylesheet" href="/static/gravar.css?v=4.8.2">
+  <link rel="stylesheet" href="/static/gravar.css?v=4.8.3">
 </head>
 <body class="escolhendo">
   <!-- Passo 1: escolher o disco -->
@@ -63,15 +63,36 @@
       </div>
     </main>
 
-    <!-- Tela 2: marca do canal — o logo como ele é; ao lado, o convite grande e o @ -->
+    <!-- Tela 2: marca do canal — redondo do logo; ao lado YouTube, Instagram, curta e compartilhe (v4.8.3) -->
     <div id="tela-marca" class="tela cam-tela">
       <div class="cam-disco-area cam-disco-marca">
         <div id="rotulo-marca" class="cam-logo-redondo" role="img" aria-label="LP da Semana"></div>
       </div>
-      <div class="cam-texto">
-        <h1 id="marca-nome" class="cam-convite">VEM OUVIR COMIGO</h1>
-        <p id="marca-arroba" class="cam-arroba">@lpdasemana</p>
-        <p class="cam-redes">YouTube · Instagram</p>
+      <div class="cam-redes-col">
+        <div class="cam-rede">
+          <div class="cam-rede-icone yt">
+            <img class="icone-oficial" src="/static/gravar/youtube.png" alt="">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8.5 6.2v11.6L18 12z"/></svg>
+          </div>
+          <div class="cam-rede-textos"><span class="cam-rede-titulo">Inscreva-se</span><span class="cam-rede-sub">no YouTube</span></div>
+        </div>
+        <div class="cam-rede">
+          <div class="cam-rede-icone ig">
+            <img class="icone-oficial" src="/static/gravar/instagram.png" alt="">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r="0.6" fill="currentColor"/></svg>
+          </div>
+          <div class="cam-rede-textos"><span class="cam-rede-titulo">@lpdasemana</span><span class="cam-rede-sub">no Instagram</span></div>
+        </div>
+        <div class="cam-acoes">
+          <div class="cam-acao">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/></svg>
+            <span>Curta</span>
+          </div>
+          <div class="cam-acao">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4"/><path d="m15.4 6.5-6.8 4"/></svg>
+            <span>Compartilhe</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -81,6 +102,6 @@
     <p id="dica" class="dica">Toque: tela cheia · segurar 2 s: voltar</p>
   </section>
   <script src="/static/silence-detector.js?v=4.5.4" defer></script>
-  <script src="/static/gravar.js?v=4.8.2" defer></script>
+  <script src="/static/gravar.js?v=4.8.3" defer></script>
 </body>
 </html>
