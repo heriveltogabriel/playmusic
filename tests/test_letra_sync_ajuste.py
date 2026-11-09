@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
 class BrandTests(unittest.TestCase):
     def test_old_brand_is_gone_from_app_screens(self):
-        for name in ("index.html", "admin.html", "ouvir.html", "app.js", "manifest.json"):
+        for name in ("index.html", "admin.html", "app.js", "manifest.json"):
             text = (ROOT / "static" / name).read_text(encoding="utf-8")
             self.assertNotIn("LP da Semana", text, name)
             self.assertNotIn("LP DA SEMANA", text, name)

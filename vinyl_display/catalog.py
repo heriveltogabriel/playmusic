@@ -105,29 +105,8 @@ class CatalogStore:
                 )
                 """
             )
-            # v4.2: prateleiras (listas de discos criadas no admin)
-            connection.execute(
-                """
-                CREATE TABLE IF NOT EXISTS shelves (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    name TEXT NOT NULL,
-                    emoji TEXT NOT NULL DEFAULT '',
-                    position INTEGER NOT NULL DEFAULT 0,
-                    created_at REAL NOT NULL
-                )
-                """
-            )
-            connection.execute(
-                """
-                CREATE TABLE IF NOT EXISTS shelf_items (
-                    shelf_id INTEGER NOT NULL,
-                    release_id INTEGER NOT NULL,
-                    added_at REAL NOT NULL,
-                    note TEXT NOT NULL DEFAULT '',
-                    PRIMARY KEY (shelf_id, release_id)
-                )
-                """
-            )
+            # v4.2 tinha as tabelas shelves/shelf_items (prateleiras); removidas da interface na
+            # v4.10. As tabelas antigas ficam no banco, sem uso, para não apagar dados.
             # v4.3: disco cadastrado no Discogs como CD/arquivo, mas que você tem em vinil
             connection.execute(
                 """
@@ -745,79 +724,6 @@ class CatalogStore:
     # ---------------- v4.2: prateleiras ----------------
     DEFAULT_SHELVES = (("Festa", "🎉"), ("Domingo de manhã", "☀️"), ("Emprestados", "🤝"))
 
-    def list_shelves(self) -> list[dict]:
-        import time as _time
-
-        with self._connect() as connection:
-            if self.get_metadata("shelves_seeded") is None:
-                count = connection.execute("SELECT COUNT(*) FROM shelves").fetchone()[0]
-                if not count:
-                    for index, (name, emoji) in enumerate(self.DEFAULT_SHELVES):
-                        connection.execute(
-                            "INSERT INTO shelves (name, emoji, position, created_at) VALUES (?, ?, ?, ?)",
-                            (name, emoji, index, _time.time()),
-                        )
-                connection.execute(
-                    "INSERT OR REPLACE INTO sync_metadata (key, value) VALUES ('shelves_seeded', '1')"
-                )
-            shelves = [
-                {"id": int(r[0]), "name": r[1], "emoji": r[2], "position": int(r[3]), "items": []}
-                for r in connection.execute("SELECT id, name, emoji, position FROM shelves ORDER BY position, id")
-            ]
-            by_id = {shelf["id"]: shelf for shelf in shelves}
-            for shelf_id, release_id, added_at, note in connection.execute(
-                "SELECT shelf_id, release_id, added_at, note FROM shelf_items ORDER BY added_at DESC"
-            ):
-                if shelf_id in by_id:
-                    by_id[shelf_id]["items"].append(
-                        {"release_id": int(release_id), "added_at": float(added_at), "note": note or ""}
-                    )
-        return shelves
-
-    def create_shelf(self, name: str, emoji: str = "") -> int:
-        import time as _time
-
-        name = (name or "").strip()[:60]
-        if not name:
-            raise ValueError("Nome da prateleira vazio")
-        with self._connect() as connection:
-            position = connection.execute("SELECT COALESCE(MAX(position), -1) + 1 FROM shelves").fetchone()[0]
-            cursor = connection.execute(
-                "INSERT INTO shelves (name, emoji, position, created_at) VALUES (?, ?, ?, ?)",
-                (name, (emoji or "").strip()[:8], position, _time.time()),
-            )
-            return int(cursor.lastrowid)
-
-    def update_shelf(self, shelf_id: int, name: str | None = None, emoji: str | None = None) -> None:
-        with self._connect() as connection:
-            if name is not None and name.strip():
-                connection.execute("UPDATE shelves SET name = ? WHERE id = ?", (name.strip()[:60], shelf_id))
-            if emoji is not None:
-                connection.execute("UPDATE shelves SET emoji = ? WHERE id = ?", (emoji.strip()[:8], shelf_id))
-
-    def delete_shelf(self, shelf_id: int) -> None:
-        with self._connect() as connection:
-            connection.execute("DELETE FROM shelf_items WHERE shelf_id = ?", (shelf_id,))
-            connection.execute("DELETE FROM shelves WHERE id = ?", (shelf_id,))
-
-    def set_shelf_item(self, shelf_id: int, release_id: int, present: bool, note: str | None = None) -> None:
-        import time as _time
-
-        with self._connect() as connection:
-            if not connection.execute("SELECT 1 FROM shelves WHERE id = ?", (shelf_id,)).fetchone():
-                raise ValueError("Prateleira não encontrada")
-            if not present:
-                connection.execute(
-                    "DELETE FROM shelf_items WHERE shelf_id = ? AND release_id = ?", (shelf_id, release_id)
-                )
-                return
-            connection.execute(
-                "INSERT INTO shelf_items (shelf_id, release_id, added_at, note) VALUES (?, ?, ?, ?) "
-                "ON CONFLICT(shelf_id, release_id) DO UPDATE SET note = COALESCE(?, shelf_items.note)",
-                (shelf_id, release_id, _time.time(), (note or "").strip()[:120], None if note is None else note.strip()[:120]),
-            )
-
-    # ---------------- v4.3: edição em vinil escolhida no PlayVinil ----------------
     def get_override(self, release_id: int) -> dict | None:
         with self._connect() as connection:
             row = connection.execute(

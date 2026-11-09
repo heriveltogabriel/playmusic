@@ -245,23 +245,14 @@ function initializeViews() {
   renderWeeklyHistory();
       } else if (targetView === 'timeline') {
         viewTitle.textContent = 'Linha do Tempo';
+        loadTimelineListening(true); // lados e faixas atualizados a cada visita
         renderTimeline();
       } else if (targetView === 'favorites') {
-        viewTitle.textContent = 'Prateleiras';
-        if (typeof loadShelves === 'function') loadShelves();
+        viewTitle.textContent = 'Favoritos';
         renderFavoritesGrid();
-      } else if (targetView === 'artists') {
-        viewTitle.textContent = 'Artistas';
-        renderArtistsIndex();
-      } else if (targetView === 'diary') {
-        viewTitle.textContent = 'Diário da Vitrola';
-        renderDiary();
       } else if (targetView === 'care') {
         viewTitle.textContent = 'Agulha e Cuidados';
         renderCare();
-      } else if (targetView === 'recognition') {
-        viewTitle.textContent = 'Reconhecimento';
-        renderRecognition();
       } else if (targetView === 'settings') {
         viewTitle.textContent = 'Configurações';
         loadSettingsFromServer();

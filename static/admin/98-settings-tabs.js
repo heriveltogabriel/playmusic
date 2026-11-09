@@ -46,6 +46,7 @@ function showSettingsTab(tab) {
   });
   try { localStorage.setItem(SETTINGS_TAB_KEY, tab); } catch (e) { /* sem armazenamento: só não lembra */ }
   if (tab === 'sistema') renderSystemCard();
+  if (tab === 'reconhecimento' && typeof renderRecognition === 'function') renderRecognition();
 }
 
 async function renderSystemCard() {
@@ -126,6 +127,7 @@ function setupSettingsTabs() {
   if (nav) nav.addEventListener('click', () => {
     const active = tabs.querySelector('.settings-tab.active');
     if (active && active.dataset.tab === 'sistema') renderSystemCard();
+    if (active && active.dataset.tab === 'reconhecimento' && typeof renderRecognition === 'function') renderRecognition();
   });
 }
 

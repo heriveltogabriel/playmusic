@@ -1,8 +1,7 @@
-"""Diário da vitrola e cuidados (v4.2).
+"""Lados e faixas ouvidos (v4.10, no lugar do Diário da Vitrola) e cuidados (v4.2).
 
-Diário: cada faixa que o player acompanhou vira uma linha em `listening_log`; faixas
-separadas por mais de SESSION_GAP viram sessões diferentes. Dias anteriores ao registro
-de faixas aparecem pelas audições do disco (sem faixas).
+Cada faixa que o player acompanha vira uma linha em `listening_log`; a Linha do Tempo do
+admin mostra, por disco, os lados ouvidos e essas faixas.
 
 Cuidados: horas de agulha estimadas pelas audições (cada audição conta o disco inteiro) e
 limpeza de cada disco (audições desde a última limpeza).
@@ -11,13 +10,11 @@ from __future__ import annotations
 
 import json
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 from typing import Any
 
 from vinyl_display.playback import get_track_side
 
-BRT = timezone(timedelta(hours=-3))
-SESSION_GAP = 45 * 60
 DEFAULT_DISC_SECONDS = 40 * 60
 NEEDLE_KEY = "needle_state"
 DEFAULT_NEEDLE_LIFE_HOURS = 1000
@@ -28,10 +25,6 @@ def _iso_to_ts(value: str) -> float | None:
         return datetime.fromisoformat(value.replace("Z", "+00:00")).timestamp()
     except (ValueError, AttributeError):
         return None
-
-
-def _day(ts: float) -> str:
-    return datetime.fromtimestamp(ts, BRT).strftime("%Y-%m-%d")
 
 
 def disc_seconds(release: Any) -> int:
@@ -48,90 +41,37 @@ def _release_brief(release: Any) -> dict[str, Any]:
     }
 
 
-# ---------------------------------------------------------------- diário
-def build_diary(store: Any, days: int = 30, now: float | None = None) -> dict[str, Any]:
-    now = now or time.time()
-    since = now - days * 86400
-    releases = {r.release_id: r for r in store.list_releases_with_stats()}
-    log = store.listening_log_since(since)
-
-    sessions: list[dict[str, Any]] = []
-    current: dict[str, Any] | None = None
-    for row in log:
-        if current is None or row["at"] - current["_last"] > SESSION_GAP:
-            current = {"start": row["at"], "_last": row["at"], "end": row["at"], "discs": [], "_by_id": {},
-                       "tracks": 0, "seconds": 0}
-            sessions.append(current)
-        current["_last"] = row["at"]
-        duration = int(row["duration_seconds"] or 0)
-        current["end"] = max(current["end"], row["at"] + duration)
-        current["tracks"] += 1
-        current["seconds"] += duration
-        disc = current["_by_id"].get(row["release_id"])
-        if disc is None:
-            release = releases.get(row["release_id"])
-            disc = (_release_brief(release) if release else
-                    {"release_id": row["release_id"], "title": "Disco removido", "artist": "", "cover_url": ""})
-            disc.update({"sides": [], "tracks": []})
-            current["_by_id"][row["release_id"]] = disc
-            current["discs"].append(disc)
+# ---------------------------------------------------------------- lados e faixas
+def listening_by_release(store: Any) -> dict[int, dict[str, Any]]:
+    """v4.10: para a Linha do Tempo — por disco, os lados já ouvidos e as faixas que o player
+    acompanhou (com quantas vezes e a última vez). Substitui o antigo Diário da Vitrola."""
+    discs: dict[int, dict[str, Any]] = {}
+    for row in store.listening_log_since(0.0):
+        disc = discs.setdefault(int(row["release_id"]), {"sides": [], "tracks": {}, "last_at": 0.0})
         side = row["side"] or get_track_side(row["track_position"])
         if side and side not in disc["sides"]:
             disc["sides"].append(side)
-        disc["tracks"].append({"position": row["track_position"], "title": row["track_title"] or "", "at": row["at"]})
+        position = row["track_position"] or ""
+        track = disc["tracks"].setdefault(position, {"position": position, "title": "", "plays": 0, "last_at": 0.0})
+        track["plays"] += 1
+        track["title"] = row["track_title"] or track["title"]
+        track["last_at"] = max(track["last_at"], row["at"])
+        disc["last_at"] = max(disc["last_at"], row["at"])
+    result: dict[int, dict[str, Any]] = {}
+    for release_id, disc in discs.items():
+        result[release_id] = {
+            "sides": sorted(disc["sides"]),
+            "tracks": sorted(disc["tracks"].values(), key=lambda t: _position_key(t["position"])),
+            "last_at": disc["last_at"],
+        }
+    return result
 
-    logged_days = set()
-    for session in sessions:
-        session.pop("_last", None)
-        session.pop("_by_id", None)
-        session["day"] = _day(session["start"])
-        session["kind"] = "tracks"
-        logged_days.add(session["day"])
 
-    # Dias sem faixas registradas: usa as audições marcadas (player ou "Ouvi").
-    by_day: dict[str, dict[str, Any]] = {}
-    for release in releases.values():
-        for value in release.listen_dates or []:
-            ts = _iso_to_ts(value)
-            if ts is None or ts < since:
-                continue
-            day = _day(ts)
-            if day in logged_days:
-                continue
-            entry = by_day.setdefault(day, {"day": day, "kind": "auditions", "start": ts, "end": ts,
-                                            "discs": [], "tracks": 0, "seconds": 0})
-            entry["start"] = min(entry["start"], ts)
-            entry["end"] = max(entry["end"], ts)
-            entry["seconds"] += disc_seconds(release)
-            entry["discs"].append({**_release_brief(release), "sides": [], "tracks": [], "at": ts})
-    for entry in by_day.values():
-        entry["discs"].sort(key=lambda d: d["at"])
-    sessions.extend(by_day.values())
-    sessions.sort(key=lambda s: s["start"], reverse=True)
-
-    top = []
-    for row in store.top_tracks(since=0.0, limit=20):
-        release = releases.get(row["release_id"])
-        top.append({
-            **(_release_brief(release) if release else {"release_id": row["release_id"], "title": "", "artist": "", "cover_url": ""}),
-            "position": row["track_position"],
-            "track_title": row["track_title"] or "",
-            "plays": row["plays"],
-            "last_at": row["last_at"],
-        })
-
-    first_log = store.listening_log_since(0.0)[:1]
-    return {
-        "days": days,
-        "sessions": sessions,
-        "top_tracks": top,
-        "totals": {
-            "sessions": len(sessions),
-            "discs": sum(len(s["discs"]) for s in sessions),
-            "hours": round(sum(s["seconds"] for s in sessions) / 3600, 1),
-        },
-        "tracks_since": first_log[0]["at"] if first_log else None,
-    }
+def _position_key(position: str) -> tuple:
+    """A1, A2, ..., A10, B1: lado pela letra e faixa pelo número."""
+    letters = "".join(ch for ch in position if ch.isalpha())
+    digits = "".join(ch for ch in position if ch.isdigit())
+    return (letters, int(digits) if digits else 0, position)
 
 
 # ---------------------------------------------------------------- cuidados

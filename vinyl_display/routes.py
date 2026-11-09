@@ -22,7 +22,6 @@ ROUTES: list[tuple[str, str, str]] = [
     ("GET", r"/api/search", PUBLIC),
     ("GET", r"/api/ouvir/releases", PUBLIC),
     ("GET", r"/api/ouvir/agenda", PUBLIC),
-    ("GET", r"/api/ouvir/history", PUBLIC),
     ("GET", r"/api/ouvir/sides/\d+", PUBLIC),
     ("GET", r"/api/config", ADMIN),
     ("GET", r"/api/admin/.*", ADMIN),

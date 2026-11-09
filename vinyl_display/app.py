@@ -445,10 +445,10 @@ class VinylDisplayApp:
         value = unicodedata.normalize("NFKD", title or "").encode("ascii", "ignore").decode("ascii").lower()
         return " ".join("".join(ch if ch.isalnum() else " " for ch in value).split())
 
-    def diary(self, days: int = 30) -> dict[str, Any]:
-        from vinyl_display.journal import build_diary
+    def listening_by_release(self) -> dict[int, dict[str, Any]]:
+        from vinyl_display.journal import listening_by_release
 
-        return build_diary(self.store, days=days)
+        return listening_by_release(self.store)
 
     def care(self) -> dict[str, Any]:
         from vinyl_display.journal import build_care

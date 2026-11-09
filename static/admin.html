@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/admin.css?v=4.5.0">
+  <link rel="stylesheet" href="/static/admin.css?v=4.10.0">
 </head>
 <body>
   <!-- Ambient background glow representing album colors -->
@@ -76,16 +76,6 @@
             </button>
           </li>
           <li>
-            <button class="nav-btn" data-view="artists">
-              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                <line x1="12" y1="19" x2="12" y2="23"></line>
-              </svg>
-              Artistas
-            </button>
-          </li>
-          <li>
             <button class="nav-btn" data-view="ranking">
               <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
@@ -130,16 +120,7 @@
               <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
               </svg>
-              Prateleiras
-            </button>
-          </li>
-          <li>
-            <button class="nav-btn" data-view="diary">
-              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-              </svg>
-              Diário da Vitrola
+              Favoritos
             </button>
           </li>
           <li>
@@ -150,14 +131,6 @@
                 <path d="M19 4l-6.5 6.5"></path>
               </svg>
               Agulha e Cuidados
-            </button>
-          </li>
-          <li>
-            <button class="nav-btn" data-view="recognition">
-              <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M2 10v4M6 6v12M10 3v18M14 8v8M18 5v14M22 10v4"></path>
-              </svg>
-              Reconhecimento
             </button>
           </li>
           <li class="menu-divider" style="height: 1px; background: var(--border-color); margin: 12px 10px; opacity: 0.5;"></li>
@@ -282,30 +255,6 @@
       </section>
 
       <!-- VIEW 4: RANKING DE AUDIÇÕES -->
-      <section id="view-artists" class="content-view">
-        <div id="artists-index">
-          <div class="catalog-toolbar">
-            <div class="toolbar-left"><span class="results-text"><span id="artists-count">0</span> artistas</span></div>
-            <div class="toolbar-search">
-              <div class="search-box">
-                <input type="text" id="artists-search" placeholder="Buscar artista..." autocomplete="off" style="padding-left: 12px;">
-              </div>
-            </div>
-            <div class="toolbar-right">
-              <label for="artists-sort">Ordenar por:</label>
-              <select id="artists-sort">
-                <option value="discs">Mais discos</option>
-                <option value="plays">Mais ouvidos</option>
-                <option value="recent">Ouvido recentemente</option>
-                <option value="name">Nome (A-Z)</option>
-              </select>
-            </div>
-          </div>
-          <div id="artists-grid" class="artists-grid"></div>
-        </div>
-        <div id="artist-page" class="artist-page" style="display: none;"></div>
-      </section>
-
       <section id="view-ranking" class="content-view">
         <div class="ranking-container">
           <!-- Top 3 Podium -->
@@ -564,11 +513,9 @@
 
       <!-- VIEW: FAVORITES (Discos Favoritos) -->
       <section id="view-favorites" class="content-view">
-        <div id="shelf-bar" class="shelf-bar" aria-label="Prateleiras"></div>
-        <div id="shelf-actions" class="shelf-actions"></div>
         <div class="catalog-toolbar">
           <div class="toolbar-left">
-            <span class="results-text"><span id="favorites-filtered-count">0</span> <span id="favorites-count-label">discos</span></span>
+            <span class="results-text">Exibindo <span id="favorites-filtered-count">0</span> favoritos</span>
           </div>
           
           <div class="toolbar-search">
@@ -577,7 +524,7 @@
                 <circle cx="11" cy="11" r="8"></circle>
                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
               </svg>
-              <input type="text" id="favorites-search-input" placeholder="Buscar na prateleira..." autocomplete="off">
+              <input type="text" id="favorites-search-input" placeholder="Buscar nos favoritos..." autocomplete="off">
               <button id="clear-favorites-search-btn" class="clear-search-btn" title="Limpar busca" style="display: none;">&times;</button>
             </div>
           </div>
@@ -588,7 +535,6 @@
               <option value="plays_desc">Mais ouvidos</option>
               <option value="listened_desc">Ouvido recentemente</option>
               <option value="listened_asc">Ouvido há mais tempo</option>
-              <option value="shelf_added_desc">Adicionado à prateleira</option>
               <option value="added_desc">Adicionado à coleção</option>
               <option value="year_asc">Ano de lançamento</option>
               <option value="artist_asc">Artista (A-Z)</option>
@@ -683,39 +629,6 @@
       </section>
 
       <!-- VIEW 6: SETTINGS (Configurações) -->
-      <section id="view-diary" class="content-view">
-        <div class="stats-grid">
-          <div class="diary-toolbar">
-            <span class="diary-muted">Período:</span>
-            <select id="diary-days" style="width: auto;">
-              <option value="7">7 dias</option>
-              <option value="30" selected>30 dias</option>
-              <option value="90">90 dias</option>
-              <option value="365">1 ano</option>
-            </select>
-          </div>
-          <div class="stats-card-row">
-            <div class="stat-mini-card"><div class="mini-card-label">Sessões</div><div id="diary-sessions" class="mini-card-value">0</div></div>
-            <div class="stat-mini-card"><div class="mini-card-label">Discos tocados</div><div id="diary-discs" class="mini-card-value">0</div></div>
-            <div class="stat-mini-card"><div class="mini-card-label">Horas de música</div><div id="diary-hours" class="mini-card-value">0</div></div>
-            <div class="stat-mini-card"><div class="mini-card-label">Faixas registradas</div><div id="diary-since" class="mini-card-value diary-since">—</div></div>
-          </div>
-          <div class="stats-row">
-            <div class="stats-section-card span-full">
-              <h3>Sessões</h3>
-              <p class="profile-hint">Cada vez que você senta para ouvir: os discos, os lados e as faixas que o player acompanhou. Dias antes do registro de faixas mostram só os discos.</p>
-              <div id="diary-list" class="diary-list"></div>
-            </div>
-          </div>
-          <div class="stats-row">
-            <div class="stats-section-card span-full">
-              <h3>Faixas mais tocadas</h3>
-              <div id="diary-top" class="diary-top"></div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section id="view-care" class="content-view">
         <div class="stats-grid">
           <div class="stats-row">
@@ -752,66 +665,6 @@
         </div>
       </section>
 
-      <section id="view-recognition" class="content-view">
-        <div class="stats-grid">
-          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px;">
-            <span style="font-size: 0.85rem; color: var(--text-muted);">Período:</span>
-            <select id="recognition-days" style="width: auto;">
-              <option value="7">7 dias</option>
-              <option value="30" selected>30 dias</option>
-              <option value="90">90 dias</option>
-            </select>
-          </div>
-          <div class="stats-card-row">
-            <div class="stat-mini-card">
-              <div class="mini-card-label">Chamadas ao Shazam</div>
-              <div id="rec-calls" class="mini-card-value">0</div>
-              <div id="rec-calls-sub" style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;"></div>
-            </div>
-            <div class="stat-mini-card">
-              <div class="mini-card-label">Chamadas por disco</div>
-              <div id="rec-per-disc" class="mini-card-value">—</div>
-              <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">antes da 3.5: ~12 a 15</div>
-            </div>
-            <div class="stat-mini-card">
-              <div class="mini-card-label">Resolvido sem Shazam</div>
-              <div id="rec-local" class="mini-card-value">0</div>
-              <div id="rec-local-sub" style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;"></div>
-            </div>
-            <div class="stat-mini-card">
-              <div class="mini-card-label">Acerto do reconhecimento</div>
-              <div id="rec-match-rate" class="mini-card-value">—</div>
-              <div id="rec-match-sub" style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;"></div>
-            </div>
-          </div>
-
-          <div class="settings-card">
-            <div class="settings-card-header"><h3>Chamadas ao Shazam por dia</h3></div>
-            <div id="rec-chart" style="display: flex; align-items: flex-end; gap: 3px; height: 140px; margin-top: 12px;"></div>
-            <div id="rec-chart-axis" style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-top: 6px;"></div>
-          </div>
-
-          <div class="settings-card">
-            <div class="settings-card-header"><h3>Por que o Shazam foi chamado</h3></div>
-            <div id="rec-triggers" class="rec-triggers"></div>
-          </div>
-
-          <div class="settings-card">
-            <div class="settings-card-header"><h3>Por disco</h3></div>
-            <div style="overflow-x: auto;">
-              <div class="table-scroll"><table id="rec-discs" style="width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 8px;"></table></div>
-            </div>
-          </div>
-
-          <div class="settings-card">
-            <div class="settings-card-header"><h3>Últimos eventos</h3></div>
-            <div style="overflow-x: auto;">
-              <div class="table-scroll"><table id="rec-events" style="width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 8px;"></table></div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section id="view-settings" class="content-view">
         <div class="settings-container">
           <nav id="settings-tabs" class="settings-tabs" role="tablist" aria-label="Seções das configurações">
@@ -820,7 +673,67 @@
             <button type="button" class="settings-tab" data-tab="apis" role="tab">APIs</button>
             <button type="button" class="settings-tab" data-tab="player" role="tab">Player e alertas</button>
             <button type="button" class="settings-tab" data-tab="seguranca" role="tab">Segurança</button>
+            <button type="button" class="settings-tab" data-tab="reconhecimento" role="tab">Reconhecimento</button>
           </nav>
+
+          <!-- v4.10: Reconhecimento virou aba das Configurações (era um menu próprio) -->
+          <div data-settings-tab="reconhecimento" class="stats-grid settings-recognition">
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px;">
+              <span style="font-size: 0.85rem; color: var(--text-muted);">Período:</span>
+              <select id="recognition-days" class="history-select" style="width: auto;">
+                <option value="7">7 dias</option>
+                <option value="30" selected>30 dias</option>
+                <option value="90">90 dias</option>
+              </select>
+            </div>
+            <div class="stats-card-row">
+              <div class="stat-mini-card">
+                <div class="mini-card-label">Chamadas ao Shazam</div>
+                <div id="rec-calls" class="mini-card-value">0</div>
+                <div id="rec-calls-sub" style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;"></div>
+              </div>
+              <div class="stat-mini-card">
+                <div class="mini-card-label">Chamadas por disco</div>
+                <div id="rec-per-disc" class="mini-card-value">—</div>
+                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">antes da 3.5: ~12 a 15</div>
+              </div>
+              <div class="stat-mini-card">
+                <div class="mini-card-label">Resolvido sem Shazam</div>
+                <div id="rec-local" class="mini-card-value">0</div>
+                <div id="rec-local-sub" style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;"></div>
+              </div>
+              <div class="stat-mini-card">
+                <div class="mini-card-label">Acerto do reconhecimento</div>
+                <div id="rec-match-rate" class="mini-card-value">—</div>
+                <div id="rec-match-sub" style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;"></div>
+              </div>
+            </div>
+
+            <div class="settings-card">
+              <div class="settings-card-header"><h3>Chamadas ao Shazam por dia</h3></div>
+              <div id="rec-chart" style="display: flex; align-items: flex-end; gap: 3px; height: 140px; margin-top: 12px;"></div>
+              <div id="rec-chart-axis" style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-top: 6px;"></div>
+            </div>
+
+            <div class="settings-card">
+              <div class="settings-card-header"><h3>Por que o Shazam foi chamado</h3></div>
+              <div id="rec-triggers" class="rec-triggers"></div>
+            </div>
+
+            <div class="settings-card">
+              <div class="settings-card-header"><h3>Por disco</h3></div>
+              <div style="overflow-x: auto;">
+                <div class="table-scroll"><table id="rec-discs" style="width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 8px;"></table></div>
+              </div>
+            </div>
+
+            <div class="settings-card">
+              <div class="settings-card-header"><h3>Últimos eventos</h3></div>
+              <div style="overflow-x: auto;">
+                <div class="table-scroll"><table id="rec-events" style="width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 8px;"></table></div>
+              </div>
+            </div>
+          </div>
 
           <div data-settings-tab="sistema" class="settings-card" id="system-card">
             <div class="settings-card-header"><h3>Sistema</h3></div>
@@ -1189,10 +1102,6 @@
 
           <div id="details-edition" class="details-edition"></div>
 
-          <div class="details-shelves-block">
-            <span>Prateleiras:</span>
-            <div id="details-shelves" class="details-shelves"></div>
-          </div>
 
           <div class="details-notes-block">
             <label>Notas Privadas:</label>
@@ -1382,23 +1291,21 @@
   <div id="toast-container" class="toast-container"></div>
 
   <!-- Database & Logic Scripts -->
-  <script src="/static/admin/00-core.js?v=4.5.0" defer></script>
+  <script src="/static/admin/00-core.js?v=4.10.0" defer></script>
   <script src="/static/admin/10-agenda.js?v=4.5.0" defer></script>
   <script src="/static/admin/20-collection.js?v=4.5.0" defer></script>
   <script src="/static/admin/25-filters.js?v=4.5.0" defer></script>
-  <script src="/static/admin/30-timeline.js?v=4.5.0" defer></script>
+  <script src="/static/admin/30-timeline.js?v=4.10.0" defer></script>
   <script src="/static/admin/40-stats.js?v=4.5.0" defer></script>
   <script src="/static/admin/45-profile.js?v=4.5.0" defer></script>
-  <script src="/static/admin/50-dialogs.js?v=4.5.0" defer></script>
+  <script src="/static/admin/50-dialogs.js?v=4.10.0" defer></script>
   <script src="/static/admin/60-ranking.js?v=4.5.0" defer></script>
   <script src="/static/admin/70-settings.js?v=4.5.0" defer></script>
   <script src="/static/admin/80-history.js?v=4.5.0" defer></script>
   <script src="/static/admin/90-devices-alerts.js?v=4.5.0" defer></script>
   <script src="/static/admin/95-recognition.js?v=4.5.0" defer></script>
-  <script src="/static/admin/96-diary-care.js?v=4.5.0" defer></script>
-  <script src="/static/admin/97-shelves.js?v=4.5.0" defer></script>
-  <script src="/static/admin/98-settings-tabs.js?v=4.5.0" defer></script>
-  <script src="/static/admin/99-artists.js?v=4.5.0" defer></script>
+  <script src="/static/admin/96-diary-care.js?v=4.10.0" defer></script>
+  <script src="/static/admin/98-settings-tabs.js?v=4.10.0" defer></script>
   <script src="/static/admin/99b-vinyl-edition.js?v=4.5.0" defer></script>
 </body>
 </html>

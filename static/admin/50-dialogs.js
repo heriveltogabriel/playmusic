@@ -215,13 +215,6 @@ function openDetailsDialog(id) {
   document.getElementById('details-cover').src = lp.cover_image || lp.thumbnail || defaultCover;
   document.getElementById('details-title').textContent = lp.title;
   document.getElementById('details-artist').textContent = lp.artist;
-  // v4.2: o nome do artista abre a página dele
-  const detailsArtistEl = document.getElementById('details-artist');
-  if (detailsArtistEl && typeof openArtistForLp === 'function') {
-    detailsArtistEl.classList.add('details-artist-link');
-    detailsArtistEl.title = 'Ver a página do artista';
-    detailsArtistEl.onclick = () => openArtistForLp(lp);
-  }
   document.getElementById('details-year').textContent = lp.original_year > 0 ? lp.original_year : 'Ano Desconhecido';
   
   const editionYearContainer = document.getElementById('details-edition-year-container');
@@ -278,7 +271,6 @@ function openDetailsDialog(id) {
 
   // Interactive stars
   renderDetailsStars(lp);
-  if (typeof renderDetailsShelves === 'function') renderDetailsShelves(lp);
   if (typeof renderDetailsEdition === 'function') renderDetailsEdition(lp);
   
   // Details Action Buttons

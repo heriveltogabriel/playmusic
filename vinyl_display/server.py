@@ -230,9 +230,6 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             else:
                 self._send_static("admin.html")
             return
-        if path == "/ouvir" or path == "/ouvir/":
-            self._send_static("ouvir.html")
-            return
         if path == "/gravar" or path == "/gravar/":
             self._send_static("gravar.html")
             return
@@ -305,10 +302,6 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                 return
             self._json(sides)
             return
-        if path == "/api/ouvir/history":
-            history = self.app.get_listening_history()
-            self._json(history)
-            return
         if path == "/api/admin/recognition":
             from urllib.parse import parse_qs
             import time as _time
@@ -323,22 +316,6 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
             report["shazam_usage"] = self.app.shazam_usage()
             self._json(report)
             return
-        if path == "/api/admin/artist":
-            from urllib.parse import parse_qs
-
-            from vinyl_display.artist import artist_listening, discography
-
-            query = parse_qs(urlparse(self.path).query)
-            try:
-                ids = [int(x) for x in (query.get("release_ids") or [""])[0].split(",") if x.strip()][:200]
-            except ValueError:
-                self.send_error(HTTPStatus.BAD_REQUEST)
-                return
-            result = {"listening": artist_listening(self.app.store, ids)}
-            if (query.get("discography") or ["1"])[0] != "0":
-                result["discography"] = discography(self.app, ids, refresh=(query.get("refresh") or ["0"])[0] == "1")
-            self._json(result)
-            return
         if path.startswith("/api/admin/releases/") and path.endswith("/vinyl_versions"):
             try:
                 release_id = int(path.split("/")[4])
@@ -352,18 +329,9 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
 
             self._json(build_system_status(self.app))
             return
-        if path == "/api/admin/shelves":
-            self._json({"shelves": self.app.store.list_shelves()})
-            return
-        if path == "/api/admin/diary":
-            from urllib.parse import parse_qs
-
-            query = parse_qs(urlparse(self.path).query)
-            try:
-                days = max(1, min(365, int((query.get("days") or ["30"])[0])))
-            except ValueError:
-                days = 30
-            self._json(self.app.diary(days))
+        if path == "/api/admin/listening":
+            # v4.10: lados e faixas ouvidos por disco, para a Linha do Tempo
+            self._json({str(k): v for k, v in self.app.listening_by_release().items()})
             return
         if path == "/api/admin/care":
             self._json(self.app.care())
@@ -824,31 +792,6 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
                 self.send_error(HTTPStatus.BAD_REQUEST)
                 return
             self._json(self.app.use_vinyl_version(release_id, vinyl_id))
-            return
-        if path.startswith("/api/admin/shelves/"):
-            payload = self._read_json_body()
-            action = path.rsplit("/", 1)[-1]
-            store = self.app.store
-            try:
-                if action == "create":
-                    store.create_shelf(str(payload.get("name") or ""), str(payload.get("emoji") or ""))
-                elif action == "update":
-                    store.update_shelf(int(payload["id"]), payload.get("name"), payload.get("emoji"))
-                elif action == "delete":
-                    store.delete_shelf(int(payload["id"]))
-                elif action == "item":
-                    note = payload.get("note")
-                    store.set_shelf_item(
-                        int(payload["shelf_id"]), int(payload["release_id"]),
-                        bool(payload.get("present", True)), None if note is None else str(note),
-                    )
-                else:
-                    self.send_error(HTTPStatus.NOT_FOUND)
-                    return
-            except (KeyError, TypeError, ValueError) as error:
-                self._json_status({"status": "error", "message": str(error)}, HTTPStatus.BAD_REQUEST)
-                return
-            self._json({"status": "ok", "shelves": store.list_shelves()})
             return
         if path == "/api/admin/care/needle":
             from vinyl_display.journal import update_needle

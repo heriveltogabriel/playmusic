@@ -46,7 +46,7 @@ class TabelaFechadaTests(unittest.TestCase):
             ("GET", "/admin"): ADMIN,
             ("GET", "/ouvir"): ADMIN,
             ("GET", "/agenda"): ADMIN,
-            ("GET", "/api/ouvir/history"): ADMIN,
+            ("GET", "/api/admin/stats"): ADMIN,
             ("GET", "/qualquer/coisa"): ADMIN,
             ("POST", "/api/auth/change_password"): ADMIN,
         }
@@ -55,7 +55,6 @@ class TabelaFechadaTests(unittest.TestCase):
 
     def test_site_aberto_continua_igual(self):
         self.assertEqual(access_for("GET", "/ouvir"), PUBLIC)
-        self.assertEqual(access_for("GET", "/api/ouvir/history"), PUBLIC)
         self.assertEqual(access_for("GET", "/api/state"), PUBLIC)
 
 
@@ -131,9 +130,9 @@ class HttpSiteFechadoTests(unittest.TestCase):
         self.assertEqual((status, headers["Location"]), (302, "/login?next=/"))
         status, headers, _ = self.get("/", headers={"X-Forwarded-Prefix": "/vinyl"})
         self.assertEqual((status, headers["Location"]), (302, "/login?next=/vinyl/"))
-        status, headers, _ = self.get("/ouvir")
-        self.assertEqual((status, headers["Location"]), (302, "/login?next=/ouvir"))
-        self.assertEqual(self.get("/api/ouvir/history")[0], 401)
+        status, headers, _ = self.get("/agenda")
+        self.assertEqual((status, headers["Location"]), (302, "/login?next=/agenda"))
+        self.assertEqual(self.get("/api/admin/stats")[0], 401)
         self.assertEqual(self.get("/api/state")[0], 401)
         status, _, corpo = self.get("/login")
         self.assertEqual(status, 200)
@@ -143,10 +142,10 @@ class HttpSiteFechadoTests(unittest.TestCase):
         status, headers, corpo = self.post("/api/auth/login", {"password": "senha-certa"})
         self.assertEqual(status, 200)
         sessao = headers["Set-Cookie"].split(";")[0]
-        for caminho in ("/herivelto", "/admin", "/ouvir", "/", "/gravar", "/api/ouvir/history", "/api/state"):
+        for caminho in ("/herivelto", "/admin", "/agenda", "/", "/gravar", "/api/admin/stats", "/api/state"):
             self.assertEqual(self.get(caminho, cookie=sessao)[0], 200, caminho)
-        status, headers, _ = self.get("/login?next=/ouvir", cookie=sessao)
-        self.assertEqual((status, headers["Location"]), (302, "/ouvir"))
+        status, headers, _ = self.get("/login?next=/agenda", cookie=sessao)
+        self.assertEqual((status, headers["Location"]), (302, "/agenda"))
         status, headers, _ = self.get("/login?next=//outro.site", cookie=sessao)
         self.assertEqual(headers["Location"], "/")
 
@@ -162,9 +161,9 @@ class HttpSiteFechadoTests(unittest.TestCase):
             aparelho = f"{VinylRequestHandler.DEVICE_COOKIE}={token if isinstance(token, str) else token[1]}"
         for caminho in ("/", "/gravar", "/api/state", "/api/ouvir/releases"):
             self.assertEqual(self.get(caminho, cookie=aparelho)[0], 200, caminho)
-        for caminho in ("/herivelto", "/admin", "/ouvir"):
+        for caminho in ("/herivelto", "/admin", "/agenda"):
             self.assertEqual(self.get(caminho, cookie=aparelho)[0], 302, caminho)
-        self.assertEqual(self.get("/api/ouvir/history", cookie=aparelho)[0], 401)
+        self.assertEqual(self.get("/api/admin/stats", cookie=aparelho)[0], 401)
 
     def test_bloqueio_de_tentativas(self):
         ip = {"X-Real-IP": "9.9.9.9"}

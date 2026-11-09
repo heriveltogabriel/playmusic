@@ -5,13 +5,13 @@ import unittest
 from datetime import datetime, timedelta, timezone
 
 from tests.test_v36_compilations_devices import make_app
-from vinyl_display.journal import build_care, build_diary, replace_needle, update_needle
+from vinyl_display.journal import build_care, listening_by_release, replace_needle, update_needle
 from vinyl_display.routes import ADMIN, access_for
 
 BRT = timezone(timedelta(hours=-3))
 
 
-class DiaryTests(unittest.TestCase):
+class ListeningTests(unittest.TestCase):
     def test_track_changes_become_a_session(self):
         with tempfile.TemporaryDirectory() as tmp:
             app, store = make_app(tmp)
@@ -25,32 +25,27 @@ class DiaryTests(unittest.TestCase):
             app.state()
             positions = [r["track_position"] for r in store.listening_log_since(0)]
             self.assertEqual(sorted(positions), ["A1", "A2"])
-            diary = build_diary(store, days=7)
-            session = diary["sessions"][0]
-            self.assertEqual(session["kind"], "tracks")
-            self.assertEqual(session["discs"][0]["sides"], ["A"])
-            self.assertEqual(len(session["discs"][0]["tracks"]), 2)
-            self.assertEqual(diary["top_tracks"][0]["plays"], 1)
+            disc = listening_by_release(store)[1]
+            self.assertEqual(disc["sides"], ["A"])
+            self.assertEqual([t["position"] for t in disc["tracks"]], ["A1", "A2"])
+            self.assertEqual(disc["tracks"][0]["plays"], 1)
 
-    def test_gap_splits_sessions_and_old_days_use_auditions(self):
+    def test_sides_and_tracks_by_release(self):
         with tempfile.TemporaryDirectory() as tmp:
             app, store = make_app(tmp)
             now = time.time()
             store.log_track_play(now - 7200, 1, "A1", "Que País É Este", "A", 180)
-            store.log_track_play(now - 60, 2, "A1", "Será", "A", 150)
-            old = datetime.now(timezone.utc) - timedelta(days=3)
-            store.increment_auditions(3)
-            from dataclasses import replace
-
-            release = store.get_release(3)
-            store.upsert_release(replace(release, listen_dates=[old.isoformat().replace("+00:00", "Z")]))
-            diary = build_diary(store, days=30, now=now)
-            kinds = [s["kind"] for s in diary["sessions"]]
-            self.assertEqual(kinds.count("tracks"), 2)
-            self.assertIn("auditions", kinds)
+            store.log_track_play(now - 3600, 1, "A1", "Que País É Este", "A", 180)
+            store.log_track_play(now - 60, 1, "B10", "Faroeste Caboclo", "B", 540)
+            store.log_track_play(now - 30, 1, "B2", "Angra dos Reis", "B", 200)
+            disc = listening_by_release(store)[1]
+            self.assertEqual(disc["sides"], ["A", "B"])
+            self.assertEqual([t["position"] for t in disc["tracks"]], ["A1", "B2", "B10"])
+            self.assertEqual(disc["tracks"][0]["plays"], 2)
+            self.assertAlmostEqual(disc["last_at"], now - 30)
 
     def test_endpoints_are_admin(self):
-        for path in ("/api/admin/diary", "/api/admin/care"):
+        for path in ("/api/admin/listening", "/api/admin/care"):
             self.assertEqual(access_for("GET", path), ADMIN)
         for path in ("/api/admin/care/needle", "/api/admin/care/needle/replace", "/api/admin/care/cleaned"):
             self.assertEqual(access_for("POST", path), ADMIN)

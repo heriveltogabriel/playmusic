@@ -1,7 +1,6 @@
-// Admin do PlayVinil — Diário da Vitrola e Agulha e Cuidados (v4.2).
+// Admin do PlayVinil — Agulha e Cuidados (v4.2). O Diário da Vitrola saiu na v4.10.
 // Scripts clássicos carregados em ordem pelo admin.html; compartilham o escopo global.
 
-const DIARY_WEEKDAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 const DIARY_DEFAULT_COVER = '/static/playvinil-cover.svg';
 
 function dcEsc(text) {
@@ -10,118 +9,14 @@ function dcEsc(text) {
   return div.innerHTML;
 }
 
-function dcTime(ts) {
-  return new Date(ts * 1000).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-}
-
 function dcDate(ts) {
   return new Date(ts * 1000).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-}
-
-function dcDayTitle(dayKey) {
-  const [y, m, d] = dayKey.split('-').map(Number);
-  const date = new Date(y, m - 1, d);
-  const today = new Date();
-  const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
-  const same = (a, b) => a.toDateString() === b.toDateString();
-  const label = same(date, today) ? 'Hoje' : same(date, yesterday) ? 'Ontem' : DIARY_WEEKDAYS[date.getDay()];
-  return `${label}, ${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}`;
-}
-
-function dcDuration(seconds) {
-  const minutes = Math.round((seconds || 0) / 60);
-  if (minutes < 60) return `${minutes} min`;
-  return `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, '0')}`;
 }
 
 async function dcFetch(url, options) {
   const response = await fetch(url, options);
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   return response.json();
-}
-
-// ==================== DIÁRIO DA VITROLA ====================
-async function renderDiary() {
-  const list = document.getElementById('diary-list');
-  if (!list) return;
-  const days = (document.getElementById('diary-days') || {}).value || '30';
-  let data;
-  try {
-    data = await dcFetch(`/api/admin/diary?days=${days}`);
-  } catch (error) {
-    showToast('Não foi possível carregar o diário.', 'error');
-    return;
-  }
-  const set = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
-  set('diary-sessions', data.totals.sessions);
-  set('diary-discs', data.totals.discs);
-  set('diary-hours', String(data.totals.hours).replace('.', ','));
-  set('diary-since', data.tracks_since ? `desde ${dcDate(data.tracks_since)}` : 'a partir de hoje');
-
-  list.replaceChildren();
-  if (!data.sessions.length) {
-    list.innerHTML = '<p class="profile-hint">Nenhuma audição neste período.</p>';
-  }
-  let lastDay = '';
-  data.sessions.forEach(session => {
-    if (session.day !== lastDay) {
-      lastDay = session.day;
-      const header = document.createElement('h4');
-      header.className = 'diary-day';
-      header.textContent = dcDayTitle(session.day);
-      list.appendChild(header);
-    }
-    const card = document.createElement('div');
-    card.className = 'diary-session';
-    const when = session.kind === 'tracks'
-      ? `${dcTime(session.start)} – ${dcTime(session.end)} · ${dcDuration(session.end - session.start)} · ${session.tracks} ${session.tracks === 1 ? 'faixa' : 'faixas'}`
-      : `${session.discs.length} ${session.discs.length === 1 ? 'disco' : 'discos'} · audições marcadas`;
-    card.innerHTML = `<div class="diary-session-when">${dcEsc(when)}</div>`;
-    session.discs.forEach(disc => {
-      const row = document.createElement('div');
-      row.className = 'diary-disc';
-      const sides = disc.sides && disc.sides.length ? `Lado ${disc.sides.join(' · ')}` : (disc.at ? `às ${dcTime(disc.at)}` : '');
-      row.innerHTML = `
-        <img src="${dcEsc(disc.cover_url || DIARY_DEFAULT_COVER)}" alt="" loading="lazy" onerror="this.src='${DIARY_DEFAULT_COVER}'">
-        <div class="diary-disc-info">
-          <div class="diary-disc-title">${dcEsc(disc.title)}</div>
-          <div class="diary-disc-artist">${dcEsc(disc.artist)}${sides ? ` · <span class="diary-sides">${dcEsc(sides)}</span>` : ''}</div>
-        </div>`;
-      if (disc.tracks && disc.tracks.length) {
-        const details = document.createElement('details');
-        details.className = 'diary-tracks';
-        details.innerHTML = `<summary>${disc.tracks.length} ${disc.tracks.length === 1 ? 'faixa' : 'faixas'}</summary>` +
-          '<ol>' + disc.tracks.map(t => `<li><span>${dcEsc(t.position)}</span> ${dcEsc(t.title)} <small>${dcTime(t.at)}</small></li>`).join('') + '</ol>';
-        row.querySelector('.diary-disc-info').appendChild(details);
-      }
-      row.querySelector('img').addEventListener('click', () => {
-        if (typeof openDetailsDialog === 'function') openDetailsDialog(disc.release_id);
-      });
-      card.appendChild(row);
-    });
-    list.appendChild(card);
-  });
-
-  const top = document.getElementById('diary-top');
-  if (top) {
-    top.replaceChildren();
-    if (!data.top_tracks.length) {
-      top.innerHTML = '<p class="profile-hint">Ainda sem faixas registradas. O diário começa a contar a partir desta versão, sempre que o player acompanhar um disco.</p>';
-    }
-    data.top_tracks.forEach((track, index) => {
-      const row = document.createElement('div');
-      row.className = 'diary-top-row';
-      row.innerHTML = `
-        <span class="diary-top-rank">${index + 1}</span>
-        <img src="${dcEsc(track.cover_url || DIARY_DEFAULT_COVER)}" alt="" loading="lazy" onerror="this.src='${DIARY_DEFAULT_COVER}'">
-        <div class="diary-disc-info">
-          <div class="diary-disc-title">${dcEsc(track.position)} · ${dcEsc(track.track_title)}</div>
-          <div class="diary-disc-artist">${dcEsc(track.artist)} — ${dcEsc(track.title)}</div>
-        </div>
-        <span class="diary-top-plays">${track.plays}×</span>`;
-      top.appendChild(row);
-    });
-  }
 }
 
 // ==================== AGULHA E CUIDADOS ====================
@@ -230,8 +125,6 @@ function renderCareList() {
 }
 
 function setupCare() {
-  const days = document.getElementById('diary-days');
-  if (days) days.addEventListener('change', renderDiary);
   const search = document.getElementById('care-search');
   if (search) search.addEventListener('input', renderCareList);
 

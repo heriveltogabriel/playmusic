@@ -4914,39 +4914,15 @@ dialog::backdrop {
 .heatmap-day { align-self: center; }
 .heatmap-cell { aspect-ratio: 1; border-radius: 3px; }
 
-/* ==================== v4.2: DIÁRIO DA VITROLA E CUIDADOS ==================== */
-.diary-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 4px; }
-.diary-muted { font-size: 0.85rem; color: var(--text-muted); }
-.mini-card-value.diary-since { font-size: 1rem; }
-
-.diary-day {
-  margin: 22px 0 8px;
-  font-size: 0.9rem;
-  color: var(--primary);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.diary-day:first-child { margin-top: 8px; }
-
-.diary-session {
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  padding: 12px 14px;
-  margin-bottom: 10px;
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.diary-session-when { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 8px; }
-
-.diary-disc, .diary-top-row, .care-row {
+/* ==================== v4.2: AGULHA E CUIDADOS ==================== */
+.diary-disc, .care-row {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 6px 0;
 }
 
-.diary-disc img, .diary-top-row img, .care-row img {
+.diary-disc img, .care-row img {
   width: 48px;
   height: 48px;
   border-radius: 4px;
@@ -4958,16 +4934,6 @@ dialog::backdrop {
 .diary-disc-info { flex: 1; min-width: 0; }
 .diary-disc-title { color: var(--text-primary); font-weight: 600; font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .diary-disc-artist { color: var(--text-secondary); font-size: 0.8rem; }
-.diary-sides { color: var(--primary); }
-
-.diary-tracks { margin-top: 4px; font-size: 0.8rem; color: var(--text-secondary); }
-.diary-tracks summary { cursor: pointer; color: var(--text-muted); }
-.diary-tracks ol { margin: 6px 0 0; padding-left: 18px; }
-.diary-tracks li span { color: var(--primary); font-weight: 600; margin-right: 4px; }
-.diary-tracks li small { color: var(--text-muted); margin-left: 6px; }
-
-.diary-top-rank { width: 22px; text-align: right; color: var(--text-muted); font-variant-numeric: tabular-nums; }
-.diary-top-plays { color: var(--primary); font-weight: 700; }
 
 .care-needle {
   display: grid;
@@ -5015,65 +4981,17 @@ dialog::backdrop {
   .care-needle { grid-template-columns: 1fr; }
 }
 
-/* v4.2: de onde veio cada disco, na Linha do Tempo */
-.timeline-origin {
-  margin-top: 4px;
-  font-size: 0.78rem;
-  color: var(--text-secondary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* ==================== v4.2: PRATELEIRAS ==================== */
-.shelf-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
-
-.shelf-chip {
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-color);
-  border-radius: 999px;
-  padding: 7px 14px;
-  font-size: 0.88rem;
-  cursor: pointer;
-}
-
-.shelf-chip.active { color: var(--text-primary); border-color: var(--primary); background: var(--primary-light); }
-.shelf-chip-count { color: var(--primary); font-size: 0.78rem; margin-left: 4px; }
-.shelf-chip-add { border-style: dashed; }
-
-.shelf-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; min-height: 8px; margin-bottom: 14px; }
-.shelf-delete { color: var(--danger); }
-
-.shelf-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.shelf-form input {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 7px 10px;
-  color: var(--text-primary);
-}
-.shelf-form-emoji { width: 56px; text-align: center; }
-.shelf-form-name { min-width: 220px; }
+/* v4.10: lados e faixas ouvidos de cada disco, na Linha do Tempo (no lugar das notas) */
+.timeline-listened { margin-top: 4px; font-size: 0.8rem; color: var(--text-secondary); }
+.timeline-listened summary { cursor: pointer; list-style-position: inside; }
+.timeline-listened summary:hover { color: var(--text-primary); }
+.timeline-sides { color: var(--primary); font-weight: 600; }
+.timeline-tracks { margin: 6px 0 2px; padding-left: 20px; display: flex; flex-direction: column; gap: 2px; }
+.timeline-tracks li { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.timeline-track-pos { color: var(--primary); font-weight: 600; margin-right: 4px; font-variant-numeric: tabular-nums; }
+.timeline-tracks small { color: var(--text-muted); margin-left: 4px; }
 
 .lp-card-last-listen { font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; }
-.lp-card-shelf-note { font-size: 0.75rem; color: var(--primary); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-.details-shelves-block { display: flex; flex-direction: column; gap: 8px; margin: 14px 0; }
-.details-shelves-block > span { font-size: 0.8rem; color: var(--text-secondary); font-weight: 600; }
-.details-shelves { display: flex; flex-wrap: wrap; gap: 8px; }
-.details-shelf { display: flex; align-items: center; gap: 6px; }
-.details-shelf .shelf-chip { padding: 5px 12px; font-size: 0.8rem; }
-.details-shelf-note {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  padding: 4px 8px;
-  color: var(--text-primary);
-  font-size: 0.78rem;
-  width: 170px;
-}
-.details-shelves-empty { font-size: 0.8rem; color: var(--text-muted); }
 
 /* ==================== v4.2: CONFIGURAÇÕES EM ABAS ==================== */
 .settings-tabs {
@@ -5123,112 +5041,6 @@ dialog::backdrop {
 .system-sub { font-size: 0.78rem; color: var(--text-secondary); }
 .system-actions { margin-top: 14px; display: flex; justify-content: flex-end; }
 #view-settings .settings-tab-hidden { display: none !important; }
-
-/* ==================== v4.2: ARTISTAS ==================== */
-.artists-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 16px;
-}
-
-.artist-card {
-  background: var(--card-bg);
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  padding: 10px;
-  text-align: left;
-  cursor: pointer;
-  color: inherit;
-}
-
-.artist-card:hover { background: var(--card-hover-bg); border-color: var(--border-color-active); }
-
-.artist-mosaic {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2px;
-  aspect-ratio: 1;
-  border-radius: 6px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.artist-mosaic img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.artist-mosaic.n1 { grid-template-columns: 1fr; }
-.artist-mosaic.n1 img { grid-row: span 2; }
-.artist-mosaic.n2 img { grid-row: span 2; }
-.artist-mosaic.n3 img:first-child { grid-row: span 2; }
-
-.artist-card-name { margin-top: 8px; font-weight: 700; color: var(--text-primary); font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.artist-card-sub { font-size: 0.78rem; color: var(--text-secondary); }
-
-.artist-back { margin-bottom: 12px; padding-left: 0; }
-
-.artist-header { display: flex; gap: 22px; align-items: flex-start; margin-bottom: 22px; flex-wrap: wrap; }
-.artist-mosaic.big { width: 170px; flex-shrink: 0; }
-.artist-header-info { flex: 1; min-width: 240px; }
-.artist-name { margin: 0 0 10px; font-size: 1.9rem; color: var(--text-primary); }
-.artist-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.artist-chips span {
-  font-size: 0.8rem;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid var(--border-color);
-  color: var(--text-secondary);
-}
-.artist-chips .artist-chip-warn { color: var(--primary); border-color: var(--border-color-active); }
-.artist-profile { margin-top: 12px; color: var(--text-secondary); font-size: 0.88rem; line-height: 1.55; white-space: pre-line; max-width: 760px; }
-
-.artist-section { margin-bottom: 18px; }
-
-.artist-discs { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 14px; margin-top: 12px; }
-.artist-disc { background: none; border: 0; padding: 0; text-align: left; cursor: pointer; color: inherit; }
-.artist-disc img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; }
-.artist-disc-title { display: block; margin-top: 6px; font-size: 0.85rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.artist-disc-sub { display: block; font-size: 0.75rem; color: var(--text-secondary); }
-
-.artist-disco-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.artist-disco-head h3 { margin: 0; }
-.artist-disco-head .profile-hint { margin: 0; }
-
-.artist-works { display: flex; flex-direction: column; margin-top: 12px; }
-.artist-work {
-  display: grid;
-  grid-template-columns: 44px 56px 1fr auto;
-  gap: 12px;
-  align-items: center;
-  padding: 8px 6px;
-  border-bottom: 1px solid var(--border-color);
-  text-decoration: none;
-  color: var(--text-secondary);
-  font-size: 0.88rem;
-}
-.artist-work:hover { background: rgba(255, 255, 255, 0.03); }
-.artist-work-year { color: var(--text-muted); font-variant-numeric: tabular-nums; }
-.artist-work-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.artist-work.owned .artist-work-title { color: var(--text-primary); font-weight: 600; }
-.artist-work.owned .artist-work-mark { color: var(--success); }
-.artist-work.missing .artist-work-mark { color: var(--text-muted); }
-
-.details-artist-link { cursor: pointer; }
-.details-artist-link:hover { color: var(--primary); text-decoration: underline; }
-
-/* v4.2: capa pequena de cada disco da discografia; os que faltam ficam apagados */
-.artist-work-cover {
-  width: 44px;
-  height: 44px;
-  border-radius: 4px;
-  object-fit: cover;
-  background: rgba(255, 255, 255, 0.04);
-}
-.artist-work.missing .artist-work-cover { opacity: 0.45; filter: grayscale(0.6); }
-.artist-work.missing:hover .artist-work-cover { opacity: 0.9; filter: none; }
-@media (max-width: 600px) {
-  .artist-work { grid-template-columns: 40px 44px 1fr; }
-  .artist-work-cover { width: 40px; height: 40px; }
-  .artist-work-mark { grid-column: 3; font-size: 0.75rem; }
-}
 
 /* ==================== v4.3: EDIÇÃO EM VINIL ==================== */
 .details-edition { margin: 12px 0; display: flex; flex-direction: column; gap: 8px; }
@@ -5282,14 +5094,6 @@ dialog::backdrop {
 
 .cf-toggle { display: none; }
 
-.artist-profile.clamped {
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.artist-profile-more { padding-left: 0; }
-
 @media (max-width: 680px) {
   .details-dialog-layout { grid-template-columns: minmax(0, 1fr); gap: 20px; }
   .dialog-glass { width: 94%; }
@@ -5318,11 +5122,6 @@ dialog::backdrop {
   .settings-tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
   .settings-tabs::-webkit-scrollbar { display: none; }
   .settings-tab { flex-shrink: 0; padding: 10px 12px; }
-
-  /* Prateleiras numa linha só, rolando para o lado */
-  .shelf-bar { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
-  .shelf-bar::-webkit-scrollbar { display: none; }
-  .shelf-chip { flex-shrink: 0; }
 }
 
 @media (max-width: 600px) {
@@ -5445,29 +5244,6 @@ dialog::backdrop {
 @media (max-width: 600px) {
   .plays-history-filter-row { justify-content: flex-start !important; }
   .plays-history-filter-row > span { display: none; }
-}
-
-/* v4.4.5: crédito da biografia do artista */
-.artist-profile-source { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
-.artist-profile-source a { color: var(--text-secondary); }
-
-/* v4.4.6: "Seus discos" na página do artista vira lista no celular (as capas grandes,
-   duas por linha, faziam uma rolagem longa) */
-@media (max-width: 700px) {
-  .artist-discs { display: flex; flex-direction: column; gap: 0; margin-top: 8px; }
-  .artist-disc {
-    display: grid;
-    grid-template-columns: 52px minmax(0, 1fr);
-    column-gap: 12px;
-    align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--border-color);
-  }
-  .artist-disc:last-child { border-bottom: 0; }
-  .artist-disc img { grid-row: 1 / span 2; width: 52px; height: 52px; aspect-ratio: auto; border-radius: 4px; }
-  .artist-disc-title { margin-top: 0; align-self: end; }
-  .artist-disc-sub { align-self: start; }
-  .artist-mosaic.big { width: 120px; }
 }
 
 /* v4.5: PlayVinil + nome da coleção no menu */

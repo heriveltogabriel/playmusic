@@ -21,9 +21,43 @@ function initializeTimelineEvents() {
   }
 }
 
+// v4.10: lados e faixas ouvidos por disco (no lugar das notas; o Diário da Vitrola saiu)
+let timelineListening = null;
+let timelineListeningLoading = false;
+
+function loadTimelineListening(force) {
+  if (timelineListeningLoading || (timelineListening && !force)) return;
+  timelineListeningLoading = true;
+  fetch('/api/admin/listening')
+    .then(r => (r.ok ? r.json() : {}))
+    .then(data => { timelineListening = data || {}; })
+    .catch(() => { timelineListening = timelineListening || {}; })
+    .finally(() => {
+      timelineListeningLoading = false;
+      if (state.currentView === 'timeline') renderTimeline();
+    });
+}
+
+function timelineListeningHtml(lp) {
+  const info = timelineListening && timelineListening[String(lp.id)];
+  if (!info || (!info.sides.length && !info.tracks.length)) return '';
+  const sides = info.sides.length ? `Lado${info.sides.length > 1 ? 's' : ''} ${info.sides.join(' · ')}` : '';
+  const count = info.tracks.length;
+  if (!count) return `<div class="timeline-listened"><span class="timeline-sides">${timelineEscape(sides)}</span></div>`;
+  const items = info.tracks.map(t =>
+    `<li><span class="timeline-track-pos">${timelineEscape(t.position)}</span> ${timelineEscape(t.title)}` +
+    `${t.plays > 1 ? ` <small>${t.plays}×</small>` : ''}</li>`
+  ).join('');
+  return `<details class="timeline-listened">
+            <summary>${sides ? `<span class="timeline-sides">${timelineEscape(sides)}</span> · ` : ''}${count} ${count === 1 ? 'faixa ouvida' : 'faixas ouvidas'}</summary>
+            <ol class="timeline-tracks">${items}</ol>
+          </details>`;
+}
+
 function renderTimeline() {
   const container = document.getElementById('timeline-container');
   if (!container) return;
+  loadTimelineListening();
   
   container.innerHTML = '';
   
@@ -202,7 +236,7 @@ function renderTimeline() {
             <span class="timeline-artist">- ${lp.artist}</span>
           </div>
           <div class="timeline-date">${friendlyDate}</div>
-          ${lp.notes ? `<div class="timeline-origin" title="De onde veio (notas do Discogs)">🛒 ${timelineEscape(lp.notes)}</div>` : ''}
+          ${timelineListeningHtml(lp)}
         </div>
         <div class="timeline-play-count">${lp.plays || 0} ${lp.plays === 1 ? 'audição' : 'audições'}</div>
       </div>
@@ -211,6 +245,7 @@ function renderTimeline() {
     // Bind open details modal on card click
     const cardEl = itemDiv.querySelector('.timeline-card');
     cardEl.addEventListener('click', (e) => {
+      if (e.target.closest('.timeline-listened')) return; // abrir/fechar as faixas não abre a ficha
       openDetailsDialog(lp.id);
     });
     
@@ -341,10 +376,7 @@ function renderFavoritesGrid() {
   
   grid.innerHTML = '';
   
-  // v4.2: Prateleiras — Favoritos ou a prateleira escolhida
-  let favorites = (typeof currentShelfLps === 'function')
-    ? currentShelfLps()
-    : state.lps.filter(lp => lp.favorite === true);
+  let favorites = state.lps.filter(lp => lp.favorite === true);
   
   // Apply search query
   if (state.favoritesQuery) {
@@ -387,9 +419,6 @@ function renderFavoritesGrid() {
     if (state.favoritesSortBy === 'listened_asc') {
       // Nunca ouvidos primeiro, depois os parados há mais tempo
       return lastListenTs(a) - lastListenTs(b);
-    }
-    if (state.favoritesSortBy === 'shelf_added_desc' && typeof shelfAddedAt === 'function') {
-      return shelfAddedAt(b) - shelfAddedAt(a);
     }
     return 0;
   });
@@ -436,7 +465,6 @@ function renderFavoritesGrid() {
           </button>
         </div>
         <div class="lp-card-last-listen">${lastListenLabel(lp)}</div>
-        ${typeof shelfNoteHtml === 'function' ? shelfNoteHtml(lp) : ''}
 
         <div class="lp-card-footer">
           <span class="lp-card-year">
