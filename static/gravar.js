@@ -131,7 +131,7 @@ function caber(el, linhas, minimoVh) {
 function ajustarTextos() {
   caber($("banda"), 2, 7);
   caber($("album"), 2, 4.5);
-  caber($("marca-nome"), 1, 7);
+  caber($("marca-nome"), 2, 7);
   caber($("marca-arroba"), 1, 5);
 }
 window.addEventListener("resize", () => { if (!palco.classList.contains("hidden")) ajustarTextos(); });

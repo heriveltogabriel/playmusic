@@ -61,7 +61,7 @@ class ModoGravacaoTests(unittest.TestCase):
         root = Path(__file__).resolve().parent.parent
         html = (root / "static" / "gravar.html").read_text(encoding="utf-8")
         js = (root / "static" / "gravar.js").read_text(encoding="utf-8")
-        self.assertIn("VEM OUVIR COMIGO", html)
+        self.assertIn("Vem ouvir comigo", html)
         self.assertIn("@lpdasemana", html)
         self.assertIn("LP DA SEMANA", html)
         self.assertNotIn("/api/recognize", js)  # microfone só mede o volume para a virada
