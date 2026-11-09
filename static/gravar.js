@@ -227,17 +227,43 @@ window.addEventListener("resize", ajustarEscala);
 
 // ---------- tela sempre acesa ----------
 let trava = null;
+let videoAcordado = null;
 async function manterAcesa() {
   try {
     if ("wakeLock" in navigator && !trava && document.visibilityState === "visible") {
       trava = await navigator.wakeLock.request("screen");
       trava.addEventListener("release", () => { trava = null; });
     }
-  } catch (e) { /* sem suporte: segue sem */ }
+  } catch (e) { trava = null; }
+  // plano B: vídeo minúsculo, mudo e em loop. Aparelhos que ignoram (ou derrubam) o pedido
+  // de tela acesa não apagam enquanto há um vídeo tocando.
+  try {
+    if (!videoAcordado) {
+      videoAcordado = document.createElement("video");
+      videoAcordado.setAttribute("playsinline", "");
+      videoAcordado.setAttribute("muted", "");
+      videoAcordado.muted = true;
+      videoAcordado.loop = true;
+      videoAcordado.style.cssText = "position:fixed;left:0;bottom:0;width:1px;height:1px;opacity:0.01;pointer-events:none;";
+      ["webm", "mp4"].forEach((tipo) => {
+        const fonte = document.createElement("source");
+        fonte.src = `/static/gravar/acordado.${tipo}`;
+        fonte.type = `video/${tipo}`;
+        videoAcordado.appendChild(fonte);
+      });
+      document.body.appendChild(videoAcordado);
+    }
+    if (videoAcordado.paused) await videoAcordado.play();
+  } catch (e) { /* tenta de novo no próximo toque */ }
 }
 document.addEventListener("visibilitychange", () => {
   if (!palco.classList.contains("hidden")) manterAcesa();
 });
+document.addEventListener("fullscreenchange", () => {
+  if (!palco.classList.contains("hidden")) manterAcesa();
+});
+// o pedido pode cair sem aviso: confere a cada 20 s
+setInterval(() => { if (!palco.classList.contains("hidden")) manterAcesa(); }, 20000);
 
 // ---------- toque: tela cheia; segurar 2 s: sair ----------
 let segurando = null;
@@ -262,6 +288,7 @@ palco.addEventListener("pointerdown", () => {
 const appEmTelaCheia = window.matchMedia && window.matchMedia("(display-mode: fullscreen)").matches;
 function toque() {
   mostrarBotoes();
+  manterAcesa();
   if (!appEmTelaCheia && !document.fullscreenElement && document.documentElement.requestFullscreen) {
     document.documentElement.requestFullscreen().catch(() => {});
   }
