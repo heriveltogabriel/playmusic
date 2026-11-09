@@ -7,7 +7,9 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 from tests.test_v36_compilations_devices import FixedShazam, make_app
-from vinyl_display.assistant import HELP, OFFSET_KEY, TelegramCommands, maybe_send_weekly_summary
+from vinyl_display.assistant import (
+    HELP, OFFSET_KEY, TelegramCommands, daily_pick_text, maybe_send_daily_pick, maybe_send_weekly_summary,
+)
 from vinyl_display.models import Track
 from vinyl_display.notify import Notifier
 
@@ -116,6 +118,38 @@ class WeeklySummaryTests(unittest.TestCase):
             self.assertFalse(maybe_send_weekly_summary(app, sunday + 3600))
             self.assertIn("Resumo da semana", t.texts()[0])
             self.assertEqual(len(t.posts), 1)
+
+
+class DailyPickTests(unittest.TestCase):
+    def test_every_day_after_ten_once(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            app, _ = make_app(tmp)
+            t = with_bot(app)
+            monday_early = datetime(2026, 11, 9, 9, 0, tzinfo=BRT).timestamp()
+            monday = datetime(2026, 11, 9, 10, 30, tzinfo=BRT).timestamp()
+            tuesday = datetime(2026, 11, 10, 11, 0, tzinfo=BRT).timestamp()
+            self.assertFalse(maybe_send_daily_pick(app, monday_early))
+            self.assertTrue(maybe_send_daily_pick(app, monday))
+            self.assertFalse(maybe_send_daily_pick(app, monday + 3600))
+            self.assertTrue(maybe_send_daily_pick(app, tuesday))
+            self.assertEqual(len(t.posts), 2)
+            self.assertIn("Escuta de hoje · Segunda, 09/11", t.texts()[0])
+            self.assertIn("Escuta de hoje · Terça, 10/11", t.texts()[1])
+
+    def test_text_names_the_disc_of_the_day(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            app, _ = make_app(tmp)
+            agenda = app.get_weekly_agenda()
+            wednesday = datetime(2026, 11, 11, 12, 0, tzinfo=BRT).timestamp()
+            text = daily_pick_text(app, wednesday)
+            self.assertIn(agenda[3]["title"], text)
+            self.assertIn("Quarta", text)
+
+    def test_hoje_command(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            app, _ = make_app(tmp)
+            self.assertIn("Escuta de hoje", TelegramCommands(app).answer("/hoje"))
+            self.assertIn("/hoje", HELP)
 
 
 class RecognitionReportTests(unittest.TestCase):

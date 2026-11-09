@@ -83,9 +83,10 @@ class WatchdogTests(unittest.TestCase):
     def setUp(self):
         # o resumo semanal sai no domingo à noite de verdade: fora destes testes
         from unittest import mock
-        patcher = mock.patch("vinyl_display.assistant.maybe_send_weekly_summary", lambda *a, **k: None)
-        patcher.start()
-        self.addCleanup(patcher.stop)
+        for name in ("maybe_send_weekly_summary", "maybe_send_daily_pick"):
+            patcher = mock.patch(f"vinyl_display.assistant.{name}", lambda *a, **k: None)
+            patcher.start()
+            self.addCleanup(patcher.stop)
 
     def make_app(self, tmp):
         store = CatalogStore(Path(tmp) / "c.sqlite3")
@@ -119,14 +120,15 @@ class WatchdogTests(unittest.TestCase):
             app.run_watchdog(now=time.time())
             self.assertIn("voltou a responder", self.texts()[-1])
 
-    def test_microphone_paused_needs_tap(self):
+    def test_microphone_paused_no_longer_alerts(self):
+        # v4.11: o aviso de microfone pausado saiu a pedido do usuário
         with tempfile.TemporaryDirectory() as tmp:
             app = self.make_app(tmp)
             app.record_heartbeat({"audio": "suspended"})
             at = json.loads(app.store.get_metadata("player_heartbeat"))["at"]
             app.run_watchdog(now=at + 30)
-            app.run_watchdog(now=at + 30 + 301)
-            self.assertIn("Toque uma vez na tela", self.texts()[-1])
+            app.run_watchdog(now=at + 30 + 3600)
+            self.assertFalse(any("microfone" in t.lower() for t in self.texts()))
 
     def test_shazam_quota_alerts_once_per_month(self):
         with tempfile.TemporaryDirectory() as tmp:

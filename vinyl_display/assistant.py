@@ -2,6 +2,7 @@
 
 Comandos (só respondem ao chat configurado em TELEGRAM_CHAT_ID):
     /tocando  o disco e a faixa que estão tocando
+    /hoje     a escuta do dia (o disco de hoje na Escuta da Semana)
     /semana   a Escuta da Semana, com o que já foi ouvido
     /status   player, microfone, Shazam e último sync
     /ajuda    esta lista
@@ -18,10 +19,13 @@ from typing import Any, Callable
 _BRT = timezone(timedelta(hours=-3))
 OFFSET_KEY = "telegram_update_offset"
 WEEKLY_KEY = "weekly_summary_sent_week"
+DAILY_KEY = "daily_pick_sent_day"
+WEEKDAYS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"]
 
 HELP = (
     "Comandos do PlayVinil:\n"
     "/tocando — o que está tocando agora\n"
+    "/hoje — a escuta de hoje\n"
     "/semana — a Escuta da Semana\n"
     "/status — player, microfone, Shazam e sync\n"
     "/ajuda — esta lista"
@@ -130,6 +134,67 @@ def weekly_summary_text(app: Any, now: float | None = None) -> str:
     return "\n".join(lines)
 
 
+def _send_after(app: Any) -> tuple[int, int]:
+    """Hora das mensagens do dia: 5 min depois do fim do não perturbe (padrão 10:00)."""
+    end = str(getattr(app.config, "alert_quiet_end", "") or "10:00") if getattr(app, "config", None) else "10:00"
+    try:
+        hour, minute = (int(x) for x in end.split(":", 1))
+    except ValueError:
+        hour, minute = 10, 0
+    total = hour * 60 + minute + 5
+    return (total // 60) % 24, total % 60
+
+
+def daily_pick_text(app: Any, now: float | None = None) -> str:
+    """v4.11: o disco do dia na Escuta da Semana (domingo = 1º da lista ... sábado = 7º)."""
+    now = now or time.time()
+    local = datetime.fromtimestamp(now, _BRT)
+    index = (local.weekday() + 1) % 7  # dias desde domingo
+    agenda = app.get_weekly_agenda()
+    if len(agenda) <= index:
+        return "Ainda não há Escuta da Semana para hoje."
+    pick = agenda[index]
+    header = f"🎧 Escuta de hoje · {WEEKDAYS[index]}, {local.strftime('%d/%m')}"
+    title = f"{pick.get('artist', '')} — {pick.get('title', '')}"
+    year = pick.get("original_year") or pick.get("year")
+    if year:
+        title += f" ({year})"
+    lines = [header, title]
+
+    dates = []
+    for value in pick.get("listen_dates") or []:
+        try:
+            dates.append(datetime.fromisoformat(str(value).replace("Z", "+00:00")).astimezone(_BRT))
+        except ValueError:
+            continue
+    plays = max(int(pick.get("auditions") or 0), len(dates))
+    if not plays:
+        lines.append("Você ainda não ouviu esse disco. 🆕")
+    elif dates:
+        last = max(dates)
+        lines.append(f"Ouvido {plays} {'vez' if plays == 1 else 'vezes'} · a última em {last.strftime('%d/%m/%Y')}")
+    else:
+        lines.append(f"Ouvido {plays} {'vez' if plays == 1 else 'vezes'}")
+
+    current = next((week for week in app.get_listening_history() if week.get("is_current")), None)
+    if current:
+        lines.append(f"Semana: {current['listened_count']} de {current['total']} ouvidos até agora.")
+    return "\n".join(lines)
+
+
+def maybe_send_daily_pick(app: Any, now: float | None = None) -> bool:
+    """Todo dia depois do não perturbe, uma vez por dia (no domingo, depois do resumo da semana)."""
+    now = now or time.time()
+    local = datetime.fromtimestamp(now, _BRT)
+    if (local.hour, local.minute) < _send_after(app):
+        return False
+    day_key = local.strftime("%Y-%m-%d")
+    if app.store.get_metadata(DAILY_KEY) == day_key or not app.notifier.enabled:
+        return False
+    app.store.set_metadata(DAILY_KEY, day_key)
+    return bool(app.notifier.send(daily_pick_text(app, now)))
+
+
 def maybe_send_weekly_summary(app: Any, now: float | None = None) -> bool:
     """Domingo a partir das 10:05 (fim do não perturbe), uma vez por semana."""
     now = now or time.time()
@@ -159,6 +224,8 @@ class TelegramCommands:
         command = (text or "").strip().split()[0].split("@")[0].lower() if text and text.strip() else ""
         if command in ("/tocando", "/agora", "/now"):
             return now_playing_text(self.app)
+        if command in ("/hoje", "/dia"):
+            return daily_pick_text(self.app)
         if command in ("/semana", "/agenda"):
             return week_text(self.app)
         if command == "/status":

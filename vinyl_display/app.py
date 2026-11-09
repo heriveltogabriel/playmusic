@@ -51,7 +51,6 @@ class VinylDisplayApp:
         self._restore_playback()
         self.notifier = Notifier.from_config(config) if config else Notifier()
         self.alerts = AlertManager.from_config(self.store, self.config, self.notifier)
-        self._audio_suspended_since: float | None = None
 
     @staticmethod
     def make_shazam_client(store: CatalogStore, config: Any) -> ShazamClient:
@@ -110,7 +109,7 @@ class VinylDisplayApp:
         }
 
     def run_watchdog(self, now: float | None = None) -> None:
-        """Roda a cada minuto: player fora do ar, microfone pausado e cota do Shazam."""
+        """Roda a cada minuto: player fora do ar, resumo da semana, escuta do dia e cota do Shazam."""
         import time
         from datetime import datetime, timedelta, timezone
 
@@ -124,22 +123,11 @@ class VinylDisplayApp:
                     f"O player está sem sinal há {status['seconds_ago'] // 60} min (último contato às {last}). "
                     "Confira se o celular está ligado, no carregador e no Wi-Fi."),
                 )
-                self._audio_suspended_since = None
             else:
                 self.alerts.resolve("player_offline", "✅ O player voltou a responder.")
-                if status.get("audio") in ("running",):
-                    self._audio_suspended_since = None
-                    self.alerts.resolve("player_needs_tap", "✅ O microfone do player voltou a ouvir.")
-                else:
-                    if self._audio_suspended_since is None:
-                        self._audio_suspended_since = now
-                    if now - self._audio_suspended_since >= 300:
-                        self.alerts.raise_alert(
-                            "player_needs_tap",
-                            "O microfone do player está pausado. Toque uma vez na tela do celular para ele voltar a ouvir.",
-                            cooldown=3 * 3600,
-                            hold_in_quiet_hours=True,
-                        )
+        # v4.11: o aviso de microfone pausado saiu a pedido; limpa sem mandar mensagem um que
+        # tenha ficado marcado como ativo
+        self.alerts.resolve("player_needs_tap")
 
         try:
             from vinyl_display.assistant import maybe_send_weekly_summary
@@ -147,6 +135,13 @@ class VinylDisplayApp:
             maybe_send_weekly_summary(self, now)
         except Exception as error:
             print(f"[WATCHDOG] weekly summary failed: {error}")
+
+        try:
+            from vinyl_display.assistant import maybe_send_daily_pick
+
+            maybe_send_daily_pick(self, now)
+        except Exception as error:
+            print(f"[WATCHDOG] daily pick failed: {error}")
 
         usage = self.shazam_usage()
         if usage and usage.get("keys"):
