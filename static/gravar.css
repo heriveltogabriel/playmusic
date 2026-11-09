@@ -81,7 +81,7 @@ body.escolhendo button { min-height: 0; }
 .cam-rede-titulo { display: block; font-size: 10.5vh; font-weight: 700; line-height: 1.05; color: #fff8ee; white-space: nowrap; overflow: hidden; }
 .cam-rede-sub { font-size: 5.6vh; font-weight: 500; line-height: 1.1; color: rgba(255,243,226,0.85); white-space: nowrap; }
 .cam-acoes { display: flex; gap: 3.2vh; }
-.cam-acao { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 2.4vh; padding: 3vh 2vh; border-radius: 3vh; background: #e65c00; color: #fff; box-shadow: 0 1vh 3vh rgba(0,0,0,0.3); }
+.cam-acao { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 2.4vh; padding: 3vh 2vh; border-radius: 3vh; background: #fbefbb; color: #2b1d14; box-shadow: 0 1vh 3vh rgba(0,0,0,0.3); } /* v4.10.2: bege da letra do logo */
 .cam-acao svg { width: 8.5vh; height: 8.5vh; flex-shrink: 0; }
 .cam-acao span { display: block; min-width: 0; font-size: 7vh; font-weight: 700; line-height: 1; white-space: nowrap; overflow: hidden; }
 .cam-album { font-size: 8vh; font-weight: 600; line-height: 1.12; overflow: hidden; color: #fff3e2; }
