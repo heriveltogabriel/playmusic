@@ -113,43 +113,26 @@ function mostrarLado() {
   $("lado").textContent = ladoAtual ? `Lado ${ladoAtual}` : "";
 }
 
-// "LP DA SEMANA · VEM OUVIR COMIGO" ocupa a mesma largura do nome da banda; o álbum e o
-// lado ficam alinhados à direita dessa largura
-function larguraTexto(el) {
-  const faixa = document.createRange();
-  faixa.selectNodeContents(el);
-  return faixa.getBoundingClientRect().width;
+// v4.8.0: cada texto começa no tamanho máximo do CSS e encolhe até caber na largura da
+// coluna e no número de linhas permitido
+function caber(el, linhas, minimoVh) {
+  if (!el || !el.textContent) return;
+  el.style.fontSize = "";
+  const minimo = (window.innerHeight * minimoVh) / 100;
+  let tamanho = parseFloat(getComputedStyle(el).fontSize);
+  for (let i = 0; i < 40; i++) {
+    el.style.fontSize = `${tamanho}px`;
+    const altura = parseFloat(getComputedStyle(el).lineHeight) || tamanho * 1.1;
+    const cabe = el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight < altura * (linhas + 0.5);
+    if (cabe || tamanho <= minimo) break;
+    tamanho = Math.max(minimo, tamanho * 0.94);
+  }
 }
 function ajustarTextos() {
-  const banda = $("banda");
-  const rotulo = $("rotulo-canal");
-  const bloco = $("bloco");
-  if (!banda.firstChild) return;
-  bloco.style.width = "";
-  rotulo.style.fontSize = "";
-  // largura do bloco: o maior entre o nome da banda e o do álbum (numa linha), sem passar da
-  // coluna; o rótulo laranja ocupa essa largura toda
-  const album = $("album");
-  album.style.whiteSpace = "nowrap";
-  const sec = banda.parentElement.parentElement;
-  const est = getComputedStyle(sec);
-  const coluna = sec.clientWidth - parseFloat(est.paddingLeft) - parseFloat(est.paddingRight) - 8;
-  const largura = Math.min(Math.max(larguraTexto(banda), larguraTexto(album)), coluna);
-  album.style.whiteSpace = "";
-  // a largura visível das letras (sem o espaçamento que sobra depois da última) igual à da banda
-  let tamanho = parseFloat(getComputedStyle(rotulo).fontSize);
-  for (let i = 0; i < 4; i++) {
-    const visivel = larguraTexto(rotulo) - 0.15 * tamanho;
-    if (visivel <= 0) break;
-    tamanho = Math.min(80, tamanho * (largura / visivel));
-    rotulo.style.fontSize = `${tamanho}px`;
-  }
-  // garantia: nunca passa da largura (arredondamentos de fonte)
-  for (let i = 0; i < 6 && larguraTexto(rotulo) - 0.15 * tamanho > largura + 0.5; i++) {
-    tamanho *= 0.98;
-    rotulo.style.fontSize = `${tamanho}px`;
-  }
-  bloco.style.width = `${largura}px`;
+  caber($("banda"), 2, 7);
+  caber($("album"), 2, 4.5);
+  caber($("marca-nome"), 1, 7);
+  caber($("marca-arroba"), 1, 5);
 }
 window.addEventListener("resize", () => { if (!palco.classList.contains("hidden")) ajustarTextos(); });
 async function mudarLado(passo) {
@@ -172,7 +155,7 @@ function abrirPalco(release, lado) {
   const capa = release.cover_url || "/static/playvinil-cover.svg";
   $("capa").src = capa;
   $("rotulo").style.backgroundImage = `url("${capa}")`;
-  $("rotulo-marca").style.backgroundImage = `url("${capa}")`;
+  $("fundo").style.backgroundImage = `url("${capa}")`;
   $("banda").textContent = release.artist || "";
   $("album").textContent = release.title || "";
   discoAtual = release.release_id || release.id || null;
@@ -186,8 +169,6 @@ function abrirPalco(release, lado) {
   escolha.classList.add("hidden");
   palco.classList.remove("hidden");
   document.body.classList.remove("escolhendo");
-  document.body.classList.add("is-playing");
-  ajustarEscala();
   ajustarTextos();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(ajustarTextos);
   manterAcesa();
@@ -217,13 +198,6 @@ function alternar() {
   clearTimeout(temporizador);
   mostrarCapa();
 }
-
-// ---------- palco de 1280x720 cabendo em qualquer tela ----------
-function ajustarEscala() {
-  const escala = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
-  $("stage").style.transform = `translate(-50%, -50%) scale(${escala})`;
-}
-window.addEventListener("resize", ajustarEscala);
 
 // ---------- tela sempre acesa ----------
 let trava = null;

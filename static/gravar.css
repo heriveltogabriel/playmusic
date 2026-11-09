@@ -32,48 +32,51 @@ body.escolhendo button { min-height: 0; }
 .lados button { min-height: 48px; padding: 0 22px; border-radius: 999px; border: 1px solid rgba(242,236,226,0.2); background: #1c1c1c; color: var(--texto); font: inherit; font-weight: 600; cursor: pointer; }
 .lados button.principal { background: var(--destaque); border-color: var(--destaque); }
 
-/* ---------- palco 1280x720, escalado para caber na tela ---------- */
-.palco { position: fixed; inset: 0; background: var(--fundo); overflow: hidden; cursor: none; user-select: none; -webkit-user-select: none; }
-.stage { position: absolute; pointer-events: none; left: 50%; top: 50%; width: 1280px; height: 720px; transform-origin: center center; }
+/* ---------- palco (v4.8.0: versão para câmera) ----------
+   A tela aparece pequena no vídeo: só o que se lê de longe, tudo em vh para ocupar a tela
+   inteira em qualquer proporção (celular deitado é bem mais largo que 16:9). */
+.palco { position: fixed; inset: 0; background: #111; overflow: hidden; cursor: none; user-select: none; -webkit-user-select: none; }
+.cam-fundo { position: absolute; inset: -12%; background: #3a2a22 center / cover no-repeat; filter: blur(48px) saturate(1.5) brightness(0.62); transform: translateZ(0); }
+.cam-sombra { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.25) 55%, rgba(0,0,0,0.38) 100%); }
 .tela { position: absolute; inset: 0; opacity: 0; transition: opacity 1.5s ease; }
 .tela.visivel { opacity: 1; }
-.dica { position: absolute; left: 0; right: 0; bottom: 14px; margin: 0; text-align: center; color: rgba(242,236,226,0.5); font-size: 14px; transition: opacity 1s ease; }
+.dica { position: absolute; left: 0; right: 0; bottom: 2vh; margin: 0; text-align: center; color: rgba(242,236,226,0.7); font-size: 14px; transition: opacity 1s ease; }
 .dica.some { opacity: 0; }
 
 @keyframes girar { to { transform: rotate(360deg); } }
 .gira { animation: girar 12s linear infinite; }
-.disco { border-radius: 50%; background: conic-gradient(from 0deg, rgba(255,255,255,0) 0deg, rgba(255,255,255,0.07) 40deg, rgba(255,255,255,0) 90deg, rgba(255,255,255,0) 180deg, rgba(255,255,255,0.07) 220deg, rgba(255,255,255,0) 270deg), repeating-radial-gradient(circle at center, #0b0b0b 0px, #0b0b0b 2px, #262626 3px, #0b0b0b 4px); border: 2px solid #2c2c2c; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
-
-/* tela 1: usa o layout do player (styles.css); aqui só o que muda */
-#tela-capa { position: absolute; inset: 0; }
-/* menos recuo à direita que o player: o texto ganha espaço (o nome da banda quebra menos) */
-#tela-capa.screen { padding-right: max(12px, 2vw); }
-#tela-capa .status-label { white-space: nowrap; }
-.bloco-texto { display: flex; flex-direction: column; align-self: flex-start; max-width: 100%; }
-#tela-capa .status-label { white-space: nowrap; letter-spacing: 0.15em; margin-right: -0.15em; line-height: 1.1; }
-.alinha-direita { text-align: right; }
-.linha-lado { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; margin-top: 12px; }
-.linha-lado .album-line { margin: 0; }
-#lado-botoes { transition: opacity 0.6s ease; }
-#lado-botoes.some { opacity: 0; }
-
-/* tela 2: marca do canal */
-.tela-marca { display: flex; align-items: center; justify-content: space-between; gap: 56px; padding: 0 64px 0 48px; background: radial-gradient(ellipse at 50% 40%, #1d1a17 0%, #0d0d0d 72%); }
-.marca-disco-area { display: flex; flex-direction: column; align-items: center; gap: 22px; flex-shrink: 0; }
-.disco-marca { width: 440px; height: 440px; border-radius: 50%; box-shadow: 0 30px 80px rgba(0,0,0,0.7); }
-.disco-marca .vinyl-disc-inner { display: flex; align-items: center; justify-content: center; }
 .gira-marca { animation: girar 15s linear infinite; }
-.redes { display: flex; flex-direction: column; gap: 26px; flex: 1; max-width: 700px; }
-.rede { display: flex; align-items: center; gap: 28px; padding: 34px 36px; border-radius: 24px; background: rgba(242,236,226,0.06); border: 1px solid rgba(242,236,226,0.12); }
-.rede-icone { width: 96px; height: 96px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-.rede-icone img { width: 96px; height: 96px; object-fit: contain; }
-.rede-icone.generico { border-radius: 22px; background: rgba(230,92,0,0.14); color: var(--destaque); }
-.rede-textos { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.rede-titulo { font-size: 40px; font-weight: 700; line-height: 1.1; }
-.rede-perfil { font-size: 28px; color: var(--suave); }
-.acoes { display: flex; gap: 24px; }
-.acao { flex: 1; display: flex; align-items: center; gap: 16px; padding: 24px 28px; border-radius: 20px; background: rgba(242,236,226,0.06); color: var(--destaque); }
-.acao span { font-size: 28px; font-weight: 600; color: var(--texto); }
+
+.cam-tela { display: flex; align-items: center; gap: 5vh; padding: 0 5vh 0 4vh; color: #fff8ee; }
+
+/* capa de 88% da altura, com o disco saindo pela direita */
+.cam-disco-area { position: relative; height: 88vh; width: 120vh; max-width: 58vw; flex-shrink: 0; display: flex; align-items: center; }
+.cam-capa { position: relative; z-index: 2; height: 88vh; width: 88vh; max-width: 42vw; max-height: 42vw; object-fit: cover; border-radius: 1.2vh; box-shadow: 0 2vh 6vh rgba(0,0,0,0.55); background: #222; }
+.cam-vinil { position: absolute; z-index: 1; top: 50%; height: 84vh; width: 84vh; max-width: 40vw; max-height: 40vw; left: calc(min(88vh, 42vw) * 0.36); transform: translateY(-50%); }
+.cam-vinil .vinyl-disc-inner { width: 100%; height: 100%; }
+.cam-vinil .vinyl-label { background-color: #b33; }
+
+/* tela da marca: disco inteiro, sem capa, com o logo no rótulo */
+.cam-disco-marca { width: 92vh; max-width: 46vw; justify-content: center; }
+.cam-disco-marca .cam-vinil { position: relative; left: 0; top: 0; transform: none; height: 90vh; width: 90vh; max-width: 46vw; max-height: 46vw; }
+/* o disco gira por baixo e o logo fica parado no meio, para ler no vídeo */
+.cam-logo { position: absolute; left: 50%; top: 50%; width: 64%; height: 64%; transform: translate(-50%, -50%); border-radius: 50%; background: #111 url("/static/logo_lp_da_semana.png") center / 128% no-repeat; box-shadow: 0 0 0 0.5vh #000, 0 0 3vh rgba(0,0,0,0.6); }
+
+/* textos: tamanhos máximos; o gravar.js reduz o que não couber */
+.cam-texto { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1.6vh; text-shadow: 0 0.4vh 2.4vh rgba(0,0,0,0.45); }
+.cam-texto p { margin: 0; }
+.cam-canal { font-size: 4.6vh; font-weight: 700; letter-spacing: 0.14em; color: #ffb37a; line-height: 1.1; }
+.cam-banda { margin: 0; font-family: 'DM Serif Display', Georgia, serif; font-weight: 400; font-size: 22vh; line-height: 1.02; overflow: hidden; overflow-wrap: normal; word-break: normal; }
+.cam-serif { white-space: nowrap; }
+.cam-album { font-size: 8vh; font-weight: 600; line-height: 1.12; overflow: hidden; color: #fff3e2; }
+.cam-arroba { font-size: 10vh; font-weight: 700; line-height: 1.1; white-space: nowrap; overflow: hidden; }
+.cam-redes { font-size: 5vh; font-weight: 500; color: rgba(255,243,226,0.85); }
+.cam-lado-linha { display: flex; align-items: center; gap: 2vh; margin-top: 0.6vh; }
+.cam-lado { font-size: 5.4vh; font-weight: 600; color: #ffb37a; }
+.cam-lado:empty { display: none; }
+.cam-lado-botoes { display: flex; gap: 10px; transition: opacity 0.6s ease; }
+.cam-lado-botoes.some { opacity: 0; pointer-events: none; }
+.cam-btn { width: 48px; height: 48px; min-height: 0; padding: 0; border-radius: 50%; display: grid; place-items: center; border: 1px solid rgba(255,248,238,0.35); background: rgba(0,0,0,0.35); color: #fff8ee; cursor: pointer; }
 
 /* botão voltar na tela de gravação: aparece ao tocar e some junto com os botões de lado */
 .btn-voltar-palco { position: absolute; top: 20px; left: 20px; z-index: 20; cursor: pointer; transition: opacity 0.6s ease; }

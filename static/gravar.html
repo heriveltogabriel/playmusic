@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/styles.css?v=4.5.7">
-  <link rel="stylesheet" href="/static/gravar.css?v=4.6.8">
+  <link rel="stylesheet" href="/static/gravar.css?v=4.8.0">
 </head>
 <body class="escolhendo">
   <!-- Passo 1: escolher o disco -->
@@ -33,78 +33,55 @@
     <div id="lados" class="lados hidden"></div>
   </section>
 
-  <!-- Passo 2: as duas telas que alternam -->
+  <!-- Passo 2: as duas telas que alternam (v4.8.0: versão para câmera — a tela aparece pequena
+       no vídeo, então pouca coisa, bem grande, e o fundo na cor da capa) -->
   <section id="palco" class="palco hidden" aria-live="off">
-    <!-- Tela 1: igual à tela do player, com a banda no lugar da música -->
-    <main id="tela-capa" class="screen tela visivel">
-      <section class="cover-panel">
-        <div class="vinyl-wrapper playing">
-          <div id="album-cover"><img id="capa" class="cover-image" alt=""></div>
-          <div class="vinyl-disc">
-            <div class="vinyl-disc-inner">
-              <div id="rotulo" class="vinyl-label"></div>
-            </div>
+    <div id="fundo" class="cam-fundo" aria-hidden="true"></div>
+    <div class="cam-sombra" aria-hidden="true"></div>
+
+    <!-- Tela 1: capa grande com o disco saindo de trás, artista enorme -->
+    <main id="tela-capa" class="tela visivel cam-tela">
+      <div class="cam-disco-area">
+        <div class="cam-vinil"><div class="vinyl-disc-inner gira"><div id="rotulo" class="vinyl-label"></div></div></div>
+        <img id="capa" class="cam-capa" alt="">
+      </div>
+      <div id="bloco" class="cam-texto">
+        <p id="rotulo-canal" class="cam-canal">LP DA SEMANA</p>
+        <h1 id="banda" class="cam-banda"></h1>
+        <p id="album" class="cam-album"></p>
+        <div class="cam-lado-linha">
+          <span id="lado" class="cam-lado"></span>
+          <div id="lado-botoes" class="cam-lado-botoes">
+            <button id="lado-anterior" class="cam-btn" type="button" aria-label="Lado anterior" title="Lado anterior">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+            </button>
+            <button id="lado-proximo" class="cam-btn" type="button" aria-label="Próximo lado" title="Próximo lado">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M6 18l8.5-6L6 6zm9-12h2v12h-2z"/></svg>
+            </button>
           </div>
         </div>
-      </section>
-      <section class="now-playing">
-        <div id="bloco" class="bloco-texto">
-          <p id="rotulo-canal" class="status-label">LP DA SEMANA · VEM OUVIR COMIGO</p>
-          <h1 id="banda"></h1>
-          <p id="album" class="artist-name alinha-direita"></p>
-          <div class="linha-lado">
-            <span id="lado" class="album-line"></span>
-            <div id="lado-botoes" class="media-nav-buttons">
-              <button id="lado-anterior" class="btn-media-nav" type="button" aria-label="Lado anterior" title="Lado anterior">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
-              </button>
-              <button id="lado-proximo" class="btn-media-nav" type="button" aria-label="Próximo lado" title="Próximo lado">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6 18l8.5-6L6 6zm9-12h2v12h-2z"/></svg>
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
+      </div>
     </main>
 
-    <!-- Tela 2: marca do canal (palco 1280x720 escalado) -->
-    <div id="stage" class="stage">
-    <div id="tela-marca" class="tela tela-marca">
-      <div class="marca-disco-area">
-        <div class="disco-marca">
-          <div class="vinyl-disc-inner gira-marca">
-            <div id="rotulo-marca" class="vinyl-label"></div>
-          </div>
-        </div>
+    <!-- Tela 2: marca do canal — disco com o logo e o @, nada mais -->
+    <div id="tela-marca" class="tela cam-tela">
+      <div class="cam-disco-area cam-disco-marca">
+        <div class="cam-vinil"><div class="vinyl-disc-inner gira-marca"></div><div id="rotulo-marca" class="cam-logo" role="img" aria-label="LP da Semana"></div></div>
       </div>
-      <div class="redes">
-        <div class="rede">
-          <div class="rede-icone generico" aria-hidden="true"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"></circle><path d="M10 8.5v7l5.5-3.5z" fill="currentColor"></path></svg></div>
-          <div class="rede-textos"><span class="rede-titulo">Inscreva-se no canal</span><span class="rede-perfil">YouTube · LP da Semana</span></div>
-        </div>
-        <div class="rede">
-          <div class="rede-icone generico" aria-hidden="true"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L8 6H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3z"></path><circle cx="12" cy="13" r="3.5"></circle></svg></div>
-          <div class="rede-textos"><span class="rede-titulo">Siga no Instagram</span><span class="rede-perfil">@lpdasemana</span></div>
-        </div>
-        <div class="acoes">
-          <div class="acao">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10v12"></path><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"></path></svg>
-            <span>Deixe seu like</span>
-          </div>
-          <div class="acao">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg>
-            <span>Ative o sininho</span>
-          </div>
-        </div>
+      <div class="cam-texto">
+        <p class="cam-canal">VEM OUVIR COMIGO</p>
+        <h1 id="marca-nome" class="cam-banda cam-serif">LP da Semana</h1>
+        <p id="marca-arroba" class="cam-arroba">@lpdasemana</p>
+        <p class="cam-redes">YouTube · Instagram</p>
       </div>
     </div>
-    </div>
+
     <a id="voltar-palco" class="btn-voltar btn-voltar-palco" href="/" aria-label="Voltar para a tela inicial" title="Voltar">
       <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"></path><path d="m12 19-7-7 7-7"></path></svg>
     </a>
     <p id="dica" class="dica">Toque: tela cheia · segurar 2 s: voltar</p>
   </section>
   <script src="/static/silence-detector.js?v=4.5.4" defer></script>
-  <script src="/static/gravar.js?v=4.7.1" defer></script>
+  <script src="/static/gravar.js?v=4.8.0" defer></script>
 </body>
 </html>
