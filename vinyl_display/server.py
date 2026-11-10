@@ -177,6 +177,13 @@ class VinylRequestHandler(SimpleHTTPRequestHandler):
         if path == "/api/health":
             self._json({"status": "ok"})
             return
+        if path == "/api/auth/check":
+            # v4.12.1: o nginx pergunta aqui (auth_request) se quem pede o Investify está logado.
+            # A tabela de rotas já recusou com 401 quem não tem sessão.
+            self.send_response(HTTPStatus.NO_CONTENT)
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            return
         if path == "/api/state":
             self._json(self.app.state())
             return

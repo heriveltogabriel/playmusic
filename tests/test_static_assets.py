@@ -214,7 +214,8 @@ class StaticAssetTests(unittest.TestCase):
         self.assertIn("https://heriveltogabriel.com.br/vinyl/", html)
         self.assertIn("https://lpdasemana.com.br/gerador.html", html)
         self.assertIn("https://lpdasemana.com.br", html)
-        self.assertIn("http://150.136.207.62:5001/", html)
+        self.assertIn('href="/investify/"', html)
+        self.assertNotIn("150.136.207.62", html)
         self.assertIn("Outfit", css)
         self.assertIn("backdrop-filter", css)
 

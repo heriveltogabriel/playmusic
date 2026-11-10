@@ -149,6 +149,13 @@ class HttpSiteFechadoTests(unittest.TestCase):
         status, headers, _ = self.get("/login?next=//outro.site", cookie=sessao)
         self.assertEqual(headers["Location"], "/")
 
+    def test_checagem_de_login_para_o_nginx(self):
+        # v4.12.1: o nginx usa /api/auth/check (auth_request) para proteger o Investify
+        self.assertEqual(self.get("/api/auth/check")[0], 401)
+        status, headers, _ = self.post("/api/auth/login", {"password": "senha-certa"})
+        sessao = headers["Set-Cookie"].split(";")[0]
+        self.assertEqual(self.get("/api/auth/check", cookie=sessao)[0], 204)
+
     def test_aparelho_autorizado_so_abre_player_e_gravacao(self):
         token = self.auth.authorize_device("Vitrola") if hasattr(self.auth, "authorize_device") else None
         if token is None:
