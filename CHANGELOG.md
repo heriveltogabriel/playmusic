@@ -2,6 +2,31 @@
 
 Versões do PlayVinil / Vinyl Display. As mais recentes primeiro.
 
+## 4.12.0 — 2026-11-10
+
+Junta as versões de teste 4.5.5 a 4.12.0.
+
+### Player e reconhecimento
+- Faixas em partes do Discogs (ex.: "Shine On You Crazy Diamond (Parts I-V)") viram uma faixa só e casam com o Shazam; empate no reconhecimento favorece o álbum original. Script `scripts/reparar_faixas_em_partes.py` recupera as faixas que o sync antigo descartava.
+- A tela pega a versão nova também na virada de lado; o início de cada faixa é acertado pela pausa uma vez só.
+
+### Modo Gravação (só no servidor pessoal)
+- Página `/vinyl/gravar` para os vídeos do LP da Semana: escolhe disco e lado (registra a escuta, sem Shazam), percebe a virada pelo silêncio e alterna a capa (40 s) com a marca do canal (15 s). Tela não apaga, instalável como app "Gravar LP" em tela cheia, atalho no "Qual disco está tocando?" do player.
+- Versão para câmera: ocupa a tela inteira, fundo na cor da capa, capa grande e artista enorme; tela da marca com o redondo do logo, YouTube, Instagram e os botões Curta e Compartilhe em bege.
+
+### Site e segurança
+- `SITE_FECHADO=1`: o site inteiro atrás de um login único (o do admin); player e gravação abrem em aparelho autorizado; botão Sair na tela de escolha.
+- Limite de tentativas no login e na recuperação (5 erros por IP, depois espera dobrando até 1 h); chave de recuperação nova com 100 bits.
+- `SITE_PESSOAL=1`: tela de escolha (/herivelto) e Modo Gravação só existem no servidor pessoal; nos outros o player abre direto.
+
+### Admin
+- Reconhecimento virou aba das Configurações; Prateleiras voltou a ser Favoritos; saem Artistas, Diário da Vitrola e as páginas Ouvir e Agenda.
+- Linha do Tempo mostra os lados ouvidos e as faixas de cada disco no lugar das notas.
+
+### Telegram
+- Mensagem diária com a escuta do dia da Escuta da Semana (5 min depois do não perturbe) e comando `/hoje`.
+- O aviso de microfone pausado não é mais enviado.
+
 ## 4.5.4 — 2026-11-05
 
 - Shazam: pausa no meio do lado não chama mais o Shazam (faixas baixas e trechos quietos pareciam troca de disco); troca de disco é conferida uma vez pela pausa fora do previsto, e não logo depois de um reconhecimento.
