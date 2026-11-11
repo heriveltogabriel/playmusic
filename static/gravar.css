@@ -88,7 +88,9 @@ body.escolhendo button { min-height: 0; }
 .cam-arroba { font-size: 10vh; font-weight: 700; line-height: 1.1; white-space: nowrap; overflow: hidden; }
 .cam-redes { font-size: 5vh; font-weight: 500; color: rgba(255,243,226,0.85); }
 .cam-lado-linha { display: flex; align-items: center; gap: 2vh; margin-top: 0.6vh; }
-.cam-lado { font-size: 5.4vh; font-weight: 600; color: #ffb37a; }
+/* v4.12.2: o lado não aparece no vídeo; só junto com os botões, ao tocar na tela */
+.cam-lado { font-size: 5.4vh; font-weight: 600; color: #ffb37a; transition: opacity 0.6s ease; }
+.cam-lado.some { opacity: 0; }
 .cam-lado:empty { display: none; }
 .cam-lado-botoes { display: flex; gap: 10px; transition: opacity 0.6s ease; }
 .cam-lado-botoes.some { opacity: 0; pointer-events: none; }

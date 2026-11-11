@@ -274,7 +274,7 @@ function toque() {
 // botões de lado: aparecem ao tocar e somem depois de 5 s (não ficam no vídeo)
 let botoesTimer = null;
 function mostrarBotoes() {
-  const itens = [$("lado-botoes"), $("voltar-palco")];
+  const itens = [$("lado"), $("lado-botoes"), $("voltar-palco")];
   itens.forEach((el) => el.classList.remove("some"));
   clearTimeout(botoesTimer);
   botoesTimer = setTimeout(() => itens.forEach((el) => el.classList.add("some")), 5000);
