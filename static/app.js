@@ -101,6 +101,57 @@ let farGapTrackKey = "";          // v4.2: a conferência de "pausa fora do prev
 let unknownDurationCheckedKey = ""; // v4.2: faixa sem duração: uma conferência só, no fim estimado
 let recognizeReason = "";          // v4.2: motivo enviado ao servidor (aparece no Reconhecimento)
 
+// v4.13: lado/disco novo pelo detector. Antes o Shazam era chamado no instante em que o som
+// voltava, e no fim de LP duplo cada estalo da agulha, conversa ou ruído depois de uma pausa
+// virava uma chamada (11 num disco, a maioria sem resultado). Agora: (1) espera a música
+// firmar (som contínuo por uns segundos) antes de gravar; (2) depois de uma tentativa sem
+// resultado, espera cada vez mais (30 s, 1, 2, 4, 8 min) antes da próxima.
+const NEW_SIDE_REASONS = ["lado_novo", "virada_sem_lado"];
+const NEW_SIDE_MIN_WAIT_MS = 6000;    // a música precisa estar tocando há pelo menos isso
+const NEW_SIDE_PENDING_MAX_MS = 180000; // som que não firmou em 3 min: desiste
+let pendingNewSide = null;            // { reason, since }
+let newSideFailures = 0;
+let newSideBlockedUntil = 0;
+
+function newSideBackoffMs(failures) {
+  return Math.min(480000, 30000 * Math.pow(2, Math.max(0, failures - 1)));
+}
+
+function requestNewSide(reason) {
+  const now = Date.now();
+  if (now < newSideBlockedUntil) {
+    lastDetectorAction = `som depois de pausa; Shazam em espera (${Math.ceil((newSideBlockedUntil - now) / 1000)}s)`;
+    return;
+  }
+  if (!pendingNewSide) pendingNewSide = { reason, since: now };
+  lastDetectorAction = "som depois de pausa: esperando a música firmar";
+}
+
+function checkPendingNewSide() {
+  if (!pendingNewSide || recording) return;
+  const now = Date.now();
+  if (now - pendingNewSide.since > NEW_SIDE_PENDING_MAX_MS) {
+    pendingNewSide = null;
+    return;
+  }
+  if (now - pendingNewSide.since < NEW_SIDE_MIN_WAIT_MS) return;
+  if (steadyRatio() < STEADY_MIN_RATIO) return; // ainda é estalo, conversa ou silêncio
+  const reason = pendingNewSide.reason;
+  pendingNewSide = null;
+  listenFor(reason);
+}
+
+function newSideResult(reason, matched) {
+  if (!NEW_SIDE_REASONS.includes(reason) && reason !== "fim_do_disco") return;
+  if (matched) {
+    newSideFailures = 0;
+    newSideBlockedUntil = 0;
+  } else {
+    newSideFailures++;
+    newSideBlockedUntil = Date.now() + newSideBackoffMs(newSideFailures);
+  }
+}
+
 function listenFor(reason) {
   recognizeReason = reason;
   recordClip(true, false);
@@ -113,7 +164,7 @@ async function handleSilenceResume(event) {
   lastDetectorAction = `${action} após pausa de ${gapSeconds}s`;
   if (action === "ignore") return;
   if (action === "recognize") {
-    listenFor("lado_novo");
+    requestNewSide("lado_novo");
     return;
   }
   try {
@@ -125,7 +176,7 @@ async function handleSilenceResume(event) {
     const result = (res && res.result) || {};
     if (action === "flip" && !result.flipped) {
       // Não havia outro lado (ou o disco não tem lados): provavelmente é outro disco
-      listenFor("virada_sem_lado");
+      requestNewSide("virada_sem_lado");
       return;
     }
     if (action === "flip") {
@@ -432,10 +483,12 @@ function renderStateInner(state) {
       const progress = state.progress_seconds || 0;
       const duration = track.duration_seconds || state.duration_seconds || 0;
       const playingKey = `${release.release_id}|${track.position}`;
-      if (playingKey !== farGapTrackKey) {
-        // v4.2: faixa nova, conferência nova. Trechos quietos dentro da mesma música não
-        // disparam o Shazam de novo (antes, cada confirmação liberava outra conferência).
-        farGapTrackKey = playingKey;
+      // v4.13: a conferência da "pausa fora do previsto" vale uma vez por LADO (antes era por
+      // faixa: trechos quietos de cada música davam uma chamada por faixa). Se o disco estiver
+      // errado, a deriva (duas trocas sem pausa) ainda chama o Shazam.
+      const sideKey = `${release.release_id}|${String(track.position || "").replace(/[^A-Za-z]/g, "").toUpperCase()}`;
+      if (sideKey !== farGapTrackKey) {
+        farGapTrackKey = sideKey;
         farGapChecked = false;
       }
       if (silenceDetector && state.duration_estimated) {
@@ -685,6 +738,7 @@ async function startMicrophone() {
       }
       const fastRms = Math.sqrt(sum / detectorSamples.length);
       pushLoudSample(fastRms);
+      checkPendingNewSide();
       if (!silenceDetector) return;
       const event = silenceDetector.push(fastRms, Date.now());
       if (event) handleSilenceResume(event);
@@ -746,6 +800,8 @@ async function startMicrophone() {
         } else if (lastServerState && lastServerState.status === "waiting_flip") {
           reason = lastServerState.next_track ? "virada_demorou" : "fim_do_disco";
         }
+        // v4.13: fim do disco sem resultado também entra na espera crescente
+        if (reason === "fim_do_disco" && Date.now() < newSideBlockedUntil) return;
         listenFor(reason);
       }
     }, 1000);
@@ -834,6 +890,7 @@ function recordClip(isAutomatic = false, isManual = false, attempt = 1, maxAttem
   pendingDriftListen = false;
   const reasonForServer = isManual ? "manual" : (recognizeReason || "automatico");
   recognizeReason = "";
+  if (isManual) { pendingNewSide = null; newSideFailures = 0; newSideBlockedUntil = 0; }
 
   const isPlaying = (currentRelease !== null) || playbackTracker.active;
 
@@ -909,6 +966,7 @@ function recordClip(isAutomatic = false, isManual = false, attempt = 1, maxAttem
 
       if (response && response.status === "matched" && response.match) {
         consecutiveFailedListens = 0;
+        newSideResult(reasonForServer, true);
         if (elements.micDebug) {
           elements.micDebug.textContent = `Shazam: identificada com sucesso! (${response.match.track.title})`;
         }
@@ -923,6 +981,7 @@ function recordClip(isAutomatic = false, isManual = false, attempt = 1, maxAttem
 
       // Se não identificou:
       recording = false;
+      newSideResult(reasonForServer, false);
       if (elements.retryButton) {
         elements.retryButton.classList.remove("recording");
       }

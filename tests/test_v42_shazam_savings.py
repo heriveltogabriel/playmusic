@@ -45,9 +45,10 @@ class RecentMatchGuardTests(unittest.TestCase):
 
 
 class PlayerSavingsTests(unittest.TestCase):
-    def test_player_sends_reason_and_checks_once_per_track(self):
+    def test_player_sends_reason_and_checks_once_per_side(self):
+        # v4.13: a conferência da pausa fora do previsto passou de uma por faixa para uma por lado
         self.assertIn('"X-Recognize-Reason": reasonForServer', APP_JS)
-        self.assertIn("if (playingKey !== farGapTrackKey)", APP_JS)
+        self.assertIn("if (sideKey !== farGapTrackKey)", APP_JS)
         self.assertIn("unknownDurationCheckedKey", APP_JS)
         self.assertIn('response.status === "skipped_recent"', APP_JS)
 
